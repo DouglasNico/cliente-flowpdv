@@ -1,5 +1,5 @@
-// FlowPDV Mobile Service Worker
-const CACHE_NAME = 'flowpdv-mobile-v1.0.0';
+// FlowPDV Mobile Service Worker v1.0.1
+const CACHE_NAME = 'flowpdv-mobile-v1.0.1';
 const ASSETS_TO_CACHE = [
   './',
   './index.html',
@@ -33,8 +33,11 @@ self.addEventListener('activate', (event) => {
 });
 
 self.addEventListener('fetch', (event) => {
+  // Ignora esquemas não-HTTP (extensões do navegador, etc)
+  if (!event.request.url.startsWith('http')) return;
+
   // Ignora requisições do Firebase e APIs externas para sempre buscar dados frescos
-  if (event.request.url.includes('firestore.googleapis.com') || event.request.url.includes('firebase')) {
+  if (event.request.url.includes('firestore.googleapis.com') || event.request.url.includes('firebase') || event.request.url.includes('googleapis.com')) {
     return;
   }
 
