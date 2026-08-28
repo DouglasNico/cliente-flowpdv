@@ -363,12 +363,29 @@ window.MobileApp = {
   // -------------------------------------------------------------
   // ABA 2: ESTOQUE & REPOSIÇÃO
   // -------------------------------------------------------------
-  setFiltroEstoque(filtro) {
+  setFiltroEstoque(filtro, elementoClicado) {
     this.filtroEstoqueAtual = filtro;
     document.querySelectorAll('#tab-estoque .chip-btn').forEach(btn => btn.classList.remove('active'));
-    const btn = document.getElementById(`chip-est-${filtro}`);
-    if (btn) btn.classList.add('active');
+    
+    const btn = elementoClicado || document.getElementById(`chip-est-${filtro}`);
+    if (btn) {
+      btn.classList.add('active');
+      // Garante que o botão selecionado fique sempre no meio da tela (scroll suave)
+      btn.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+    }
+
     this.renderEstoque();
+  },
+
+  scrollChips(direcao) {
+    const container = document.getElementById('chips-estoque-container');
+    if (!container) return;
+    const scrollAmount = 140;
+    if (direcao === 'esquerda') {
+      container.scrollBy({ left: -scrollAmount, behavior: 'smooth' });
+    } else {
+      container.scrollBy({ left: scrollAmount, behavior: 'smooth' });
+    }
   },
 
   filtrarEstoque() {

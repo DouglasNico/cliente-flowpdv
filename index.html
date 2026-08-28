@@ -165,12 +165,16 @@
           <input type="text" id="input-busca-estoque" class="mobile-search-input" placeholder="Buscar por produto ou código..." oninput="MobileApp.filtrarEstoque()">
         </div>
 
-        <!-- Filtros Rápidos -->
-        <div class="filter-chips-row">
-          <button type="button" class="chip-btn active" id="chip-est-todos" onclick="MobileApp.setFiltroEstoque('todos')">Todos</button>
-          <button type="button" class="chip-btn" id="chip-est-baixo" onclick="MobileApp.setFiltroEstoque('baixo')">⚠️ Baixo / Zerado</button>
-          <button type="button" class="chip-btn" id="chip-est-vencidos" onclick="MobileApp.setFiltroEstoque('vencidos')">🚨 Validade</button>
-          <button type="button" class="chip-btn" id="chip-est-compras" onclick="MobileApp.setFiltroEstoque('compras')">🛒 Sugestão de Compra</button>
+        <!-- Filtros Rápidos com Navegação Lateral e Scroll por Toque -->
+        <div class="filter-carousel-wrapper">
+          <button type="button" class="btn-carousel-arrow left" onclick="MobileApp.scrollChips('esquerda')" title="Rolar para a esquerda">‹</button>
+          <div class="filter-chips-row" id="chips-estoque-container">
+            <button type="button" class="chip-btn active" id="chip-est-todos" onclick="MobileApp.setFiltroEstoque('todos', this)">Todos</button>
+            <button type="button" class="chip-btn" id="chip-est-baixo" onclick="MobileApp.setFiltroEstoque('baixo', this)">⚠️ Baixo / Zerado</button>
+            <button type="button" class="chip-btn" id="chip-est-vencidos" onclick="MobileApp.setFiltroEstoque('vencidos', this)">🚨 Validade</button>
+            <button type="button" class="chip-btn" id="chip-est-compras" onclick="MobileApp.setFiltroEstoque('compras', this)">🛒 Sugestão de Compra</button>
+          </div>
+          <button type="button" class="btn-carousel-arrow right" onclick="MobileApp.scrollChips('direita')" title="Rolar para a direita">›</button>
         </div>
 
         <div class="section-title-mobile">
