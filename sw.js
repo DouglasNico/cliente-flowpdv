@@ -1,5 +1,5 @@
-// FlowPDV Mobile Service Worker v1.0.1
-const CACHE_NAME = 'flowpdv-mobile-v1.0.1';
+// FlowPDV Mobile Service Worker v1.0.2 - Ultra-Fast PWA
+const CACHE_NAME = 'flowpdv-mobile-v1.0.2';
 const ASSETS_TO_CACHE = [
   './',
   './index.html',
@@ -7,14 +7,14 @@ const ASSETS_TO_CACHE = [
   './app.js',
   './manifest.json',
   './icon.png',
-  './logoflow.png'
+  './logoflow.png',
+  './favicon.ico'
 ];
 
 self.addEventListener('install', (event) => {
+  self.skipWaiting();
   event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => {
-      return cache.addAll(ASSETS_TO_CACHE);
-    }).then(() => self.skipWaiting())
+    caches.open(CACHE_NAME).then((cache) => cache.addAll(ASSETS_TO_CACHE))
   );
 });
 
@@ -33,17 +33,31 @@ self.addEventListener('activate', (event) => {
 });
 
 self.addEventListener('fetch', (event) => {
-  // Ignora esquemas não-HTTP (extensões do navegador, etc)
   if (!event.request.url.startsWith('http')) return;
 
-  // Ignora requisições do Firebase e APIs externas para sempre buscar dados frescos
-  if (event.request.url.includes('firestore.googleapis.com') || event.request.url.includes('firebase') || event.request.url.includes('googleapis.com')) {
+  // Ignora chamadas do Firebase Firestore e Google APIs para dados sempre em tempo real
+  if (
+    event.request.url.includes('firestore.googleapis.com') ||
+    event.request.url.includes('firebase') ||
+    event.request.url.includes('googleapis.com') ||
+    event.request.url.includes('google.com')
+  ) {
     return;
   }
 
+  // Resposta instantânea do Cache com atualização em segundo plano (Stale-While-Revalidate)
   event.respondWith(
-    fetch(event.request).catch(() => {
-      return caches.match(event.request);
+    caches.match(event.request).then((cachedResponse) => {
+      const fetchPromise = fetch(event.request).then((networkResponse) => {
+        if (networkResponse && networkResponse.status === 200 && networkResponse.type === 'basic') {
+          const responseToCache = networkResponse.clone();
+          caches.open(CACHE_NAME).then((cache) => cache.put(event.request, responseToCache));
+        }
+        return networkResponse;
+      }).catch(() => cachedResponse);
+
+      return cachedResponse || fetchPromise;
     })
   );
 });
+

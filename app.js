@@ -37,8 +37,25 @@ window.MobileApp = {
     if (chave && pin) {
       this.chaveLicenca = chave;
       this.pinGerente = pin;
+
+      // ⚡ CARREGAMENTO INSTANTÂNEO (0ms): Exibe os dados do cache local imediatamente
+      const cached = localStorage.getItem(`flowpdv_cache_${chave}`);
+      if (cached) {
+        try {
+          this.dadosBackup = JSON.parse(cached);
+          this.atualizarHeaderUI();
+          this.renderResumoDashboard();
+          this.renderEstoque();
+          this.renderFinanceiro();
+        } catch (e) {
+          console.warn('[Cache] Erro ao ler cache local:', e);
+        }
+      }
+
       document.getElementById('screen-login').style.display = 'none';
       document.getElementById('screen-app').style.display = 'flex';
+
+      // Sincroniza dados frescos em segundo plano
       this.carregarDadosLoja();
     } else {
       document.getElementById('screen-login').style.display = 'flex';
@@ -99,10 +116,12 @@ window.MobileApp = {
         localStorage.setItem('flowpdv_mob_pin', pinInput);
       }
 
+      // Transição visual imediata para a tela principal
       document.getElementById('screen-login').style.display = 'none';
       document.getElementById('screen-app').style.display = 'flex';
 
-      await this.carregarDadosLoja();
+      // ⚡ Carrega dados em paralelo sem bloquear a interface
+      this.carregarDadosLoja();
     } catch (err) {
       console.error('[Login] Erro:', err);
       toastErro.innerHTML = `⚠️ ${err.message || 'Erro ao autenticar.'}`;
@@ -133,7 +152,7 @@ window.MobileApp = {
   },
 
   // -------------------------------------------------------------
-  // CARREGAMENTO DE DADOS (FIREBASE FIRESTORE)
+  // CARREGAMENTO DE DADOS (FIREBASE FIRESTORE PARALELO & OTIMIZADO)
   // -------------------------------------------------------------
   async recarregarDados() {
     const btn = document.getElementById('btn-refresh');
@@ -141,7 +160,7 @@ window.MobileApp = {
     await this.carregarDadosLoja();
     setTimeout(() => {
       if (btn) btn.classList.remove('rotating');
-    }, 600);
+    }, 400);
   },
 
   unsubRealtime: null,
@@ -177,57 +196,56 @@ window.MobileApp = {
     if (!this.chaveLicenca) return;
 
     try {
+      if (!window.FirebaseDB || !window.FirebaseDB.db) return;
       const { db, doc, getDoc, collection, query, where, getDocs, limit } = window.FirebaseDB;
 
-      // 1. Carregar Licença Atualizada
-      const snapLic = await getDoc(doc(db, 'licencas', this.chaveLicenca));
-      if (snapLic.exists()) {
-        this.dadosLoja = snapLic.data();
+      // 🚀 EXECUÇÃO PARALELA: Dispara todas as consultas Firestore simultaneamente
+      const promLicenca = getDoc(doc(db, 'licencas', this.chaveLicenca));
+      const promBackup = getDoc(doc(db, 'backups_lojas', this.chaveLicenca));
+      const promAudit = getDocs(query(
+        collection(db, 'auditoria_lojas'),
+        where('chaveLicenca', '==', this.chaveLicenca),
+        limit(25)
+      ));
+
+      const [resLic, resBackup, resAudit] = await Promise.allSettled([promLicenca, promBackup, promAudit]);
+
+      // 1. Processa Licença
+      if (resLic.status === 'fulfilled' && resLic.value.exists()) {
+        this.dadosLoja = resLic.value.data();
       }
 
-      // 2. Carregar Backup da Loja (Produtos, Vendas, Turnos, Clientes, Contas)
-      let snapBackup = await getDoc(doc(db, 'backups_lojas', this.chaveLicenca));
-      if (!snapBackup.exists()) {
-        // Fallback para coleção legada
-        snapBackup = await getDoc(doc(db, 'backups_adegas', this.chaveLicenca));
-      }
-
-      if (snapBackup.exists()) {
-        this.dadosBackup = snapBackup.data();
+      // 2. Processa Backup da Loja (Produtos, Vendas, Turnos, Contas, etc)
+      if (resBackup.status === 'fulfilled' && resBackup.value.exists()) {
+        this.dadosBackup = resBackup.value.data();
         localStorage.setItem(`flowpdv_cache_${this.chaveLicenca}`, JSON.stringify(this.dadosBackup));
-      } else {
-        // Tenta pegar do cache local se existir
-        const cached = localStorage.getItem(`flowpdv_cache_${this.chaveLicenca}`);
-        if (cached) this.dadosBackup = JSON.parse(cached);
+      } else if (!this.dadosBackup) {
+        // Tenta buscar no backup legado apenas se necessário
+        try {
+          const snapLeg = await getDoc(doc(db, 'backups_adegas', this.chaveLicenca));
+          if (snapLeg.exists()) {
+            this.dadosBackup = snapLeg.data();
+            localStorage.setItem(`flowpdv_cache_${this.chaveLicenca}`, JSON.stringify(this.dadosBackup));
+          }
+        } catch(e) {}
       }
 
-      // 3. Carregar Logs de Auditoria Recentes
-      try {
-        const qAudit = query(
-          collection(db, 'auditoria_lojas'),
-          where('chaveLicenca', '==', this.chaveLicenca),
-          limit(30)
-        );
-        const snapAudit = await getDocs(qAudit);
+      // 3. Processa Logs de Auditoria
+      if (resAudit.status === 'fulfilled' && resAudit.value) {
         const logs = [];
-        snapAudit.forEach(d => logs.push({ id: d.id, ...d.data() }));
-
-        // Ordena por data decrescente
+        resAudit.value.forEach(d => logs.push({ id: d.id, ...d.data() }));
         logs.sort((a, b) => {
           const tA = a.criadoEm ? new Date(a.criadoEm).getTime() : 0;
           const tB = b.criadoEm ? new Date(b.criadoEm).getTime() : 0;
           return tB - tA;
         });
-
         this.dadosAuditoria = logs;
-      } catch (e) {
-        console.warn('[Auditoria] Falha ao puxar logs:', e);
       }
 
       // Iniciar Ouvinte em Tempo Real
       this.iniciarListenerTempoReal();
 
-      // 4. Atualizar Todas as Telas
+      // Renderizar UI atualizada
       this.atualizarHeaderUI();
       this.renderResumoDashboard();
       this.renderEstoque();
