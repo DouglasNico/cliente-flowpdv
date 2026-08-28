@@ -14,9 +14,19 @@
   <title>FlowPDV Gestor — Painel do Dono</title>
 
   <link rel="manifest" href="manifest.json">
-  <link rel="icon" type="image/png" href="icon.png">
-  <link rel="apple-touch-icon" href="icon.png">
-  <link rel="stylesheet" href="style.css?v=1.0.0">
+  <link rel="stylesheet" href="style.css?v=1.1.0">
+
+  <script>
+    // Intercepta e silencia erros gerados por extensões do navegador (gerenciadores de senhas, tradutores, autofill)
+    window.addEventListener('unhandledrejection', function (event) {
+      if (event.reason && (
+        (event.reason.message && event.reason.message.includes('message channel closed')) ||
+        (String(event.reason).includes('message channel closed'))
+      )) {
+        event.preventDefault();
+      }
+    });
+  </script>
 </head>
 <body>
 
