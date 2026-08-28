@@ -29,6 +29,17 @@
         event.preventDefault();
       }
     });
+
+    // 🚫 Desativa zoom por duplo clique e gestos de pinça no celular
+    document.addEventListener('gesturestart', function (e) { e.preventDefault(); });
+    let lastTouch = 0;
+    document.addEventListener('touchend', function (event) {
+      const now = Date.now();
+      if (now - lastTouch <= 300) {
+        event.preventDefault();
+      }
+      lastTouch = now;
+    }, { passive: false });
   </script>
 </head>
 <body>
