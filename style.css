@@ -1,43 +1,45 @@
 /* ==========================================================================
-   FLOWPDV GESTOR MOBILE (COMPANION APP) - DESIGN SYSTEM MOBILE-FIRST
-   Dark Mode Premium & Ergonomia Touch Nativa
+   FLOWPDV GESTOR MOBILE (COMPANION APP) - MASTER ADMIN THEME
+   Dark Slate #0f172a • Cyan #38bdf8 • Violet #7c3aed • Emerald #10b981
    ========================================================================== */
 
 @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@500;700;800&display=swap');
 
 :root {
-  --bg-app: #090d16;
-  --bg-surface-1: #111827;
-  --bg-surface-2: #1e293b;
-  --bg-surface-3: #273549;
+  --bg-app: #0f172a;
+  --bg-surface-1: #1e293b;
+  --bg-surface-2: #273549;
+  --bg-surface-3: #334155;
   --border-subtle: #1e293b;
   --border-card: #334155;
-  --border-highlight: #475569;
+  --border-highlight: rgba(99, 102, 241, 0.5);
 
   --text-main: #f8fafc;
   --text-muted: #94a3b8;
   --text-dim: #64748b;
 
-  --accent-orange: #f97316;
-  --accent-orange-hover: #ea580c;
-  --accent-orange-glow: rgba(249, 115, 22, 0.25);
+  --accent-cyan: #38bdf8;
+  --accent-cyan-light: rgba(56, 189, 248, 0.15);
+  --accent-cyan-glow: rgba(56, 189, 248, 0.3);
+
+  --accent-purple: #7c3aed;
+  --accent-purple-hover: #6d28d9;
+  --accent-purple-light: rgba(124, 58, 237, 0.15);
+  --accent-purple-glow: rgba(124, 58, 237, 0.35);
 
   --accent-green: #10b981;
   --accent-green-light: rgba(16, 185, 129, 0.15);
   --accent-green-border: rgba(16, 185, 129, 0.3);
 
-  --accent-blue: #38bdf8;
-  --accent-blue-light: rgba(56, 189, 248, 0.15);
-
-  --accent-purple: #a855f7;
-  --accent-purple-light: rgba(168, 85, 247, 0.15);
+  --accent-amber: #f59e0b;
+  --accent-amber-light: rgba(245, 158, 11, 0.15);
 
   --accent-red: #ef4444;
   --accent-red-light: rgba(239, 68, 68, 0.15);
 
-  --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.3);
-  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.4);
-  --shadow-lg: 0 10px 25px -5px rgba(0, 0, 0, 0.6);
+  --shadow-sm: 0 2px 6px rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 6px 16px rgba(0, 0, 0, 0.4);
+  --shadow-lg: 0 12px 30px -5px rgba(0, 0, 0, 0.7);
 
   --radius-sm: 8px;
   --radius-md: 12px;
@@ -86,7 +88,7 @@ body {
   align-items: center;
   min-height: 100vh;
   padding: 24px;
-  background: radial-gradient(circle at top center, #1e1b4b 0%, #090d16 70%);
+  background: radial-gradient(circle at top right, #1e1b4b 0%, #0f172a 70%);
   position: fixed;
   inset: 0;
   z-index: 9999;
@@ -95,7 +97,7 @@ body {
 .login-box {
   width: 100%;
   max-width: 400px;
-  background: rgba(17, 24, 39, 0.85);
+  background: rgba(30, 41, 59, 0.85);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
   border: 1px solid var(--border-card);
@@ -117,8 +119,8 @@ body {
   width: 68px;
   height: 68px;
   border-radius: 18px;
-  box-shadow: 0 8px 24px rgba(249, 115, 22, 0.3);
-  border: 2px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+  border: 2px solid rgba(255, 255, 255, 0.15);
 }
 
 .login-title {
@@ -129,7 +131,7 @@ body {
 }
 
 .login-title span {
-  color: var(--accent-orange);
+  color: var(--accent-cyan);
 }
 
 .login-subtitle {
@@ -174,8 +176,8 @@ body {
 }
 
 .input-mobile:focus {
-  border-color: var(--accent-orange);
-  box-shadow: 0 0 0 3px var(--accent-orange-glow);
+  border-color: var(--accent-purple);
+  box-shadow: 0 0 0 3px var(--accent-purple-glow);
 }
 
 .input-mobile.uppercase {
@@ -212,21 +214,21 @@ body {
 .remember-row input[type="checkbox"] {
   width: 16px;
   height: 16px;
-  accent-color: var(--accent-orange);
+  accent-color: var(--accent-purple);
   cursor: pointer;
 }
 
 .btn-login-submit {
   width: 100%;
   height: 50px;
-  background: linear-gradient(135deg, var(--accent-orange), var(--accent-orange-hover));
+  background: linear-gradient(135deg, var(--accent-purple), #4f46e5);
   color: #ffffff;
   font-size: 15px;
   font-weight: 800;
   border: none;
   border-radius: var(--radius-md);
   cursor: pointer;
-  box-shadow: 0 4px 16px var(--accent-orange-glow);
+  box-shadow: 0 4px 16px var(--accent-purple-glow);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -235,7 +237,7 @@ body {
 }
 
 .btn-login-submit:active {
-  background: var(--accent-orange-hover);
+  background: var(--accent-purple-hover);
 }
 
 .login-error-toast {
@@ -266,9 +268,9 @@ body {
   position: sticky;
   top: 0;
   z-index: 100;
-  background: rgba(11, 15, 25, 0.92);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
+  background: rgba(15, 23, 42, 0.92);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
   border-bottom: 1px solid var(--border-card);
   padding: calc(env(safe-area-inset-top, 0px) + 12px) 16px 12px 16px;
   display: flex;
@@ -315,7 +317,7 @@ body {
 }
 
 .btn-header-action {
-  background: var(--bg-surface-2);
+  background: var(--bg-surface-1);
   border: 1px solid var(--border-card);
   color: var(--text-main);
   width: 36px;
@@ -330,7 +332,7 @@ body {
 }
 
 .btn-header-action:active {
-  background: var(--bg-surface-3);
+  background: var(--bg-surface-2);
 }
 
 .rotating {
@@ -355,7 +357,7 @@ body {
 
 /* Cards de Métricas Principais */
 .hero-metric-card {
-  background: linear-gradient(135deg, #1e293b, #0f172a);
+  background: linear-gradient(135deg, #1e293b 0%, #1e1b4b 100%);
   border: 1px solid var(--border-card);
   border-radius: var(--radius-lg);
   padding: 18px 20px;
@@ -371,7 +373,7 @@ body {
   right: 0;
   width: 120px;
   height: 120px;
-  background: radial-gradient(circle, var(--accent-orange-glow) 0%, transparent 70%);
+  background: radial-gradient(circle, var(--accent-purple-glow) 0%, transparent 70%);
   pointer-events: none;
 }
 
@@ -420,7 +422,7 @@ body {
 
 .small-metric-card.alert {
   border-color: rgba(239, 68, 68, 0.4);
-  background: rgba(239, 68, 68, 0.05);
+  background: rgba(239, 68, 68, 0.08);
 }
 
 .small-metric-label {
@@ -529,9 +531,9 @@ body {
 }
 
 .badge-tag-sm.low {
-  background: var(--accent-orange-glow);
-  color: var(--accent-orange);
-  border: 1px solid rgba(249, 115, 22, 0.3);
+  background: var(--accent-amber-light);
+  color: var(--accent-amber);
+  border: 1px solid rgba(245, 158, 11, 0.3);
 }
 
 .badge-tag-sm.zero {
@@ -542,13 +544,13 @@ body {
 
 .badge-tag-sm.purple {
   background: var(--accent-purple-light);
-  color: var(--accent-purple);
-  border: 1px solid rgba(168, 85, 247, 0.3);
+  color: #c084fc;
+  border: 1px solid rgba(124, 58, 237, 0.3);
 }
 
 .badge-tag-sm.blue {
-  background: var(--accent-blue-light);
-  color: var(--accent-blue);
+  background: var(--accent-cyan-light);
+  color: var(--accent-cyan);
   border: 1px solid rgba(56, 189, 248, 0.3);
 }
 
@@ -621,10 +623,10 @@ body {
 }
 
 .chip-btn.active {
-  background: var(--accent-orange);
+  background: linear-gradient(135deg, var(--accent-purple), #4f46e5);
   color: #ffffff;
-  border-color: var(--accent-orange);
-  box-shadow: 0 2px 8px var(--accent-orange-glow);
+  border-color: var(--accent-purple);
+  box-shadow: 0 2px 8px var(--accent-purple-glow);
 }
 
 /* ==========================================================================
@@ -637,7 +639,7 @@ body {
   transform: translateX(-50%);
   width: 100%;
   max-width: 500px;
-  background: rgba(11, 15, 25, 0.95);
+  background: rgba(15, 23, 42, 0.95);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
   border-top: 1px solid var(--border-card);
@@ -670,7 +672,7 @@ body {
 }
 
 .tabbar-item.active {
-  color: var(--accent-orange);
+  color: var(--accent-cyan);
 }
 
 .tabbar-item.active .tabbar-icon {
