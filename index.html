@@ -315,7 +315,7 @@
   <!-- Firebase JS SDK v11 -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.4.0/firebase-app.js";
-    import { getFirestore, doc, getDoc, collection, query, where, orderBy, limit, getDocs } from "https://www.gstatic.com/firebasejs/11.4.0/firebase-firestore.js";
+    import { getFirestore, doc, getDoc, collection, query, where, orderBy, limit, getDocs, onSnapshot } from "https://www.gstatic.com/firebasejs/11.4.0/firebase-firestore.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyBn1tl0IBQoWZBmunYtRSb-i74Yhe5OAFg",
@@ -330,14 +330,26 @@
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
 
-    window.FirebaseDB = { db, doc, getDoc, collection, query, where, orderBy, limit, getDocs };
+    window.FirebaseDB = { db, doc, getDoc, collection, query, where, orderBy, limit, getDocs, onSnapshot };
 
     if (window.MobileApp && typeof window.MobileApp.init === 'function') {
       window.MobileApp.init();
     }
   </script>
 
+  <!-- Prevenir Zoom por Duplo Clique -->
+  <script>
+    let lastTouchEnd = 0;
+    document.addEventListener('touchend', function (event) {
+      const now = Date.now();
+      if (now - lastTouchEnd <= 300) {
+        event.preventDefault();
+      }
+      lastTouchEnd = now;
+    }, { passive: false });
+  </script>
+
   <!-- Lógica Principal do Companion App -->
-  <script src="app.js?v=1.0.0"></script>
+  <script src="app.js?v=1.1.0"></script>
 </body>
 </html>

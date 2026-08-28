@@ -144,6 +144,35 @@ window.MobileApp = {
     }, 600);
   },
 
+  unsubRealtime: null,
+
+  iniciarListenerTempoReal() {
+    if (!this.chaveLicenca || !window.FirebaseDB || !window.FirebaseDB.onSnapshot) return;
+    
+    if (this.unsubRealtime) {
+      this.unsubRealtime();
+      this.unsubRealtime = null;
+    }
+
+    try {
+      const { db, doc, onSnapshot } = window.FirebaseDB;
+      this.unsubRealtime = onSnapshot(doc(db, 'backups_lojas', this.chaveLicenca), (snap) => {
+        if (snap && snap.exists()) {
+          this.dadosBackup = snap.data();
+          localStorage.setItem(`flowpdv_cache_${this.chaveLicenca}`, JSON.stringify(this.dadosBackup));
+          this.atualizarHeaderUI();
+          this.renderResumoDashboard();
+          this.renderEstoque();
+          this.renderFinanceiro();
+        }
+      }, (err) => {
+        console.warn('[MobileApp] Erro no listener realtime:', err);
+      });
+    } catch(e) {
+      console.warn('[MobileApp] Falha ao ligar listener realtime:', e);
+    }
+  },
+
   async carregarDadosLoja() {
     if (!this.chaveLicenca) return;
 
@@ -195,6 +224,9 @@ window.MobileApp = {
         console.warn('[Auditoria] Falha ao puxar logs:', e);
       }
 
+      // Iniciar Ouvinte em Tempo Real
+      this.iniciarListenerTempoReal();
+
       // 4. Atualizar Todas as Telas
       this.atualizarHeaderUI();
       this.renderResumoDashboard();
@@ -234,11 +266,21 @@ window.MobileApp = {
     const turnos = backup.turnosHistorico || [];
     const produtos = backup.produtos || [];
 
-    const hojeStr = new Date().toISOString().split('T')[0];
-    const mesAtualStr = hojeStr.substring(0, 7);
+    const hoje = new Date();
+    const ano = hoje.getFullYear();
+    const mes = String(hoje.getMonth() + 1).padStart(2, '0');
+    const dia = String(hoje.getDate()).padStart(2, '0');
+    const hojeStr = `${ano}-${mes}-${dia}`;
+    const mesAtualStr = `${ano}-${mes}`;
 
-    // Vendas de Hoje
-    const vendasHoje = vendas.filter(v => (v.dataHora || '').startsWith(hojeStr));
+    // Vendas de Hoje (compatível com v.data, v.dataHora, v.criadoEm e ISO strings)
+    const vendasHoje = vendas.filter(v => {
+      const rawDate = v.data || v.dataHora || v.criadoEm || (v.timestamp ? new Date(v.timestamp).toISOString() : '');
+      if (!rawDate) return false;
+      const dataStr = String(rawDate).split('T')[0];
+      return dataStr === hojeStr;
+    });
+
     const totalHoje = vendasHoje.reduce((acc, v) => acc + (parseFloat(v.total) || 0), 0);
     const qtdVendasHoje = vendasHoje.length;
     const ticketMedioHoje = qtdVendasHoje > 0 ? (totalHoje / qtdVendasHoje) : 0;
@@ -338,10 +380,15 @@ window.MobileApp = {
           <span style="font-size: 13px;">Nenhuma venda realizada hoje até o momento.</span>
         </div>
       `;
-    } else {
-      const ultimasVendas = [...vendasHoje].reverse().slice(0, 10);
+      const ultimasVendas = [...vendasHoje].sort((a, b) => {
+        const tA = new Date(a.data || a.dataHora || a.criadoEm || 0).getTime();
+        const tB = new Date(b.data || b.dataHora || b.criadoEm || 0).getTime();
+        return tB - tA;
+      }).slice(0, 15);
+
       containerVendas.innerHTML = ultimasVendas.map(v => {
-        const hora = (v.dataHora || '').split('T')[1]?.substring(0, 5) || '--:--';
+        const rawDate = v.data || v.dataHora || v.criadoEm || '';
+        const hora = rawDate ? (rawDate.includes('T') ? rawDate.split('T')[1].substring(0, 5) : new Date(rawDate).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })) : '--:--';
         const qtdItens = (v.itens || []).reduce((acc, it) => acc + (parseFloat(it.quantidade) || 1), 0);
 
         return `
