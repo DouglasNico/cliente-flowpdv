@@ -17,7 +17,7 @@
   <link rel="icon" type="image/png" href="icon.png">
   <link rel="shortcut icon" href="icon.png">
   <link rel="apple-touch-icon" href="icon.png">
-  <link rel="stylesheet" href="style.css?v=1.4.0">
+  <link rel="stylesheet" href="style.css?v=1.4.1">
 
   <script>
     // Intercepta e silencia erros gerados por extensões do navegador (gerenciadores de senhas, tradutores, autofill)
@@ -128,7 +128,7 @@
         <div class="header-actions">
           <button type="button" class="btn-header-action btn-refresh-page" id="btn-refresh" onclick="MobileApp.recarregarDados()" title="Atualizar dados agora">
             <span class="refresh-icon">🔄</span>
-            <span class="refresh-text">Atualizar Página</span>
+            <span class="refresh-text">Atualizar</span>
           </button>
           <button type="button" class="btn-header-action btn-logout-action" onclick="MobileApp.fazerLogout()" title="Sair da conta">
             <span class="logout-icon">🚪</span>
@@ -321,6 +321,23 @@
           </div>
         </div>
 
+        <!-- Filtros Rápidos de Auditoria (Pills / Carrossel Horizontal) -->
+        <div class="filter-carousel-wrapper" style="margin-top: 12px;">
+          <button type="button" class="btn-carousel-arrow left" onclick="MobileApp.scrollChipsAuditoria('esquerda')" title="Rolar para a esquerda">‹</button>
+          <div class="filter-chips-row" id="chips-auditoria-container">
+            <button type="button" class="chip-btn active" id="chip-aud-todos" onclick="MobileApp.setFiltroAuditoria('todos', this)">Todos</button>
+            <button type="button" class="chip-btn" id="chip-aud-cortesia" onclick="MobileApp.setFiltroAuditoria('cortesia', this)">🎁 Cortesias</button>
+            <button type="button" class="chip-btn" id="chip-aud-abertura" onclick="MobileApp.setFiltroAuditoria('abertura_caixa', this)">🟢 Aberturas</button>
+            <button type="button" class="chip-btn" id="chip-aud-fechamento" onclick="MobileApp.setFiltroAuditoria('fechamento_caixa', this)">💰 Fechamentos</button>
+            <button type="button" class="chip-btn" id="chip-aud-sangria" onclick="MobileApp.setFiltroAuditoria('sangria_caixa', this)">💸 Sangrias</button>
+            <button type="button" class="chip-btn" id="chip-aud-suprimento" onclick="MobileApp.setFiltroAuditoria('suprimento_caixa', this)">💵 Suprimentos</button>
+            <button type="button" class="chip-btn" id="chip-aud-cancelamento" onclick="MobileApp.setFiltroAuditoria('cancelamento_venda', this)">🛑 Cancelamentos</button>
+            <button type="button" class="chip-btn" id="chip-aud-ajuste" onclick="MobileApp.setFiltroAuditoria('ajuste_estoque', this)">📦 Ajuste Estoque</button>
+            <button type="button" class="chip-btn" id="chip-aud-produtos" onclick="MobileApp.setFiltroAuditoria('produtos', this)">✨ Produtos</button>
+          </div>
+          <button type="button" class="btn-carousel-arrow right" onclick="MobileApp.scrollChipsAuditoria('direita')" title="Rolar para a direita">›</button>
+        </div>
+
         <div class="section-title-mobile">
           <span>📜 Registros Operacionais</span>
           <span class="badge-pill-count" id="badge-total-auditorias">0</span>
@@ -418,6 +435,6 @@
   </script>
 
   <!-- Lógica Principal do Companion App -->
-  <script src="app.js?v=1.4.0"></script>
+  <script src="app.js?v=1.4.1"></script>
 </body>
 </html>

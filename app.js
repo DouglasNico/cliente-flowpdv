@@ -753,6 +753,25 @@ window.MobileApp = {
   // -------------------------------------------------------------
   // ABA 4: AUDITORIA EM TEMPO REAL
   // -------------------------------------------------------------
+  filtroAuditoriaAtivo: 'todos',
+
+  setFiltroAuditoria(tipo, btnEl) {
+    this.filtroAuditoriaAtivo = tipo;
+    document.querySelectorAll('#chips-auditoria-container .chip-btn').forEach(b => b.classList.remove('active'));
+    if (btnEl) btnEl.classList.add('active');
+    this.renderAuditoria();
+  },
+
+  scrollChipsAuditoria(direcao) {
+    const container = document.getElementById('chips-auditoria-container');
+    if (!container) return;
+    const scrollAmount = 180;
+    container.scrollBy({
+      left: direcao === 'esquerda' ? -scrollAmount : scrollAmount,
+      behavior: 'smooth'
+    });
+  },
+
   processarLogsAuditoria(rawLogs = []) {
     const logs = Array.isArray(rawLogs) ? [...rawLogs] : [];
     const backup = this.dadosBackup || {};
@@ -866,9 +885,18 @@ window.MobileApp = {
   },
 
   renderAuditoria() {
-    const logs = this.dadosAuditoria || [];
+    let logs = this.dadosAuditoria || [];
     const container = document.getElementById('lista-auditoria-eventos');
     const badgeTotal = document.getElementById('badge-total-auditorias');
+
+    // Aplica filtro por tipo selecionado
+    if (this.filtroAuditoriaAtivo !== 'todos') {
+      if (this.filtroAuditoriaAtivo === 'produtos') {
+        logs = logs.filter(l => ['cadastro_produto', 'edicao_produto', 'exclusao_produto'].includes(l.tipo));
+      } else {
+        logs = logs.filter(l => l.tipo === this.filtroAuditoriaAtivo);
+      }
+    }
 
     if (badgeTotal) badgeTotal.textContent = logs.length;
 
@@ -876,7 +904,7 @@ window.MobileApp = {
       container.innerHTML = `
         <div class="empty-state-mobile">
           <span class="empty-state-icon">🛡️</span>
-          <span style="font-size: 13px;">Nenhum registro de auditoria encontrado recentemente.</span>
+          <span style="font-size: 13px;">Nenhum registro encontrado para este filtro.</span>
         </div>
       `;
       return;
@@ -916,7 +944,7 @@ window.MobileApp = {
   },
 
   // -------------------------------------------------------------
-  // MODAIS BOTTOM SHEET
+  // MODAIS BOTTOM SHEET & DIALOGS
   // -------------------------------------------------------------
   verDetalhesVenda(vendaId) {
     const backup = this.dadosBackup || {};
@@ -924,15 +952,15 @@ window.MobileApp = {
     if (!venda) return;
 
     const itensHtml = (venda.itens || []).map(it => `
-      <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px dashed var(--border-card); font-size: 13px;">
-        <span>${it.quantidade}x ${it.nome}</span>
-        <strong style="font-family: 'JetBrains Mono'; color: var(--accent-green);">${this.formatarMoeda((it.precoUnitario || 0) * (it.quantidade || 1))}</strong>
+      <div style="display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 8px 0; border-bottom: 1px dashed var(--border-card); font-size: 12.5px;">
+        <span style="flex: 1; min-width: 0; word-break: break-word; line-height: 1.35; color: #f1f5f9;">${it.quantidade}x ${it.nome}</span>
+        <strong style="font-family: 'JetBrains Mono'; color: var(--accent-green); white-space: nowrap; flex-shrink: 0; font-size: 13px; text-align: right;">${this.formatarMoeda((it.precoUnitario || 0) * (it.quantidade || 1))}</strong>
       </div>
     `).join('');
 
     const html = `
       <div style="display: flex; flex-direction: column; gap: 12px;">
-        <div style="background: var(--bg-surface-2); padding: 12px; border-radius: 10px; display: flex; justify-content: space-between;">
+        <div style="background: var(--bg-surface-2); padding: 12px; border-radius: 10px; display: flex; justify-content: space-between; align-items: center;">
           <div>
             <span style="font-size: 11px; color: var(--text-dim);">Operador</span>
             <strong style="display: block; font-size: 13px;">${venda.operador || 'Caixa'}</strong>
@@ -945,12 +973,12 @@ window.MobileApp = {
 
         <div style="margin-top: 6px;">
           <span style="font-size: 11px; font-weight: 800; color: var(--text-dim); text-transform: uppercase;">Itens Vendidos</span>
-          <div style="margin-top: 6px;">${itensHtml}</div>
+          <div style="margin-top: 6px; max-height: 220px; overflow-y: auto;">${itensHtml}</div>
         </div>
 
         <div style="background: #0b0f19; padding: 14px; border-radius: 10px; display: flex; justify-content: space-between; align-items: center; margin-top: 8px;">
           <span style="font-size: 14px; font-weight: 800;">Total da Venda</span>
-          <strong style="font-size: 20px; font-family: 'JetBrains Mono'; color: var(--accent-green);">${this.formatarMoeda(venda.total)}</strong>
+          <strong style="font-size: 20px; font-family: 'JetBrains Mono'; color: var(--accent-green); white-space: nowrap; flex-shrink: 0;">${this.formatarMoeda(venda.total)}</strong>
         </div>
       </div>
     `;
@@ -974,15 +1002,15 @@ window.MobileApp = {
           <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 6px; text-align: center;">
             <div style="background: #0b0f19; padding: 8px; border-radius: 6px;">
               <span style="font-size: 10px; color: var(--text-dim); display: block;">Esperado</span>
-              <strong style="font-size: 12.5px; font-family: 'JetBrains Mono'; color: var(--accent-blue);">${this.formatarMoeda(esp)}</strong>
+              <strong style="font-size: 12px; font-family: 'JetBrains Mono'; color: var(--accent-blue); white-space: nowrap;">${this.formatarMoeda(esp)}</strong>
             </div>
             <div style="background: #0b0f19; padding: 8px; border-radius: 6px;">
               <span style="font-size: 10px; color: var(--text-dim); display: block;">Informado</span>
-              <strong style="font-size: 12.5px; font-family: 'JetBrains Mono'; color: #fff;">${this.formatarMoeda(inf)}</strong>
+              <strong style="font-size: 12px; font-family: 'JetBrains Mono'; color: #fff; white-space: nowrap;">${this.formatarMoeda(inf)}</strong>
             </div>
             <div style="background: #0b0f19; padding: 8px; border-radius: 6px;">
               <span style="font-size: 10px; color: var(--text-dim); display: block;">Diferença</span>
-              <strong style="font-size: 12.5px; font-family: 'JetBrains Mono'; color: ${dif < -0.01 ? 'var(--accent-red)' : 'var(--accent-green)'};">${dif > 0 ? '+' : ''}${this.formatarMoeda(dif)}</strong>
+              <strong style="font-size: 12px; font-family: 'JetBrains Mono'; color: ${dif < -0.01 ? 'var(--accent-red)' : 'var(--accent-green)'}; white-space: nowrap;">${dif > 0 ? '+' : ''}${this.formatarMoeda(dif)}</strong>
             </div>
           </div>
         </div>
@@ -994,11 +1022,11 @@ window.MobileApp = {
       itensCortesiaHtml = `
         <div style="margin-top: 10px;">
           <span style="font-size: 11px; font-weight: 800; color: var(--text-dim); text-transform: uppercase;">Itens da Movimentação</span>
-          <div style="background: var(--bg-surface-2); border-radius: 8px; padding: 10px; margin-top: 6px;">
+          <div style="background: var(--bg-surface-2); border-radius: 8px; padding: 10px; margin-top: 6px; max-height: 180px; overflow-y: auto;">
             ${log.detalhes.itens.map(it => `
-              <div style="display: flex; justify-content: space-between; font-size: 12.5px; padding: 4px 0;">
-                <span>${it.quantidade || 1}x ${it.nome}</span>
-                <strong style="font-family: 'JetBrains Mono'; color: var(--accent-green);">${this.formatarMoeda((it.precoUnitario || 0) * (it.quantidade || 1))}</strong>
+              <div style="display: flex; justify-content: space-between; align-items: center; gap: 10px; font-size: 12.5px; padding: 4px 0;">
+                <span style="flex: 1; min-width: 0; word-break: break-word; color: #f1f5f9;">${it.quantidade || 1}x ${it.nome}</span>
+                <strong style="font-family: 'JetBrains Mono'; color: var(--accent-green); white-space: nowrap; flex-shrink: 0;">${this.formatarMoeda((it.precoUnitario || 0) * (it.quantidade || 1))}</strong>
               </div>
             `).join('')}
           </div>

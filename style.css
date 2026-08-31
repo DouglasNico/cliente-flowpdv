@@ -292,31 +292,33 @@ body {
 .header-brand {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
+  flex: 1;
   min-width: 0;
 }
 
 .header-store-info {
   display: flex;
   flex-direction: column;
+  flex: 1;
   min-width: 0;
 }
 
 .header-store-name {
-  font-size: 15px;
+  font-size: 14.5px;
   font-weight: 800;
   color: #ffffff;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  max-width: 220px;
+  min-width: 0;
 }
 
 .header-status-badge {
   display: inline-flex;
   align-items: center;
   gap: 5px;
-  font-size: 10.5px;
+  font-size: 10px;
   font-weight: 700;
   color: var(--accent-green);
 }
@@ -324,20 +326,21 @@ body {
 .header-actions {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
+  flex-shrink: 0;
 }
 
 .btn-header-action {
   background: var(--bg-surface-1);
   border: 1px solid var(--border-card);
   color: var(--text-main);
-  min-width: 36px;
-  height: 36px;
-  border-radius: 10px;
+  min-width: 34px;
+  height: 34px;
+  border-radius: 9px;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 15px;
+  font-size: 14px;
   cursor: pointer;
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
@@ -353,15 +356,16 @@ body {
   transform: translateY(0);
 }
 
-/* Botão de Atualizar Página com Texto no Desktop & Mobile */
+/* Botão de Atualizar Compacto e Elegante */
 .btn-refresh-page {
-  padding: 0 12px;
-  gap: 7px;
-  font-size: 12.5px;
+  padding: 0 10px;
+  gap: 5px;
+  font-size: 11.5px;
   font-weight: 700;
   background: linear-gradient(135deg, rgba(56, 189, 248, 0.12), rgba(99, 102, 241, 0.12));
   border-color: rgba(56, 189, 248, 0.35);
   color: #ffffff;
+  flex-shrink: 0;
 }
 
 .btn-refresh-page:hover {
@@ -372,7 +376,7 @@ body {
 }
 
 .refresh-icon {
-  font-size: 14px;
+  font-size: 13px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
