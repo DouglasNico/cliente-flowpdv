@@ -160,6 +160,13 @@ window.MobileApp = {
     if (btn) btn.classList.add('rotating');
     if (overlay) overlay.style.display = 'flex';
 
+    // Dispara atualização do Service Worker em background caso haja nova versão
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.getRegistration().then(reg => {
+        if (reg) reg.update().catch(() => {});
+      }).catch(() => {});
+    }
+
     const t0 = Date.now();
     try {
       await this.carregarDadosLoja();
