@@ -17,7 +17,7 @@
   <link rel="icon" type="image/png" href="icon.png">
   <link rel="shortcut icon" href="icon.png">
   <link rel="apple-touch-icon" href="icon.png">
-  <link rel="stylesheet" href="style.css?v=1.1.0">
+  <link rel="stylesheet" href="style.css?v=1.4.0">
 
   <script>
     // Intercepta e silencia erros gerados por extensões do navegador (gerenciadores de senhas, tradutores, autofill)
@@ -104,12 +104,35 @@
             </div>
           </div>
         </div>
-        <div class="header-actions">
-          <button type="button" class="btn-header-action" id="btn-refresh" onclick="MobileApp.recarregarDados()" title="Atualizar dados agora">
-            🔄
+
+        <!-- Abas de Navegação em Modo Computador / Desktop -->
+        <nav class="desktop-nav-tabs" aria-label="Navegação Principal">
+          <button type="button" class="desktop-nav-btn active" id="btn-desk-tab-resumo" onclick="MobileApp.navegarPara('resumo')">
+            <span>📊</span>
+            <span>Resumo</span>
           </button>
-          <button type="button" class="btn-header-action" onclick="MobileApp.fazerLogout()" title="Sair da conta">
-            🚪
+          <button type="button" class="desktop-nav-btn" id="btn-desk-tab-estoque" onclick="MobileApp.navegarPara('estoque')">
+            <span>📦</span>
+            <span>Estoque</span>
+          </button>
+          <button type="button" class="desktop-nav-btn" id="btn-desk-tab-financeiro" onclick="MobileApp.navegarPara('financeiro')">
+            <span>💸</span>
+            <span>Financeiro</span>
+          </button>
+          <button type="button" class="desktop-nav-btn" id="btn-desk-tab-auditoria" onclick="MobileApp.navegarPara('auditoria')">
+            <span>🛡️</span>
+            <span>Auditoria</span>
+          </button>
+        </nav>
+
+        <div class="header-actions">
+          <button type="button" class="btn-header-action btn-refresh-page" id="btn-refresh" onclick="MobileApp.recarregarDados()" title="Atualizar dados agora">
+            <span class="refresh-icon">🔄</span>
+            <span class="refresh-text">Atualizar Página</span>
+          </button>
+          <button type="button" class="btn-header-action btn-logout-action" onclick="MobileApp.fazerLogout()" title="Sair da conta">
+            <span class="logout-icon">🚪</span>
+            <span class="logout-text">Sair</span>
           </button>
         </div>
       </header>
@@ -119,62 +142,74 @@
            ======================================================== -->
       <div class="mobile-tab-view active" id="tab-resumo">
         
-        <!-- Hero: Faturamento Hoje -->
-        <div class="hero-metric-card">
-          <div class="hero-label">
-            <span>💰 Faturamento Hoje</span>
-            <span id="resumo-data-hoje" style="font-size: 11px; color: var(--text-dim);">Hoje</span>
+        <!-- Grid Superior de Métricas (Responsivo Desktop: 3 Colunas) -->
+        <div class="dashboard-top-metrics-grid">
+          <!-- Hero: Faturamento Hoje -->
+          <div class="hero-metric-card glass-primary">
+            <div class="hero-label">
+              <span>💰 Faturamento Hoje</span>
+              <span id="resumo-data-hoje" style="font-size: 11px; color: var(--text-dim);">Hoje</span>
+            </div>
+            <span class="hero-value" id="metric-faturamento-hoje">R$ 0,00</span>
+            <div class="hero-stats-row">
+              <span>🧾 <strong id="metric-qtd-vendas" style="color: #fff;">0</strong> vendas</span>
+              <span>•</span>
+              <span>🎯 Ticket Médio: <strong id="metric-ticket-medio" style="color: #fff;">R$ 0,00</strong></span>
+            </div>
           </div>
-          <span class="hero-value" id="metric-faturamento-hoje">R$ 0,00</span>
-          <div class="hero-stats-row">
-            <span>🧾 <strong id="metric-qtd-vendas" style="color: #fff;">0</strong> vendas</span>
-            <span>•</span>
-            <span>🎯 Ticket Médio: <strong id="metric-ticket-medio" style="color: #fff;">R$ 0,00</strong></span>
-          </div>
-        </div>
 
-        <!-- 2 Mini Cards: Faturamento Mês e Gaveta/Turno -->
-        <div class="grid-2-metrics">
           <div class="small-metric-card">
             <span class="small-metric-label">💵 Total no Caixa Atual</span>
             <span class="small-metric-value" id="metric-gaveta-caixa" style="color: var(--accent-blue);">R$ 0,00</span>
+            <span id="label-gaveta-sub" style="font-size: 11px; color: var(--text-dim); margin-top: 4px; display: block;">Dinheiro em caixa / turno</span>
           </div>
           <div class="small-metric-card">
             <span class="small-metric-label">📅 Faturamento no Mês</span>
             <span class="small-metric-value" id="metric-faturamento-mes" style="color: var(--accent-green);">R$ 0,00</span>
+            <span style="font-size: 11px; color: var(--text-dim); margin-top: 4px; display: block;">Acumulado no mês atual</span>
           </div>
         </div>
 
-        <!-- Card de Alertas Críticos -->
-        <div class="small-metric-card alert" id="card-alerta-estoque-box" style="display: none; cursor: pointer;" onclick="MobileApp.navegarPara('estoque')">
-          <div style="display: flex; align-items: center; justify-content: space-between;">
-            <div style="display: flex; align-items: center; gap: 8px;">
-              <span style="font-size: 20px;">⚠️</span>
-              <div>
-                <strong style="font-size: 13px; color: #fca5a5; display: block;">Itens com Estoque Baixo</strong>
-                <span id="alerta-estoque-texto" style="font-size: 11.5px; color: var(--text-muted);">Existem produtos precisando de reposição</span>
+        <!-- Grid Principal do Dashboard (Responsivo Desktop: 2 Colunas) -->
+        <div class="dashboard-main-grid">
+          
+          <!-- Coluna Esquerda: Alertas & Formas de Pagamento -->
+          <div class="dashboard-col-left">
+            <!-- Card de Alertas Críticos -->
+            <div class="small-metric-card alert" id="card-alerta-estoque-box" style="display: none; cursor: pointer; margin-bottom: 12px;" onclick="MobileApp.navegarPara('estoque')">
+              <div style="display: flex; align-items: center; justify-content: space-between;">
+                <div style="display: flex; align-items: center; gap: 8px;">
+                  <span style="font-size: 20px;">⚠️</span>
+                  <div>
+                    <strong style="font-size: 13px; color: #fca5a5; display: block;">Itens com Estoque Baixo</strong>
+                    <span id="alerta-estoque-texto" style="font-size: 11.5px; color: var(--text-muted);">Existem produtos precisando de reposição</span>
+                  </div>
+                </div>
+                <span class="badge-tag-sm zero" id="badge-alerta-estoque-count">0</span>
               </div>
             </div>
-            <span class="badge-tag-sm zero" id="badge-alerta-estoque-count">0</span>
+
+            <!-- Breakdown por Formas de Pagamento -->
+            <div class="section-title-mobile">
+              <span>💳 Vendas por Pagamento</span>
+            </div>
+            <div class="small-metric-card" style="display: flex; flex-direction: column; gap: 12px;" id="resumo-formas-pagamento">
+              <!-- Renderizado dinamicamente -->
+              <div style="color: var(--text-dim); font-size: 12px; text-align: center; padding: 10px;">Calculando pagamentos do dia...</div>
+            </div>
           </div>
-        </div>
 
-        <!-- Breakdown por Formas de Pagamento -->
-        <div class="section-title-mobile">
-          <span>💳 Vendas por Pagamento</span>
-        </div>
-        <div class="small-metric-card" style="display: flex; flex-direction: column; gap: 10px;" id="resumo-formas-pagamento">
-          <!-- Renderizado dinamicamente -->
-          <div style="color: var(--text-dim); font-size: 12px; text-align: center; padding: 10px;">Calculando pagamentos do dia...</div>
-        </div>
+          <!-- Coluna Direita: Últimas Vendas do Dia -->
+          <div class="dashboard-col-right">
+            <div class="section-title-mobile">
+              <span>🛒 Vendas Recentes</span>
+              <span class="badge-pill-count" id="badge-total-vendas-hoje">0</span>
+            </div>
+            <div id="lista-ultimas-vendas" style="display: flex; flex-direction: column; gap: 8px;">
+              <!-- Renderizado dinamicamente -->
+            </div>
+          </div>
 
-        <!-- Últimas Vendas do Dia -->
-        <div class="section-title-mobile">
-          <span>🛒 Vendas Recentes</span>
-          <span class="badge-pill-count" id="badge-total-vendas-hoje">0</span>
-        </div>
-        <div id="lista-ultimas-vendas" style="display: flex; flex-direction: column; gap: 8px;">
-          <!-- Renderizado dinamicamente -->
         </div>
 
       </div>
@@ -227,7 +262,7 @@
 
         <!-- SEÇÃO: CONTAS A PAGAR -->
         <div id="secao-contas-pagar" style="display: flex; flex-direction: column; gap: 12px;">
-          <div class="hero-metric-card" style="background: linear-gradient(135deg, #371b28, #111827);">
+          <div class="hero-metric-card glass-danger">
             <div class="hero-label">
               <span>💸 Total de Contas Pendentes</span>
             </div>
@@ -249,7 +284,7 @@
 
         <!-- SEÇÃO: FIADO / CADERNETA -->
         <div id="secao-fiado-clientes" style="display: none; flex-direction: column; gap: 12px;">
-          <div class="hero-metric-card" style="background: linear-gradient(135deg, #2e2612, #111827);">
+          <div class="hero-metric-card glass-amber">
             <div class="hero-label">
               <span>📖 Total a Receber de Clientes</span>
             </div>
@@ -334,6 +369,15 @@
       </div>
     </div>
 
+    <!-- OVERLAY DE SINCRONIZAÇÃO EM TEMPO REAL -->
+    <div id="sync-loading-overlay" class="sync-loading-overlay" style="display: none;">
+      <div class="sync-loading-card">
+        <div class="sync-spinner"></div>
+        <strong class="sync-loading-title">Atualizando Dados...</strong>
+        <span class="sync-loading-subtitle">Sincronizando faturamento, estoque e vendas na nuvem</span>
+      </div>
+    </div>
+
   </div>
 
   <!-- Firebase JS SDK v11 -->
@@ -374,6 +418,6 @@
   </script>
 
   <!-- Lógica Principal do Companion App -->
-  <script src="app.js?v=1.1.0"></script>
+  <script src="app.js?v=1.4.0"></script>
 </body>
 </html>

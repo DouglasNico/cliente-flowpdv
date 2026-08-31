@@ -156,11 +156,21 @@ window.MobileApp = {
   // -------------------------------------------------------------
   async recarregarDados() {
     const btn = document.getElementById('btn-refresh');
+    const overlay = document.getElementById('sync-loading-overlay');
     if (btn) btn.classList.add('rotating');
-    await this.carregarDadosLoja();
-    setTimeout(() => {
-      if (btn) btn.classList.remove('rotating');
-    }, 400);
+    if (overlay) overlay.style.display = 'flex';
+
+    const t0 = Date.now();
+    try {
+      await this.carregarDadosLoja();
+    } finally {
+      const tempoDecorrido = Date.now() - t0;
+      const delayMinimo = Math.max(0, 450 - tempoDecorrido);
+      setTimeout(() => {
+        if (btn) btn.classList.remove('rotating');
+        if (overlay) overlay.style.display = 'none';
+      }, delayMinimo);
+    }
   },
 
   unsubRealtime: null,
@@ -183,6 +193,8 @@ window.MobileApp = {
           this.renderResumoDashboard();
           this.renderEstoque();
           this.renderFinanceiro();
+          this.processarLogsAuditoria(this.dadosAuditoriaRaw || []);
+          this.renderAuditoria();
         }
       }, (err) => {
         console.warn('[MobileApp] Erro no listener realtime:', err);
@@ -191,6 +203,8 @@ window.MobileApp = {
       console.warn('[MobileApp] Falha ao ligar listener realtime:', e);
     }
   },
+
+  dadosAuditoriaRaw: [],
 
   async carregarDadosLoja() {
     if (!this.chaveLicenca) return;
@@ -205,7 +219,7 @@ window.MobileApp = {
       const promAudit = getDocs(query(
         collection(db, 'auditoria_lojas'),
         where('chaveLicenca', '==', this.chaveLicenca),
-        limit(25)
+        limit(50)
       ));
 
       const [resLic, resBackup, resAudit] = await Promise.allSettled([promLicenca, promBackup, promAudit]);
@@ -231,16 +245,12 @@ window.MobileApp = {
       }
 
       // 3. Processa Logs de Auditoria
+      const logs = [];
       if (resAudit.status === 'fulfilled' && resAudit.value) {
-        const logs = [];
         resAudit.value.forEach(d => logs.push({ id: d.id, ...d.data() }));
-        logs.sort((a, b) => {
-          const tA = a.criadoEm ? new Date(a.criadoEm).getTime() : 0;
-          const tB = b.criadoEm ? new Date(b.criadoEm).getTime() : 0;
-          return tB - tA;
-        });
-        this.dadosAuditoria = logs;
       }
+      this.dadosAuditoriaRaw = logs;
+      this.processarLogsAuditoria(logs);
 
       // Iniciar Ouvinte em Tempo Real
       this.iniciarListenerTempoReal();
@@ -303,26 +313,84 @@ window.MobileApp = {
     const qtdVendasHoje = vendasHoje.length;
     const ticketMedioHoje = qtdVendasHoje > 0 ? (totalHoje / qtdVendasHoje) : 0;
 
-    // Faturamento do Mês
-    let totalMes = 0;
-    turnos.forEach(t => {
-      if ((t.dataFechamento || t.dataAbertura || '').startsWith(mesAtualStr)) {
-        totalMes += parseFloat(t.totalVendas) || 0;
-      }
+    // Faturamento do Mês: Soma todas as vendas do mês corrente no backup
+    const vendasMes = vendas.filter(v => {
+      const rawDate = v.data || v.dataHora || v.criadoEm || (v.timestamp ? new Date(v.timestamp).toISOString() : '');
+      if (!rawDate) return false;
+      const dataStr = String(rawDate).split('T')[0];
+      return dataStr.startsWith(mesAtualStr);
     });
-    totalMes += totalHoje;
 
-    // Total no Caixa / Gaveta
-    const turnoAtivo = backup.turnoAtual || {};
-    const gavetaCaixa = parseFloat(turnoAtivo.saldoDinheiroGaveta || turnoAtivo.trocoInicial || 0) +
-                        vendasHoje.filter(v => (v.formaPagamento || '').toLowerCase().includes('dinheiro'))
-                                  .reduce((acc, v) => acc + (parseFloat(v.total) || 0), 0);
+    let totalMes = vendasMes.reduce((acc, v) => acc + (parseFloat(v.total) || 0), 0);
+
+    // Fallback: se houver turnos arquivados no mês cujas vendas não constem no array
+    if (totalMes === 0 && turnos.length > 0) {
+      turnos.forEach(t => {
+        const dataTurno = t.dataFechamento || t.dataAbertura || '';
+        if (dataTurno.startsWith(mesAtualStr)) {
+          totalMes += parseFloat(t.totalVendasGeral || t.totalVendas || 0);
+        }
+      });
+    }
+
+    // 🏦 TOTAL EM CAIXA ATUAL (Suporta 1 terminal ou múltiplos PDVs simultâneos)
+    let turnosAbertos = [];
+    if (backup.turnosAtivos && typeof backup.turnosAtivos === 'object') {
+      turnosAbertos = Object.values(backup.turnosAtivos).filter(t => t && (t.status === 'aberto' || t.dataAbertura));
+    }
+    if (turnosAbertos.length === 0 && backup.turnoAtual && (backup.turnoAtual.status === 'aberto' || backup.turnoAtual.dataAbertura || backup.turnoAtual.trocoInicial !== undefined)) {
+      turnosAbertos = [backup.turnoAtual];
+    }
+
+    let gavetaCaixa = 0;
+    let labelCaixa = 'Dinheiro em caixa / turno';
+
+    if (turnosAbertos.length > 0) {
+      turnosAbertos.forEach(t => {
+        const trocoInicial = parseFloat(t.trocoInicial || t.saldoDinheiroGaveta || 0);
+        const dataAberturaTurno = t.dataAbertura ? new Date(t.dataAbertura).getTime() : 0;
+
+        let vendasDinheiroTurno = 0;
+        vendas.forEach(v => {
+          const tVenda = new Date(v.data || v.dataHora || 0).getTime();
+          if (dataAberturaTurno === 0 || tVenda >= dataAberturaTurno) {
+            if (v.pagamentoDividido && v.parcela1 && v.parcela2) {
+              if ((v.parcela1.forma || '').toLowerCase().includes('dinheiro')) vendasDinheiroTurno += parseFloat(v.parcela1.valor) || 0;
+              if ((v.parcela2.forma || '').toLowerCase().includes('dinheiro')) vendasDinheiroTurno += parseFloat(v.parcela2.valor) || 0;
+            } else if ((v.formaPagamento || '').toLowerCase().includes('dinheiro')) {
+              vendasDinheiroTurno += parseFloat(v.total) || 0;
+            }
+          }
+        });
+
+        const totalSangrias = Array.isArray(t.sangrias)
+          ? t.sangrias.reduce((acc, s) => acc + (parseFloat(s.valor) || 0), 0)
+          : (parseFloat(t.totalSangrias) || 0);
+        const totalSuprimentos = Array.isArray(t.suprimentos)
+          ? t.suprimentos.reduce((acc, s) => acc + (parseFloat(s.valor) || 0), 0)
+          : (parseFloat(t.totalSuprimentos) || 0);
+
+        gavetaCaixa += Math.max(0, trocoInicial + vendasDinheiroTurno + totalSuprimentos - totalSangrias);
+      });
+
+      if (turnosAbertos.length > 1) {
+        labelCaixa = `🟢 ${turnosAbertos.length} caixas abertos agora`;
+      } else {
+        labelCaixa = `🟢 Caixa: ${turnosAbertos[0].operador || 'Aberto'}`;
+      }
+    } else {
+      // Nenhum caixa aberto no momento
+      gavetaCaixa = 0;
+      labelCaixa = '🔒 Todos os caixas fechados';
+    }
 
     // Atualizar Métricas na Tela
     document.getElementById('metric-faturamento-hoje').textContent = this.formatarMoeda(totalHoje);
     document.getElementById('metric-qtd-vendas').textContent = qtdVendasHoje;
     document.getElementById('metric-ticket-medio').textContent = this.formatarMoeda(ticketMedioHoje);
     document.getElementById('metric-gaveta-caixa').textContent = this.formatarMoeda(gavetaCaixa);
+    const labelGavetaSub = document.getElementById('label-gaveta-sub');
+    if (labelGavetaSub) labelGavetaSub.textContent = labelCaixa;
     document.getElementById('metric-faturamento-mes').textContent = this.formatarMoeda(totalMes);
 
     // Alerta de Estoque Baixo
@@ -369,18 +437,19 @@ window.MobileApp = {
     const formasComValor = Object.entries(formas).filter(([_, val]) => val > 0);
 
     if (formasComValor.length === 0) {
-      containerFormas.innerHTML = `<div style="color: var(--text-dim); font-size: 12px; text-align: center; padding: 6px;">Nenhuma venda registrada hoje.</div>`;
+      containerFormas.innerHTML = `<div style="color: var(--text-dim); font-size: 12px; text-align: center; padding: 12px 6px;">Nenhuma venda registrada hoje.</div>`;
     } else {
       containerFormas.innerHTML = formasComValor.map(([nome, val]) => {
         const perc = totalHoje > 0 ? (val / totalHoje) * 100 : 0;
+        const gradiente = this.getGradienteFormaPag(nome);
         return `
-          <div>
-            <div style="display: flex; justify-content: space-between; font-size: 12.5px; font-weight: 700; margin-bottom: 4px;">
-              <span>${this.getIconeFormaPag(nome)} ${nome}</span>
-              <span style="font-family: 'JetBrains Mono'; color: #fff;">${this.formatarMoeda(val)} <small style="color: var(--text-dim); font-size: 10.5px;">(${perc.toFixed(0)}%)</small></span>
+          <div class="payment-breakdown-row">
+            <div style="display: flex; justify-content: space-between; align-items: center; font-size: 12.5px; font-weight: 700; margin-bottom: 5px;">
+              <span style="display: flex; align-items: center; gap: 6px;">${this.getIconeFormaPag(nome)} <span>${nome}</span></span>
+              <span style="font-family: 'JetBrains Mono'; color: #fff;">${this.formatarMoeda(val)} <small style="color: var(--text-dim); font-size: 11px; margin-left: 4px;">(${perc.toFixed(0)}%)</small></span>
             </div>
-            <div style="width: 100%; background: #0b0f19; height: 6px; border-radius: 3px; overflow: hidden;">
-              <div style="background: var(--accent-orange); width: ${perc}%; height: 100%; border-radius: 3px;"></div>
+            <div class="payment-progress-track">
+              <div class="payment-progress-bar" style="background: ${gradiente}; width: ${perc}%;"></div>
             </div>
           </div>
         `;
@@ -398,16 +467,19 @@ window.MobileApp = {
           <span style="font-size: 13px;">Nenhuma venda realizada hoje até o momento.</span>
         </div>
       `;
+    } else {
       const ultimasVendas = [...vendasHoje].sort((a, b) => {
         const tA = new Date(a.data || a.dataHora || a.criadoEm || 0).getTime();
         const tB = new Date(b.data || b.dataHora || b.criadoEm || 0).getTime();
         return tB - tA;
-      }).slice(0, 15);
+      }).slice(0, 20);
 
       containerVendas.innerHTML = ultimasVendas.map(v => {
         const rawDate = v.data || v.dataHora || v.criadoEm || '';
         const hora = rawDate ? (rawDate.includes('T') ? rawDate.split('T')[1].substring(0, 5) : new Date(rawDate).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })) : '--:--';
         const qtdItens = (v.itens || []).reduce((acc, it) => acc + (parseFloat(it.quantidade) || 1), 0);
+        const forma = v.formaPagamento || 'Dinheiro';
+        const badgeClasse = this.getBadgeClasseForma(forma);
 
         return `
           <div class="mobile-list-card" onclick="MobileApp.verDetalhesVenda('${v.id}')">
@@ -416,8 +488,11 @@ window.MobileApp = {
               <span class="card-item-price">${this.formatarMoeda(v.total)}</span>
             </div>
             <div class="card-bottom-row">
-              <span>👤 ${v.operador || 'Operador'} • 📦 ${qtdItens} un</span>
-              <span>🕒 ${hora} • <span class="badge-tag-sm blue">${v.formaPagamento || 'Dinheiro'}</span></span>
+              <span class="card-info-meta">👤 ${v.operador || 'Caixa'} • 📦 ${qtdItens} ${qtdItens === 1 ? 'item' : 'itens'}</span>
+              <div class="card-tag-wrapper">
+                <span class="card-time-text">🕒 ${hora}</span>
+                <span class="badge-tag-sm ${badgeClasse}">${forma}</span>
+              </div>
             </div>
           </div>
         `;
@@ -671,6 +746,118 @@ window.MobileApp = {
   // -------------------------------------------------------------
   // ABA 4: AUDITORIA EM TEMPO REAL
   // -------------------------------------------------------------
+  processarLogsAuditoria(rawLogs = []) {
+    const logs = Array.isArray(rawLogs) ? [...rawLogs] : [];
+    const backup = this.dadosBackup || {};
+    const turnoAtual = backup.turnoAtual;
+
+    // Incorpora Abertura e Sangrias do Turno Atual caso ainda não constem
+    if (turnoAtual && (turnoAtual.status === 'aberto' || turnoAtual.dataAbertura || turnoAtual.trocoInicial !== undefined)) {
+      const idAbertura = `abertura_${turnoAtual.id || turnoAtual.dataAbertura || 'atual'}`;
+      const jaTemAbertura = logs.some(l => l.id === idAbertura || (l.tipo === 'abertura_caixa' && l.criadoEm === turnoAtual.dataAbertura));
+      if (!jaTemAbertura) {
+        logs.push({
+          id: idAbertura,
+          tipo: 'abertura_caixa',
+          descricao: `Abriu o caixa com ${this.formatarMoeda(turnoAtual.trocoInicial || 0)} de troco inicial`,
+          operador: turnoAtual.operador || 'Operador',
+          criadoEm: turnoAtual.dataAbertura || new Date().toISOString(),
+          dataHoraFormatada: turnoAtual.dataAbertura ? new Date(turnoAtual.dataAbertura).toLocaleString('pt-BR') : new Date().toLocaleString('pt-BR'),
+          detalhes: {
+            trocoInicial: turnoAtual.trocoInicial || 0,
+            status: turnoAtual.status || 'aberto',
+            turnoId: turnoAtual.id
+          }
+        });
+      }
+
+      // Sangrias do turno atual
+      if (Array.isArray(turnoAtual.sangrias)) {
+        turnoAtual.sangrias.forEach((s, idx) => {
+          const idSangria = `sangria_${turnoAtual.id}_${idx}`;
+          const jaTemSangria = logs.some(l => l.id === idSangria || (l.tipo === 'sangria_caixa' && l.criadoEm === s.data));
+          if (!jaTemSangria) {
+            logs.push({
+              id: idSangria,
+              tipo: 'sangria_caixa',
+              descricao: `Registrou sangria de ${this.formatarMoeda(s.valor || 0)}. Motivo: ${s.motivo || 'Não informado'}`,
+              operador: s.operador || turnoAtual.operador || 'Operador',
+              criadoEm: s.data || turnoAtual.dataAbertura,
+              dataHoraFormatada: s.data ? new Date(s.data).toLocaleString('pt-BR') : '',
+              detalhes: s
+            });
+          }
+        });
+      }
+    }
+
+    // Se houver vendas hoje mas nenhum log de abertura registrado para hoje
+    const vendas = backup.vendas || [];
+    const hojeStr = new Date().toISOString().split('T')[0];
+    const vendasHoje = vendas.filter(v => (v.data || v.dataHora || '').startsWith(hojeStr));
+    if (vendasHoje.length > 0 && !logs.some(l => l.tipo === 'abertura_caixa' && (l.criadoEm || '').startsWith(hojeStr))) {
+      const primeiraVenda = vendasHoje[vendasHoje.length - 1];
+      const troco = turnoAtual ? (turnoAtual.trocoInicial || 0) : 0;
+      logs.push({
+        id: `abertura_hoje_${hojeStr}`,
+        tipo: 'abertura_caixa',
+        descricao: `Abriu o caixa com ${this.formatarMoeda(troco)} de troco inicial`,
+        operador: primeiraVenda.operador || (turnoAtual ? turnoAtual.operador : 'Operador'),
+        criadoEm: primeiraVenda.data || primeiraVenda.dataHora || hojeStr,
+        dataHoraFormatada: new Date(primeiraVenda.data || primeiraVenda.dataHora || Date.now()).toLocaleString('pt-BR'),
+        detalhes: {
+          trocoInicial: troco,
+          status: 'aberto'
+        }
+      });
+    }
+
+    // Incorpora Fechamentos e Aberturas do Histórico de Turnos
+    if (Array.isArray(backup.turnosHistorico)) {
+      backup.turnosHistorico.forEach(t => {
+        if (!t) return;
+        if (t.dataFechamento) {
+          const idFech = `fechamento_${t.id}`;
+          if (!logs.some(l => l.id === idFech)) {
+            logs.push({
+              id: idFech,
+              tipo: 'fechamento_caixa',
+              descricao: `Fechamento de Caixa efetuado por ${t.operador || 'Operador'}: Total ${this.formatarMoeda(t.totalVendasGeral || t.totalVendas || 0)}`,
+              operador: t.operador || 'Operador',
+              criadoEm: t.dataFechamento,
+              dataHoraFormatada: new Date(t.dataFechamento).toLocaleString('pt-BR'),
+              detalhes: t
+            });
+          }
+        }
+        if (t.dataAbertura) {
+          const idAb = `abertura_${t.id}`;
+          if (!logs.some(l => l.id === idAb || (l.tipo === 'abertura_caixa' && l.criadoEm === t.dataAbertura))) {
+            logs.push({
+              id: idAb,
+              tipo: 'abertura_caixa',
+              descricao: `Abriu o caixa com ${this.formatarMoeda(t.trocoInicial || 0)} de troco inicial`,
+              operador: t.operador || 'Operador',
+              criadoEm: t.dataAbertura,
+              dataHoraFormatada: new Date(t.dataAbertura).toLocaleString('pt-BR'),
+              detalhes: t
+            });
+          }
+        }
+      });
+    }
+
+    // Ordena todos os logs cronologicamente (mais recente no topo)
+    logs.sort((a, b) => {
+      const tA = a.criadoEm ? new Date(a.criadoEm).getTime() : 0;
+      const tB = b.criadoEm ? new Date(b.criadoEm).getTime() : 0;
+      return tB - tA;
+    });
+
+    this.dadosAuditoria = logs;
+    return logs;
+  },
+
   renderAuditoria() {
     const logs = this.dadosAuditoria || [];
     const container = document.getElementById('lista-auditoria-eventos');
@@ -690,10 +877,16 @@ window.MobileApp = {
 
     container.innerHTML = logs.map(log => {
       let badgeTipo = `<span class="badge-tag-sm blue">ℹ️ Evento</span>`;
-      if (log.tipo === 'cortesia') badgeTipo = `<span class="badge-tag-sm purple">🎁 Cortesia</span>`;
-      else if (log.tipo === 'cancelamento_venda') badgeTipo = `<span class="badge-tag-sm zero">🛑 Cancelamento</span>`;
-      else if (log.tipo === 'fechamento_caixa') badgeTipo = `<span class="badge-tag-sm ok">💰 Fech. Caixa</span>`;
+      if (log.tipo === 'abertura_caixa') badgeTipo = `<span class="badge-tag-sm ok">🟢 Abertura Caixa</span>`;
+      else if (log.tipo === 'fechamento_caixa') badgeTipo = `<span class="badge-tag-sm purple">💰 Fech. Caixa</span>`;
       else if (log.tipo === 'sangria_caixa') badgeTipo = `<span class="badge-tag-sm low">💸 Sangria</span>`;
+      else if (log.tipo === 'suprimento_caixa') badgeTipo = `<span class="badge-tag-sm cyan">💵 Suprimento</span>`;
+      else if (log.tipo === 'cortesia') badgeTipo = `<span class="badge-tag-sm purple">🎁 Cortesia</span>`;
+      else if (log.tipo === 'cancelamento_venda') badgeTipo = `<span class="badge-tag-sm zero">🛑 Cancelamento</span>`;
+      else if (log.tipo === 'ajuste_estoque') badgeTipo = `<span class="badge-tag-sm low">📦 Ajuste Estoque</span>`;
+      else if (log.tipo === 'cadastro_produto') badgeTipo = `<span class="badge-tag-sm blue">✨ Novo Produto</span>`;
+      else if (log.tipo === 'exclusao_produto') badgeTipo = `<span class="badge-tag-sm zero">🗑️ Exclusão</span>`;
+      else if (log.tipo === 'edicao_produto') badgeTipo = `<span class="badge-tag-sm cyan">✏️ Edição</span>`;
 
       const dataHora = log.dataHoraFormatada || (log.criadoEm ? new Date(log.criadoEm).toLocaleString('pt-BR') : '--');
 
@@ -701,14 +894,14 @@ window.MobileApp = {
         <div class="mobile-list-card" onclick="MobileApp.verDetalhesAuditoria('${log.id}')">
           <div class="card-top-row">
             ${badgeTipo}
-            <span style="font-size: 11px; color: var(--text-dim); font-family: 'JetBrains Mono';">${dataHora}</span>
+            <span class="card-time-text" style="color: var(--text-dim);">${dataHora}</span>
           </div>
-          <p style="font-size: 13px; font-weight: 700; color: #fff; line-height: 1.3;">
+          <p style="font-size: 13px; font-weight: 700; color: #ffffff; line-height: 1.4; margin: 4px 0;">
             ${log.tipo === 'cortesia' ? (log.detalhes?.motivo || log.descricao) : log.descricao}
           </p>
           <div class="card-bottom-row">
-            <span>👤 ${log.operador || 'Caixa'}</span>
-            <span style="color: var(--accent-orange); font-size: 11px;">Toque para ver ➔</span>
+            <span class="card-info-meta">👤 ${log.operador || 'Caixa'}</span>
+            <span style="color: var(--accent-cyan); font-size: 11px; font-weight: 700;">Toque para ver ➔</span>
           </div>
         </div>
       `;
@@ -833,16 +1026,22 @@ window.MobileApp = {
   },
 
   abrirModalSheet(title, html) {
-    document.getElementById('sheet-title').textContent = title;
-    document.getElementById('sheet-body').innerHTML = html;
-    document.getElementById('modal-bottom-sheet').style.display = 'flex';
+    const titleEl = document.getElementById('sheet-title');
+    const bodyEl = document.getElementById('sheet-body');
+    const modal = document.getElementById('modal-bottom-sheet');
+    if (titleEl) titleEl.textContent = title;
+    if (bodyEl) bodyEl.innerHTML = html;
+    if (modal) modal.style.display = 'flex';
+    document.body.style.overflow = 'hidden';
   },
 
   fecharModalSheet(e) {
-    if (e && e.target && e.target.id !== 'modal-bottom-sheet' && !e.target.classList.contains('modal-bottom-sheet')) {
+    if (e && e.target && e.target.id !== 'modal-bottom-sheet' && !e.target.classList.contains('modal-bottom-sheet') && e.target.tagName !== 'BUTTON') {
       return;
     }
-    document.getElementById('modal-bottom-sheet').style.display = 'none';
+    const modal = document.getElementById('modal-bottom-sheet');
+    if (modal) modal.style.display = 'none';
+    document.body.style.overflow = '';
   },
 
   // -------------------------------------------------------------
@@ -850,13 +1049,15 @@ window.MobileApp = {
   // -------------------------------------------------------------
   navegarPara(tabId) {
     document.querySelectorAll('.mobile-tab-view').forEach(t => t.classList.remove('active'));
-    document.querySelectorAll('.tabbar-item').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.tabbar-item, .desktop-nav-btn').forEach(b => b.classList.remove('active'));
 
     const tabEl = document.getElementById(`tab-${tabId}`);
     const btnEl = document.getElementById(`btn-tab-${tabId}`);
+    const btnDeskEl = document.getElementById(`btn-desk-tab-${tabId}`);
 
     if (tabEl) tabEl.classList.add('active');
     if (btnEl) btnEl.classList.add('active');
+    if (btnDeskEl) btnDeskEl.classList.add('active');
 
     window.scrollTo({ top: 0, behavior: 'smooth' });
   },
@@ -876,6 +1077,26 @@ window.MobileApp = {
     if (forma.includes('Débito')) return '💳';
     if (forma.includes('Fiado')) return '📖';
     return '💰';
+  },
+
+  getGradienteFormaPag(forma) {
+    if (forma.includes('PIX')) return 'linear-gradient(90deg, #06b6d4, #38bdf8)';
+    if (forma.includes('Dinheiro')) return 'linear-gradient(90deg, #059669, #10b981)';
+    if (forma.includes('Crédito')) return 'linear-gradient(90deg, #6366f1, #a855f7)';
+    if (forma.includes('Débito')) return 'linear-gradient(90deg, #2563eb, #60a5fa)';
+    if (forma.includes('Fiado')) return 'linear-gradient(90deg, #d97706, #fbbf24)';
+    return 'linear-gradient(90deg, #ec4899, #f43f5e)';
+  },
+
+  getBadgeClasseForma(forma) {
+    if (!forma) return 'cyan';
+    const f = String(forma).toUpperCase();
+    if (f.includes('PIX')) return 'cyan';
+    if (f.includes('DINHEIRO')) return 'ok';
+    if (f.includes('CRÉDITO') || f.includes('CREDITO')) return 'purple';
+    if (f.includes('DÉBITO') || f.includes('DEBITO')) return 'blue';
+    if (f.includes('FIADO')) return 'low';
+    return 'cyan';
   }
 };
 
@@ -883,5 +1104,12 @@ window.MobileApp = {
 document.addEventListener('DOMContentLoaded', () => {
   if (window.MobileApp) {
     window.MobileApp.init();
+  }
+});
+
+// Fechar modal ao pressionar ESC
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape' && window.MobileApp) {
+    window.MobileApp.fecharModalSheet();
   }
 });
