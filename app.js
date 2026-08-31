@@ -18,6 +18,7 @@ window.MobileApp = {
   init() {
     this.registrarServiceWorker();
     this.verificarSessaoSalva();
+    this.iniciarMonitoramentoInatividade();
   },
 
   registrarServiceWorker() {
@@ -121,6 +122,7 @@ window.MobileApp = {
       document.getElementById('screen-app').style.display = 'flex';
 
       // ⚡ Carrega dados em paralelo sem bloquear a interface
+      this.registrarAtividadeUsuario();
       this.carregarDadosLoja();
     } catch (err) {
       console.error('[Login] Erro:', err);
@@ -132,8 +134,83 @@ window.MobileApp = {
     }
   },
 
-  fazerLogout() {
-    if (!confirm('Deseja sair do aplicativo?')) return;
+  // -------------------------------------------------------------
+  // SEGURANÇA: CONTROLE DE INATIVIDADE (AUTO-LOGOUT EM 15 MINUTOS)
+  // -------------------------------------------------------------
+  TEMPO_MAX_INATIVIDADE_MS: 15 * 60 * 1000, // 15 minutos
+  timerInatividadeId: null,
+  ultimoAcessoTimestamp: Date.now(),
+
+  iniciarMonitoramentoInatividade() {
+    this.resetarTimerInatividade();
+
+    // Eventos de interação do usuário (toques, cliques, rolagem, teclado)
+    const eventosInteracao = ['mousedown', 'mousemove', 'touchstart', 'touchmove', 'keydown', 'scroll', 'click'];
+    const resetHandler = () => this.registrarAtividadeUsuario();
+
+    eventosInteracao.forEach(evento => {
+      window.addEventListener(evento, resetHandler, { passive: true });
+    });
+
+    // Ao voltar para a aba ou desbloquear o celular, verifica se já se passaram 15 min
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'visible') {
+        this.verificarExpiracaoInatividade();
+      }
+    });
+    window.addEventListener('focus', () => this.verificarExpiracaoInatividade());
+  },
+
+  registrarAtividadeUsuario() {
+    this.ultimoAcessoTimestamp = Date.now();
+    this.resetarTimerInatividade();
+  },
+
+  resetarTimerInatividade() {
+    if (this.timerInatividadeId) clearTimeout(this.timerInatividadeId);
+    if (!this.chaveLicenca) return; // Só monitora se estiver autenticado
+
+    this.timerInatividadeId = setTimeout(() => {
+      this.deslogarPorInatividade();
+    }, this.TEMPO_MAX_INATIVIDADE_MS);
+  },
+
+  verificarExpiracaoInatividade() {
+    if (!this.chaveLicenca) return;
+    const tempoPassado = Date.now() - this.ultimoAcessoTimestamp;
+    if (tempoPassado >= this.TEMPO_MAX_INATIVIDADE_MS) {
+      this.deslogarPorInatividade();
+    } else {
+      this.resetarTimerInatividade();
+    }
+  },
+
+  deslogarPorInatividade() {
+    if (!this.chaveLicenca) return;
+    console.warn('[Segurança] Sessão expirada após 15 minutos sem atividade.');
+    
+    if (this.timerInatividadeId) clearTimeout(this.timerInatividadeId);
+    localStorage.removeItem('flowpdv_mob_chave');
+    localStorage.removeItem('flowpdv_mob_pin');
+    this.chaveLicenca = '';
+    this.pinGerente = '';
+    this.dadosLoja = null;
+    this.dadosBackup = null;
+
+    document.getElementById('screen-app').style.display = 'none';
+    document.getElementById('screen-login').style.display = 'flex';
+
+    const toastErro = document.getElementById('login-error-toast');
+    if (toastErro) {
+      toastErro.innerHTML = '🔒 <strong>Sessão Expirada:</strong> Desconectado automaticamente após 15 minutos sem atividade por segurança.';
+      toastErro.style.display = 'block';
+    }
+  },
+
+  fazerLogout(silencioso = false) {
+    if (!silencioso && !confirm('Deseja sair do aplicativo?')) return;
+    if (this.timerInatividadeId) clearTimeout(this.timerInatividadeId);
+
     localStorage.removeItem('flowpdv_mob_chave');
     localStorage.removeItem('flowpdv_mob_pin');
     this.chaveLicenca = '';
@@ -768,7 +845,6 @@ window.MobileApp = {
         `;
       }).join('');
     }
-  },
   },
 
   // -------------------------------------------------------------
