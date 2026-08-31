@@ -758,7 +758,11 @@ window.MobileApp = {
   setFiltroAuditoria(tipo, btnEl) {
     this.filtroAuditoriaAtivo = tipo;
     document.querySelectorAll('#chips-auditoria-container .chip-btn').forEach(b => b.classList.remove('active'));
-    if (btnEl) btnEl.classList.add('active');
+    if (btnEl) {
+      btnEl.classList.add('active');
+      // Centraliza suavemente o botão clicado no meio do carrossel
+      btnEl.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+    }
     this.renderAuditoria();
   },
 

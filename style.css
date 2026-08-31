@@ -830,9 +830,10 @@ body {
   display: flex;
   gap: 8px;
   overflow-x: auto;
-  padding: 4px 2px;
+  padding: 6px 4px;
   scrollbar-width: none;
   scroll-behavior: smooth;
+  scroll-snap-type: x proximity;
   -webkit-overflow-scrolling: touch;
   flex: 1;
 }
@@ -853,6 +854,7 @@ body {
   cursor: pointer;
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   flex-shrink: 0;
+  scroll-snap-align: center;
 }
 
 .chip-btn:hover {
@@ -1018,8 +1020,33 @@ body {
     max-width: 760px;
   }
 
+  .mobile-header {
+    padding: 14px 20px;
+    gap: 16px;
+  }
+
+  .header-brand {
+    flex: 0 0 auto;
+  }
+
   .desktop-nav-tabs {
     display: flex;
+    margin: 0 auto;
+  }
+
+  .header-actions {
+    flex: 0 0 auto;
+    margin-left: auto;
+    gap: 8px;
+  }
+
+  .filter-carousel-wrapper {
+    justify-content: center;
+  }
+
+  .filter-chips-row {
+    justify-content: center;
+    flex: 0 1 auto;
   }
 
   .bottom-tabbar {
@@ -1086,11 +1113,27 @@ body {
 
   .mobile-header {
     padding: 16px 32px;
+    gap: 24px;
+  }
+
+  .header-brand {
+    flex: 0 0 auto;
   }
 
   .header-store-name {
     font-size: 17px;
     max-width: 320px;
+  }
+
+  .desktop-nav-tabs {
+    margin: 0 auto;
+    gap: 8px;
+    padding: 5px 8px;
+  }
+
+  .header-actions {
+    margin-left: 0;
+    gap: 10px;
   }
 
   .dashboard-top-metrics-grid {
