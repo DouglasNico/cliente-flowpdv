@@ -317,10 +317,27 @@ body {
 .header-status-badge {
   display: inline-flex;
   align-items: center;
-  gap: 5px;
-  font-size: 10px;
+  gap: 6px;
+  font-size: 11px;
   font-weight: 700;
-  color: var(--accent-green);
+  color: #34d399;
+  letter-spacing: 0.2px;
+}
+
+.status-pulse-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #10b981;
+  box-shadow: 0 0 8px #10b981;
+  display: inline-block;
+  animation: pulseGreen 2s infinite ease-in-out;
+}
+
+@keyframes pulseGreen {
+  0% { transform: scale(0.95); opacity: 0.8; box-shadow: 0 0 4px #10b981; }
+  50% { transform: scale(1.15); opacity: 1; box-shadow: 0 0 10px #34d399; }
+  100% { transform: scale(0.95); opacity: 0.8; box-shadow: 0 0 4px #10b981; }
 }
 
 .header-actions {
@@ -830,12 +847,13 @@ body {
   display: flex;
   gap: 8px;
   overflow-x: auto;
-  padding: 6px 4px;
+  padding: 6px 10px;
   scrollbar-width: none;
   scroll-behavior: smooth;
   scroll-snap-type: x proximity;
   -webkit-overflow-scrolling: touch;
   flex: 1;
+  min-width: 0;
 }
 
 .filter-chips-row::-webkit-scrollbar {
@@ -1041,12 +1059,22 @@ body {
   }
 
   .filter-carousel-wrapper {
+    width: 100%;
+    margin: 0 auto;
     justify-content: center;
   }
 
   .filter-chips-row {
+    flex-wrap: wrap;
     justify-content: center;
-    flex: 0 1 auto;
+    overflow-x: visible;
+    padding: 6px 0;
+    gap: 10px;
+    flex: unset;
+  }
+
+  .btn-carousel-arrow {
+    display: none;
   }
 
   .bottom-tabbar {
