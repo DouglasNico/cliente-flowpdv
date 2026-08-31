@@ -60,6 +60,44 @@
   touch-action: manipulation;
 }
 
+/* ==========================================================================
+   BARRA DE ROLAGEM ULTRA-MODERNA (WEBKIT, FIREFOX, IOS, ANDROID, DESKTOP)
+   ========================================================================== */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(56, 189, 248, 0.45) #0b1120;
+}
+
+::-webkit-scrollbar {
+  width: 7px;
+  height: 7px;
+}
+
+::-webkit-scrollbar-track {
+  background: #0b1120;
+  border-radius: 999px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, rgba(56, 189, 248, 0.45), rgba(99, 102, 241, 0.45));
+  border-radius: 999px;
+  border: 1.5px solid #0b1120;
+  transition: all 0.2s ease;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, rgba(56, 189, 248, 0.85), rgba(99, 102, 241, 0.85));
+  box-shadow: 0 0 10px rgba(56, 189, 248, 0.5);
+}
+
+::-webkit-scrollbar-thumb:active {
+  background: linear-gradient(180deg, #38bdf8, #6366f1);
+}
+
+::-webkit-scrollbar-corner {
+  background: #0b1120;
+}
+
 html, body {
   touch-action: manipulation;
   -ms-touch-action: manipulation;
