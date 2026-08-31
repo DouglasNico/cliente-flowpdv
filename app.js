@@ -660,9 +660,12 @@ window.MobileApp = {
     const hoje = new Date().toISOString().split('T')[0];
 
     // 1. Contas a Pagar
-    const contasPendentes = contas.filter(c => c.status !== 'paga');
+    const contasPendentes = contas.filter(c => c && c.status !== 'pago' && c.status !== 'paga');
     const totalPendente = contasPendentes.reduce((acc, c) => acc + (parseFloat(c.valor) || 0), 0);
-    const contasVencidas = contasPendentes.filter(c => c.dataVencimento && c.dataVencimento < hoje);
+    const contasVencidas = contasPendentes.filter(c => {
+      const dv = c.vencimento || c.dataVencimento || '';
+      return dv && dv < hoje;
+    });
 
     document.getElementById('metric-total-contas-pendentes').textContent = this.formatarMoeda(totalPendente);
     document.getElementById('metric-contas-vencidas-alerta').textContent = `🚨 ${contasVencidas.length} ${contasVencidas.length === 1 ? 'conta vencida' : 'contas vencidas'}`;
@@ -678,23 +681,37 @@ window.MobileApp = {
       `;
     } else {
       containerContas.innerHTML = contasPendentes.map(c => {
-        const isVencida = c.dataVencimento && c.dataVencimento < hoje;
-        const isHoje = c.dataVencimento === hoje;
+        const dataVenc = c.vencimento || c.dataVencimento || '';
+        const isVencida = dataVenc && dataVenc < hoje;
+        const isHoje = dataVenc === hoje;
 
         let badgeVenc = '';
         if (isVencida) badgeVenc = `<span class="badge-tag-sm zero">🚨 Vencida</span>`;
         else if (isHoje) badgeVenc = `<span class="badge-tag-sm low">⏳ Vence Hoje</span>`;
         else badgeVenc = `<span class="badge-tag-sm ok">📅 A Vencer</span>`;
 
+        let vencFormatado = '--';
+        if (dataVenc) {
+          if (dataVenc.includes('-')) {
+            const parts = dataVenc.split('T')[0].split('-');
+            if (parts.length === 3) vencFormatado = `${parts[2]}/${parts[1]}/${parts[0]}`;
+          } else {
+            vencFormatado = new Date(dataVenc).toLocaleDateString('pt-BR');
+          }
+        }
+
         return `
-          <div class="mobile-list-card">
+          <div class="mobile-list-card" onclick="MobileApp.verDetalhesContaPagar('${c.id}')">
             <div class="card-top-row">
               <strong class="card-item-title">${c.descricao || 'Despesa'}</strong>
-              <span class="card-item-price" style="color: #f87171;">${this.formatarMoeda(c.valor)}</span>
+              <span class="card-item-price" style="color: #f87171; white-space: nowrap; flex-shrink: 0;">${this.formatarMoeda(c.valor)}</span>
             </div>
             <div class="card-bottom-row">
-              <span>📅 Venc: ${c.dataVencimento ? new Date(c.dataVencimento + 'T12:00:00').toLocaleDateString('pt-BR') : '--'}</span>
-              ${badgeVenc}
+              <span class="card-info-meta">📅 Venc: ${vencFormatado} • 🏷️ ${c.categoria || 'Geral'}</span>
+              <div class="card-tag-wrapper">
+                ${badgeVenc}
+                <span style="color: var(--accent-cyan); font-size: 11px; font-weight: 700; margin-left: 4px;">Toque para ver ➔</span>
+              </div>
             </div>
           </div>
         `;
@@ -728,26 +745,30 @@ window.MobileApp = {
         if (telLimpo.length >= 10) {
           const msg = encodeURIComponent(`Olá ${cli.nome}, tudo bem? Passando para lembrar do seu saldo em aberto de ${this.formatarMoeda(saldo)} aqui no ${nomeLoja}. Qualquer dúvida estamos à disposição!`);
           btnZap = `
-            <a href="https://wa.me/55${telLimpo}?text=${msg}" target="_blank" class="btn-whatsapp-mobile">
-              <span>💬 Cobrar no Zap</span>
+            <a href="https://wa.me/55${telLimpo}?text=${msg}" target="_blank" onclick="event.stopPropagation()" class="btn-whatsapp-mobile">
+              <span>💬 Zap</span>
             </a>
           `;
         }
 
         return `
-          <div class="mobile-list-card">
+          <div class="mobile-list-card" onclick="MobileApp.verDetalhesClienteFiado('${cli.id}')">
             <div class="card-top-row">
               <strong class="card-item-title">👤 ${cli.nome}</strong>
-              <span class="card-item-price" style="color: #fbbf24;">${this.formatarMoeda(saldo)}</span>
+              <span class="card-item-price" style="color: #fbbf24; white-space: nowrap; flex-shrink: 0;">${this.formatarMoeda(saldo)}</span>
             </div>
             <div class="card-bottom-row" style="margin-top: 4px;">
-              <span>📞 ${cli.telefone || 'Sem telefone'}</span>
-              ${btnZap}
+              <span class="card-info-meta">📞 ${cli.telefone || 'Sem telefone'}</span>
+              <div style="display: flex; align-items: center; gap: 8px;">
+                ${btnZap}
+                <span style="color: var(--accent-cyan); font-size: 11px; font-weight: 700;">Toque para ver ➔</span>
+              </div>
             </div>
           </div>
         `;
       }).join('');
     }
+  },
   },
 
   // -------------------------------------------------------------
@@ -1062,6 +1083,150 @@ window.MobileApp = {
     `;
 
     this.abrirModalSheet('Registro de Auditoria', html);
+  },
+
+  verDetalhesContaPagar(contaId) {
+    const backup = this.dadosBackup || {};
+    const contas = backup.contasPagar || [];
+    const c = contas.find(item => String(item.id) === String(contaId));
+    if (!c) return;
+
+    const hoje = new Date().toISOString().split('T')[0];
+    const dataVenc = c.vencimento || c.dataVencimento || '';
+    const isVencida = dataVenc && dataVenc < hoje && c.status !== 'pago' && c.status !== 'paga';
+    const isHoje = dataVenc === hoje && c.status !== 'pago' && c.status !== 'paga';
+    const isPago = c.status === 'pago' || c.status === 'paga';
+
+    let badgeStatus = '<span class="badge-tag-sm ok">📅 A Vencer</span>';
+    if (isPago) badgeStatus = '<span class="badge-tag-sm ok" style="background: rgba(16,185,129,0.2); color: #34d399;">✅ Conta Paga</span>';
+    else if (isVencida) badgeStatus = '<span class="badge-tag-sm zero">🚨 Vencida</span>';
+    else if (isHoje) badgeStatus = '<span class="badge-tag-sm low">⏳ Vence Hoje</span>';
+
+    // Formata a data de vencimento no formato brasileiro DD/MM/YYYY
+    let vencFormatado = '--';
+    if (dataVenc) {
+      if (dataVenc.includes('-')) {
+        const parts = dataVenc.split('T')[0].split('-');
+        if (parts.length === 3) vencFormatado = `${parts[2]}/${parts[1]}/${parts[0]}`;
+      } else {
+        vencFormatado = new Date(dataVenc).toLocaleDateString('pt-BR');
+      }
+    }
+
+    const html = `
+      <div style="display: flex; flex-direction: column; gap: 12px;">
+        <!-- Header da Conta com Valor em Destaque -->
+        <div style="background: var(--bg-surface-2); padding: 14px; border-radius: 12px; display: flex; justify-content: space-between; align-items: center;">
+          <div>
+            <span style="font-size: 11px; color: var(--text-dim); text-transform: uppercase; font-weight: 800;">Valor a Pagar</span>
+            <strong style="display: block; font-size: 22px; font-family: 'JetBrains Mono'; color: ${isPago ? 'var(--accent-green)' : '#f87171'}; margin-top: 2px;">
+              ${this.formatarMoeda(c.valor)}
+            </strong>
+          </div>
+          <div style="text-align: right;">
+            ${badgeStatus}
+          </div>
+        </div>
+
+        <!-- Informações Principais da Despesa -->
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+          <div style="background: var(--bg-surface-2); padding: 10px 12px; border-radius: 8px;">
+            <span style="font-size: 11px; color: var(--text-dim); display: block;">📅 Vencimento</span>
+            <strong style="font-size: 13.5px; color: #ffffff; font-family: 'JetBrains Mono'; margin-top: 2px; display: block;">${vencFormatado}</strong>
+          </div>
+          <div style="background: var(--bg-surface-2); padding: 10px 12px; border-radius: 8px;">
+            <span style="font-size: 11px; color: var(--text-dim); display: block;">🏷️ Categoria</span>
+            <strong style="font-size: 13.5px; color: var(--accent-cyan); margin-top: 2px; display: block;">${c.categoria || 'Geral'}</strong>
+          </div>
+        </div>
+
+        <div style="background: var(--bg-surface-2); padding: 12px; border-radius: 10px;">
+          <span style="font-size: 11px; color: var(--text-dim); text-transform: uppercase; font-weight: 800; display: block; margin-bottom: 4px;">🏢 Fornecedor / Beneficiário</span>
+          <p style="font-size: 14px; font-weight: 700; color: #ffffff;">${c.fornecedor || 'Não informado no PDV'}</p>
+        </div>
+
+        <div style="background: var(--bg-surface-2); padding: 12px; border-radius: 10px;">
+          <span style="font-size: 11px; color: var(--text-dim); text-transform: uppercase; font-weight: 800; display: block; margin-bottom: 4px;">📝 Observações / Detalhes</span>
+          <p style="font-size: 13px; color: var(--text-main); line-height: 1.4;">${c.observacoes || 'Nenhuma observação informada.'}</p>
+        </div>
+
+        ${isPago && c.dataPagamento ? `
+          <div style="background: rgba(16, 185, 129, 0.12); border: 1px solid rgba(16, 185, 129, 0.35); padding: 10px 12px; border-radius: 8px; display: flex; justify-content: space-between; align-items: center;">
+            <span style="font-size: 12px; color: #34d399; font-weight: 700;">✅ Pago em: ${c.dataPagamento}</span>
+            <span style="font-size: 12px; color: var(--text-muted);">${c.formaPagamento || ''}</span>
+          </div>
+        ` : ''}
+      </div>
+    `;
+
+    this.abrirModalSheet(`Detalhes: ${c.descricao || 'Despesa'}`, html);
+  },
+
+  verDetalhesClienteFiado(clienteId) {
+    const backup = this.dadosBackup || {};
+    const clientes = backup.clientes || [];
+    const cli = clientes.find(item => String(item.id) === String(clienteId));
+    if (!cli) return;
+
+    const saldo = parseFloat(cli.saldoDevedor) || 0;
+    const limite = parseFloat(cli.limiteFiado) || 0;
+    const telLimpo = (cli.telefone || '').replace(/\D/g, '');
+    const nomeLoja = (this.dadosLoja && (this.dadosLoja.razaoSocial || this.dadosLoja.nomeFantasia)) || 'nossa loja';
+
+    let btnZap = '';
+    if (telLimpo.length >= 10) {
+      const msg = encodeURIComponent(`Olá ${cli.nome}, tudo bem? Passando para lembrar do seu saldo em aberto de ${this.formatarMoeda(saldo)} aqui no ${nomeLoja}. Qualquer dúvida estamos à disposição!`);
+      btnZap = `
+        <a href="https://wa.me/55${telLimpo}?text=${msg}" target="_blank" class="btn-whatsapp-mobile" style="margin-top: 6px; text-decoration: none; justify-content: center; width: 100%;">
+          <span>💬 Cobrar no WhatsApp</span>
+        </a>
+      `;
+    }
+
+    const html = `
+      <div style="display: flex; flex-direction: column; gap: 12px;">
+        <div style="background: var(--bg-surface-2); padding: 14px; border-radius: 12px; display: flex; justify-content: space-between; align-items: center;">
+          <div>
+            <span style="font-size: 11px; color: var(--text-dim); text-transform: uppercase; font-weight: 800;">Saldo Devedor</span>
+            <strong style="display: block; font-size: 22px; font-family: 'JetBrains Mono'; color: #fbbf24; margin-top: 2px;">
+              ${this.formatarMoeda(saldo)}
+            </strong>
+          </div>
+          <div style="text-align: right;">
+            <span class="badge-tag-sm low">Caderneta</span>
+          </div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+          <div style="background: var(--bg-surface-2); padding: 10px 12px; border-radius: 8px;">
+            <span style="font-size: 11px; color: var(--text-dim); display: block;">📞 Telefone</span>
+            <strong style="font-size: 13px; color: #ffffff; margin-top: 2px; display: block;">${cli.telefone || 'Não informado'}</strong>
+          </div>
+          <div style="background: var(--bg-surface-2); padding: 10px 12px; border-radius: 8px;">
+            <span style="font-size: 11px; color: var(--text-dim); display: block;">💳 Limite Fiado</span>
+            <strong style="font-size: 13px; color: var(--accent-cyan); font-family: 'JetBrains Mono'; margin-top: 2px; display: block;">${limite > 0 ? this.formatarMoeda(limite) : 'Sem limite'}</strong>
+          </div>
+        </div>
+
+        ${cli.cpf ? `
+          <div style="background: var(--bg-surface-2); padding: 10px 12px; border-radius: 8px;">
+            <span style="font-size: 11px; color: var(--text-dim); display: block;">🪪 CPF / Documento</span>
+            <strong style="font-size: 13px; color: #ffffff; margin-top: 2px; display: block;">${cli.cpf}</strong>
+          </div>
+        ` : ''}
+
+        ${cli.endereco ? `
+          <div style="background: var(--bg-surface-2); padding: 10px 12px; border-radius: 8px;">
+            <span style="font-size: 11px; color: var(--text-dim); display: block;">📍 Endereço</span>
+            <span style="font-size: 12.5px; color: var(--text-main); line-height: 1.4; margin-top: 2px; display: block;">${cli.endereco}</span>
+          </div>
+        ` : ''}
+
+        ${btnZap}
+      </div>
+    `;
+
+    this.abrirModalSheet(`Cliente: ${cli.nome}`, html);
   },
 
   abrirModalSheet(title, html) {
