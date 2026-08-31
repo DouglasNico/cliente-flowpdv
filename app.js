@@ -777,18 +777,21 @@ window.MobileApp = {
           }
         }
 
+        const categoriaNome = c.categoria || 'Geral';
+
         return `
           <div class="mobile-list-card" onclick="MobileApp.verDetalhesContaPagar('${c.id}')">
             <div class="card-top-row">
-              <strong class="card-item-title">${c.descricao || 'Despesa'}</strong>
-              <span class="card-item-price" style="color: #f87171; white-space: nowrap; flex-shrink: 0;">${this.formatarMoeda(c.valor)}</span>
+              <strong class="card-item-title" style="flex: 1; min-width: 0; line-height: 1.35; font-size: 14px;">${c.descricao || 'Despesa'}</strong>
+              <span class="card-item-price" style="color: #f87171; white-space: nowrap; flex-shrink: 0; margin-left: 10px; font-size: 15px;">${this.formatarMoeda(c.valor)}</span>
             </div>
-            <div class="card-bottom-row">
-              <span class="card-info-meta">📅 Venc: ${vencFormatado} • 🏷️ ${c.categoria || 'Geral'}</span>
-              <div class="card-tag-wrapper">
-                ${badgeVenc}
-                <span style="color: var(--accent-cyan); font-size: 11px; font-weight: 700; margin-left: 4px;">Toque para ver ➔</span>
-              </div>
+            <div style="display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-top: 8px; font-size: 12px; color: var(--text-muted);">
+              <span style="display: flex; align-items: center; gap: 4px;">📅 Venc: <strong style="color: #ffffff; font-family: 'JetBrains Mono';">${vencFormatado}</strong></span>
+              <span class="badge-tag-sm cyan" style="font-size: 11px; font-weight: 700; white-space: nowrap; flex-shrink: 0;">🏷️ ${categoriaNome}</span>
+            </div>
+            <div class="card-bottom-row" style="margin-top: 8px; padding-top: 8px; border-top: 1px dashed rgba(255,255,255,0.08);">
+              ${badgeVenc}
+              <span style="color: var(--accent-cyan); font-size: 11px; font-weight: 700;">Toque para ver ➔</span>
             </div>
           </div>
         `;
