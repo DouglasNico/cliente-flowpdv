@@ -1,5 +1,5 @@
-// FlowPDV Mobile Service Worker v1.4.7 - Ultra-Fast PWA
-const CACHE_NAME = 'flowpdv-mobile-v1.4.7';
+// FlowPDV Mobile Service Worker v2.0.4 - Ultra-Fast PWA
+const CACHE_NAME = 'flowpdv-mobile-v2.0.4';
 const ASSETS_TO_CACHE = [
   './',
   './index.html',
