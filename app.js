@@ -808,6 +808,8 @@ window.MobileApp = {
     this.renderEstoque();
   },
 
+  produtoValidadeMobileId: null,
+
   renderEstoque() {
     const backup = this.dadosBackup || {};
     const produtos = backup.produtos || [];
@@ -816,6 +818,18 @@ window.MobileApp = {
     const badgeTotal = document.getElementById('badge-total-produtos');
 
     const hoje = new Date();
+    hoje.setHours(0, 0, 0, 0);
+
+    const isValidadeAtivo = (this.dadosLoja && this.dadosLoja.modulos) 
+      ? (this.dadosLoja.modulos.validadeLotes !== false) 
+      : ((backup.config && backup.config.modulos) ? (backup.config.modulos.validadeLotes !== false) : true);
+
+    const chipVencidos = document.getElementById('chip-est-vencidos');
+    const chipVence15d = document.getElementById('chip-est-vence15d');
+    const chipVence30d = document.getElementById('chip-est-vence30d');
+    if (chipVencidos) chipVencidos.style.display = isValidadeAtivo ? 'inline-block' : 'none';
+    if (chipVence15d) chipVence15d.style.display = isValidadeAtivo ? 'inline-block' : 'none';
+    if (chipVence30d) chipVence30d.style.display = isValidadeAtivo ? 'inline-block' : 'none';
 
     let filtrados = produtos.filter(p => {
       // Busca textual
@@ -831,10 +845,18 @@ window.MobileApp = {
 
       if (this.filtroEstoqueAtual === 'baixo') {
         return p.controlaEstoque !== false && est <= min;
-      } else if (this.filtroEstoqueAtual === 'vencidos') {
+      } else if (isValidadeAtivo && this.filtroEstoqueAtual === 'vencidos') {
         if (!p.dataValidade) return false;
-        const diff = Math.ceil((new Date(p.dataValidade) - hoje) / (1000 * 60 * 60 * 24));
-        return diff <= 30;
+        const diff = Math.ceil((new Date(p.dataValidade + 'T00:00:00') - hoje) / (1000 * 60 * 60 * 24));
+        return diff < 0;
+      } else if (isValidadeAtivo && this.filtroEstoqueAtual === 'vence15d') {
+        if (!p.dataValidade) return false;
+        const diff = Math.ceil((new Date(p.dataValidade + 'T00:00:00') - hoje) / (1000 * 60 * 60 * 24));
+        return diff >= 0 && diff <= 15;
+      } else if (isValidadeAtivo && this.filtroEstoqueAtual === 'vence30d') {
+        if (!p.dataValidade) return false;
+        const diff = Math.ceil((new Date(p.dataValidade + 'T00:00:00') - hoje) / (1000 * 60 * 60 * 24));
+        return diff >= 0 && diff <= 30;
       } else if (this.filtroEstoqueAtual === 'compras') {
         return p.controlaEstoque !== false && est < min;
       }
@@ -870,6 +892,20 @@ window.MobileApp = {
         badgeEstoque = `<span class="badge-tag-sm ok">✅ ${estoque} un</span>`;
       }
 
+      // Validação visual de Validade com paridade ao Desktop
+      let validadeHtml = '';
+      if (isValidadeAtivo && p.dataValidade) {
+        const dataVal = new Date(p.dataValidade + 'T00:00:00');
+        const diffDias = Math.ceil((dataVal - hoje) / (1000 * 60 * 60 * 24));
+        if (diffDias < 0) {
+          validadeHtml = `<span class="badge-tag-sm zero" style="font-size: 10px; padding: 1px 6px; margin-top: 3px; display: inline-block;">🚨 Vencido (${dataVal.toLocaleDateString('pt-BR')})</span>`;
+        } else if (diffDias <= 30) {
+          validadeHtml = `<span class="badge-tag-sm low" style="font-size: 10px; padding: 1px 6px; margin-top: 3px; display: inline-block;">⏳ Vence em ${diffDias}d (${dataVal.toLocaleDateString('pt-BR')})</span>`;
+        } else {
+          validadeHtml = `<span style="font-size: 11px; color: var(--text-dim); display: block; margin-top: 2px;">📅 Val: ${dataVal.toLocaleDateString('pt-BR')}</span>`;
+        }
+      }
+
       let sugestaoCompraHtml = '';
       if (this.filtroEstoqueAtual === 'compras') {
         const sugerido = Math.max(1, (min * 2) - estoque);
@@ -881,20 +917,103 @@ window.MobileApp = {
         `;
       }
 
+      const cardOnClick = isValidadeAtivo ? `onclick="MobileApp.abrirModalValidade('${p.id}')" style="cursor: pointer;" title="Toque para ver ou atualizar data de validade"` : '';
+
       return `
-        <div class="mobile-list-card">
+        <div class="mobile-list-card" ${cardOnClick}>
           <div class="card-top-row">
             <strong class="card-item-title">${p.nome}</strong>
             <span class="card-item-price">${this.formatarMoeda(precoVenda)}</span>
           </div>
-          <div class="card-bottom-row">
-            <span>🏷️ ${p.categoria || 'Geral'}</span>
-            ${badgeEstoque}
+          <div class="card-bottom-row" style="flex-direction: column; align-items: flex-start; gap: 4px;">
+            <div style="display: flex; justify-content: space-between; width: 100%; align-items: center;">
+              <span>🏷️ ${p.categoria || 'Geral'}</span>
+              ${badgeEstoque}
+            </div>
+            ${validadeHtml}
           </div>
           ${sugestaoCompraHtml}
         </div>
       `;
     }).join('');
+  },
+
+  abrirModalValidade(prodId) {
+    const backup = this.dadosBackup || {};
+    const produtos = backup.produtos || [];
+    const p = produtos.find(item => item.id === prodId);
+    if (!p) return;
+
+    this.produtoValidadeMobileId = prodId;
+
+    const modal = document.getElementById('modal-mobile-validade');
+    const infoBox = document.getElementById('modal-mobile-validade-prod-info');
+    const inputVal = document.getElementById('input-mobile-data-validade');
+
+    if (infoBox) {
+      infoBox.innerHTML = `
+        <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+          <div>
+            <strong style="font-size: 14.5px; color: #ffffff; display: block;">${p.nome}</strong>
+            <span style="font-size: 11.5px; color: var(--text-muted); font-family: 'JetBrains Mono';">EAN: ${p.codigoBarras || '-'}</span>
+          </div>
+          <div style="text-align: right;">
+            <div style="font-size: 14px; font-weight: 800; color: #38bdf8; font-family: 'JetBrains Mono';">${this.formatarMoeda(p.precoVenda)}</div>
+            <span style="font-size: 11px; color: var(--text-muted);">${p.estoque || 0} un em estoque</span>
+          </div>
+        </div>
+        ${p.dataValidade ? `<div style="margin-top: 6px; font-size: 11.5px; color: #fbbf24; font-weight: 700;">Validade Atual: ${new Date(p.dataValidade + 'T00:00:00').toLocaleDateString('pt-BR')}</div>` : '<div style="margin-top: 6px; font-size: 11.5px; color: var(--text-dim);">Sem data de validade cadastrada</div>'}
+      `;
+    }
+
+    if (inputVal) {
+      inputVal.value = p.dataValidade || '';
+    }
+
+    if (modal) modal.style.display = 'flex';
+  },
+
+  fecharModalValidade() {
+    const modal = document.getElementById('modal-mobile-validade');
+    if (modal) modal.style.display = 'none';
+    this.produtoValidadeMobileId = null;
+  },
+
+  aplicarDataRapidaValidade(dias) {
+    const d = new Date();
+    d.setDate(d.getDate() + dias);
+    const inputVal = document.getElementById('input-mobile-data-validade');
+    if (inputVal) {
+      inputVal.value = d.toISOString().split('T')[0];
+    }
+  },
+
+  async salvarValidadeMobile() {
+    if (!this.produtoValidadeMobileId) return;
+    const inputVal = document.getElementById('input-mobile-data-validade');
+    const novaData = inputVal?.value || '';
+
+    const backup = this.dadosBackup || {};
+    const produtos = backup.produtos || [];
+    const idx = produtos.findIndex(p => p.id === this.produtoValidadeMobileId);
+
+    if (idx >= 0) {
+      produtos[idx].dataValidade = novaData;
+      this.dadosBackup.produtos = produtos;
+      localStorage.setItem(`flowpdv_cache_${this.chaveLicenca}`, JSON.stringify(this.dadosBackup));
+      this.renderEstoque();
+      this.fecharModalValidade();
+
+      // Sincronizar na Nuvem Firebase
+      if (this.chaveLicenca && window.FirebaseDB && window.FirebaseDB.setDoc) {
+        try {
+          const { db, doc, setDoc } = window.FirebaseDB;
+          await setDoc(doc(db, 'backups_lojas', this.chaveLicenca), this.dadosBackup, { merge: true });
+        } catch(e) {
+          console.warn('[MobileApp] Erro ao sincronizar validade na nuvem:', e);
+        }
+      }
+    }
   },
 
   // -------------------------------------------------------------

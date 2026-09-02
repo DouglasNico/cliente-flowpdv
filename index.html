@@ -261,7 +261,9 @@
           <div class="filter-chips-row" id="chips-estoque-container">
             <button type="button" class="chip-btn active" id="chip-est-todos" onclick="MobileApp.setFiltroEstoque('todos', this)">Todos</button>
             <button type="button" class="chip-btn" id="chip-est-baixo" onclick="MobileApp.setFiltroEstoque('baixo', this)">⚠️ Baixo / Zerado</button>
-            <button type="button" class="chip-btn" id="chip-est-vencidos" onclick="MobileApp.setFiltroEstoque('vencidos', this)">🚨 Validade</button>
+            <button type="button" class="chip-btn" id="chip-est-vencidos" onclick="MobileApp.setFiltroEstoque('vencidos', this)" style="color: #f87171;">🚨 Vencidos</button>
+            <button type="button" class="chip-btn" id="chip-est-vence15d" onclick="MobileApp.setFiltroEstoque('vence15d', this)" style="color: #fbbf24;">⏳ Vence em 15d</button>
+            <button type="button" class="chip-btn" id="chip-est-vence30d" onclick="MobileApp.setFiltroEstoque('vence30d', this)" style="color: #fbbf24;">⏳ Vence em 30d</button>
             <button type="button" class="chip-btn" id="chip-est-compras" onclick="MobileApp.setFiltroEstoque('compras', this)">🛒 Sugestão de Compra</button>
           </div>
           <button type="button" class="btn-carousel-arrow right" onclick="MobileApp.scrollChips('direita')" title="Rolar para a direita">›</button>
@@ -484,6 +486,40 @@
           <!-- Conteúdo dinâmico -->
         </div>
       </div>
+    <!-- MODAL: AJUSTE RÁPIDO DE VALIDADE NO MOBILE -->
+    <div id="modal-mobile-validade" class="modal-sheet-overlay" style="display: none; align-items: center; justify-content: center; z-index: 10600;" onclick="if(event.target === this) MobileApp.fecharModalValidade()">
+      <div class="modal-sheet-card" style="max-width: 440px; width: 92%; border-radius: 16px; background: var(--card-bg, #1e293b); border: 1px solid var(--border-color, #334155); padding: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.5);" onclick="event.stopPropagation()">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px;">
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <span style="font-size: 20px;">📅</span>
+            <h3 style="font-size: 16px; font-weight: 800; color: #ffffff; margin: 0;">Ajustar Data de Validade</h3>
+          </div>
+          <button type="button" onclick="MobileApp.fecharModalValidade()" style="background: transparent; border: none; color: var(--text-muted); font-size: 18px; cursor: pointer;">✕</button>
+        </div>
+
+        <div id="modal-mobile-validade-prod-info" style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 10px; padding: 12px; margin-bottom: 14px;">
+          <!-- Preenchido via JS -->
+        </div>
+
+        <div style="margin-bottom: 12px;">
+          <label style="font-size: 12px; font-weight: 700; color: var(--text-muted); display: block; margin-bottom: 6px;">Nova Data de Validade:</label>
+          <input type="date" id="input-mobile-data-validade" class="mobile-search-input" style="height: 44px; font-size: 15px; font-family: 'JetBrains Mono'; font-weight: 700; width: 100%; box-sizing: border-box; background: rgba(0,0,0,0.2); border: 1px solid #38bdf8; border-radius: 8px; color: #ffffff; padding: 0 12px;">
+        </div>
+
+        <!-- Atalhos Rápidos -->
+        <div style="display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 16px;">
+          <button type="button" class="chip-btn" style="height: 28px; font-size: 11px;" onclick="MobileApp.aplicarDataRapidaValidade(15)">+15 Dias</button>
+          <button type="button" class="chip-btn" style="height: 28px; font-size: 11px;" onclick="MobileApp.aplicarDataRapidaValidade(30)">+30 Dias</button>
+          <button type="button" class="chip-btn" style="height: 28px; font-size: 11px;" onclick="MobileApp.aplicarDataRapidaValidade(60)">+60 Dias</button>
+          <button type="button" class="chip-btn" style="height: 28px; font-size: 11px;" onclick="MobileApp.aplicarDataRapidaValidade(90)">+90 Dias</button>
+          <button type="button" class="chip-btn" style="height: 28px; font-size: 11px;" onclick="MobileApp.aplicarDataRapidaValidade(180)">+6 Meses</button>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+          <button type="button" class="btn-secondary-mobile" style="height: 42px; font-size: 13px; font-weight: 700; border-radius: 8px;" onclick="MobileApp.fecharModalValidade()">Cancelar</button>
+          <button type="button" class="btn-primary-mobile" style="height: 42px; font-size: 13px; font-weight: 800; border-radius: 8px; background: linear-gradient(135deg, #059669, #047857); color: #fff;" onclick="MobileApp.salvarValidadeMobile()">💾 Salvar Data</button>
+        </div>
+      </div>
     </div>
 
     <!-- OVERLAY DE SINCRONIZAÇÃO EM TEMPO REAL -->
@@ -535,6 +571,6 @@
   </script>
 
   <!-- Lógica Principal do Companion App -->
-  <script src="app.js?v=2.0.4"></script>
+  <script src="app.js?v=2.1.0"></script>
 </body>
 </html>

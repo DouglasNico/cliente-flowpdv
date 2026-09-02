@@ -1,8 +1,8 @@
 # 📱 MEMÓRIA DO PROJETO — FLOWPDV GESTÃO COMERCIAL (MOBILE PWA)
 
 > **Documentação Técnica, Arquitetura e Histórico de Versões do Companion App Mobile**  
-> *Última atualização:* 01 de Setembro de 2026  
-> *Versão Oficial Atual:* **v2.0.0**  
+> *Última atualização:* 02 de Setembro de 2026  
+> *Versão Oficial Atual:* **v2.1.0**  
 > *Desenvolvedor:* Douglas Batista / batistadev  
 > *URL Oficial:* [https://cliente.flowpdv.com.br](https://cliente.flowpdv.com.br)  
 > *Repositório:* [https://github.com/DouglasNico/cliente-flowpdv](https://github.com/DouglasNico/cliente-flowpdv)
@@ -80,6 +80,12 @@ Sub-dividida em 3 abas essenciais:
 ---
 
 ## 📋 5. Histórico de Versões & Melhorias
+
+### **v2.1.0 (02/09/2026):**
+- **📅 Paridade e Controle Inteligente de Validades:**
+  - Badges visuais com paridade 100% idêntica ao Desktop (`🚨 Vencido`, `⏳ Vence em Xd`, `📅 Val: DD/MM/AAAA`).
+  - Filtros rápidos no Estoque do Mobile: `Todos`, `⚠️ Baixo / Zerado`, `🚨 Vencidos`, `⏳ Vence em 15d`, `⏳ Vence em 30d`, `🛒 Sugestão de Compra`.
+  - **Modal de Ajuste Rápido de Validade:** Toque em qualquer produto na listagem do celular para abrir o modal de auditoria rápida com atalhos (+15d, +30d, +60d, +90d, +6m) e sincronização imediata na nuvem Firebase com o caixa.
 
 ### **v2.0.0 (01/09/2026):**
 - **🏢 Módulo Central de Gerência:** Migração completa da gerência do PDV Desktop para o Mobile (Equipe, Auditoria e Mesas ao vivo).
