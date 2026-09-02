@@ -883,9 +883,9 @@ window.MobileApp = {
 
       let badgeEstoque = '';
       if (p.controlaEstoque === false) {
-        badgeEstoque = `<span class="badge-tag-sm blue">♾️ Serviço / Fixo</span>`;
+        badgeEstoque = `<span class="badge-tag-sm blue">♾️ Serviço</span>`;
       } else if (estoque <= 0) {
-        badgeEstoque = `<span class="badge-tag-sm zero">🚨 Esgotado (0 un)</span>`;
+        badgeEstoque = `<span class="badge-tag-sm zero">🚨 Esgotado</span>`;
       } else if (estoque <= min) {
         badgeEstoque = `<span class="badge-tag-sm low">⚠️ Baixo (${estoque} un)</span>`;
       } else {
@@ -898,11 +898,11 @@ window.MobileApp = {
         const dataVal = new Date(p.dataValidade + 'T00:00:00');
         const diffDias = Math.ceil((dataVal - hoje) / (1000 * 60 * 60 * 24));
         if (diffDias < 0) {
-          validadeHtml = `<span class="badge-tag-sm zero" style="font-size: 10px; padding: 1px 6px; margin-top: 3px; display: inline-block;">🚨 Vencido (${dataVal.toLocaleDateString('pt-BR')})</span>`;
+          validadeHtml = `<span class="badge-tag-sm zero" style="font-size: 10.5px; padding: 2px 7px;">🚨 Vencido (${dataVal.toLocaleDateString('pt-BR')})</span>`;
         } else if (diffDias <= 30) {
-          validadeHtml = `<span class="badge-tag-sm low" style="font-size: 10px; padding: 1px 6px; margin-top: 3px; display: inline-block;">⏳ Vence em ${diffDias}d (${dataVal.toLocaleDateString('pt-BR')})</span>`;
+          validadeHtml = `<span class="badge-tag-sm low" style="font-size: 10.5px; padding: 2px 7px;">⏳ Vence em ${diffDias}d (${dataVal.toLocaleDateString('pt-BR')})</span>`;
         } else {
-          validadeHtml = `<span style="font-size: 11px; color: var(--text-dim); display: block; margin-top: 2px;">📅 Val: ${dataVal.toLocaleDateString('pt-BR')}</span>`;
+          validadeHtml = `<span style="font-size: 11px; color: var(--text-dim); display: inline-flex; align-items: center; gap: 4px;">📅 Val: <strong>${dataVal.toLocaleDateString('pt-BR')}</strong></span>`;
         }
       }
 
@@ -910,27 +910,28 @@ window.MobileApp = {
       if (this.filtroEstoqueAtual === 'compras') {
         const sugerido = Math.max(1, (min * 2) - estoque);
         sugestaoCompraHtml = `
-          <div class="sugestao-compra-badge-row">
+          <div class="sugestao-compra-badge-row" style="margin-top: 6px;">
             <span>🛒 Sugestão de Reposição:</span>
             <strong style="font-family: 'JetBrains Mono';">+${sugerido} un</strong>
           </div>
         `;
       }
 
-      const cardOnClick = isValidadeAtivo ? `onclick="MobileApp.abrirModalValidade('${p.id}')" style="cursor: pointer;" title="Toque para ver ou atualizar data de validade"` : '';
+      const prodIdentificador = encodeURIComponent(String(p.id || p.codigoBarras || p.nome));
+      const cardOnClick = isValidadeAtivo ? `onclick="MobileApp.abrirModalValidade('${prodIdentificador}')" style="cursor: pointer;" title="Toque para ver ou atualizar data de validade"` : '';
 
       return `
-        <div class="mobile-list-card" ${cardOnClick}>
-          <div class="card-top-row">
-            <strong class="card-item-title">${p.nome}</strong>
+        <div class="mobile-list-card product-catalog-card" ${cardOnClick}>
+          <div class="card-top-row" style="align-items: flex-start;">
+            <strong class="card-item-title product-card-title">${p.nome}</strong>
             <span class="card-item-price">${this.formatarMoeda(precoVenda)}</span>
           </div>
-          <div class="card-bottom-row" style="flex-direction: column; align-items: flex-start; gap: 4px;">
-            <div style="display: flex; justify-content: space-between; width: 100%; align-items: center;">
-              <span>🏷️ ${p.categoria || 'Geral'}</span>
+          <div class="card-bottom-row" style="flex-direction: column; align-items: stretch; gap: 6px; margin-top: auto; padding-top: 6px;">
+            <div style="display: flex; justify-content: space-between; width: 100%; align-items: center; gap: 8px;">
+              <span class="card-category-tag" title="${p.categoria || 'Geral'}">🏷️ ${p.categoria || 'Geral'}</span>
               ${badgeEstoque}
             </div>
-            ${validadeHtml}
+            ${validadeHtml ? `<div style="display: flex; align-items: center; justify-content: flex-start; width: 100%;">${validadeHtml}</div>` : ''}
           </div>
           ${sugestaoCompraHtml}
         </div>
@@ -938,13 +939,18 @@ window.MobileApp = {
     }).join('');
   },
 
-  abrirModalValidade(prodId) {
+  abrirModalValidade(prodIdRaw) {
+    const prodId = decodeURIComponent(prodIdRaw || '');
     const backup = this.dadosBackup || {};
     const produtos = backup.produtos || [];
-    const p = produtos.find(item => item.id === prodId);
+    const p = produtos.find(item => 
+      String(item.id) === prodId || 
+      String(item.codigoBarras) === prodId || 
+      String(item.nome) === prodId
+    );
     if (!p) return;
 
-    this.produtoValidadeMobileId = prodId;
+    this.produtoValidadeMobileId = p.id || prodId;
 
     const modal = document.getElementById('modal-mobile-validade');
     const infoBox = document.getElementById('modal-mobile-validade-prod-info');
@@ -952,17 +958,17 @@ window.MobileApp = {
 
     if (infoBox) {
       infoBox.innerHTML = `
-        <div style="display: flex; justify-content: space-between; align-items: flex-start;">
-          <div>
-            <strong style="font-size: 14.5px; color: #ffffff; display: block;">${p.nome}</strong>
-            <span style="font-size: 11.5px; color: var(--text-muted); font-family: 'JetBrains Mono';">EAN: ${p.codigoBarras || '-'}</span>
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 10px;">
+          <div style="min-width: 0;">
+            <strong style="font-size: 14.5px; color: var(--text-main); display: block; word-break: break-word;">${p.nome}</strong>
+            <span style="font-size: 11.5px; color: var(--text-muted); font-family: 'JetBrains Mono'; display: block; margin-top: 2px;">EAN: ${p.codigoBarras || '-'}</span>
           </div>
-          <div style="text-align: right;">
-            <div style="font-size: 14px; font-weight: 800; color: #38bdf8; font-family: 'JetBrains Mono';">${this.formatarMoeda(p.precoVenda)}</div>
+          <div style="text-align: right; flex-shrink: 0;">
+            <div style="font-size: 15px; font-weight: 800; color: var(--accent-cyan); font-family: 'JetBrains Mono';">${this.formatarMoeda(p.precoVenda)}</div>
             <span style="font-size: 11px; color: var(--text-muted);">${p.estoque || 0} un em estoque</span>
           </div>
         </div>
-        ${p.dataValidade ? `<div style="margin-top: 6px; font-size: 11.5px; color: #fbbf24; font-weight: 700;">Validade Atual: ${new Date(p.dataValidade + 'T00:00:00').toLocaleDateString('pt-BR')}</div>` : '<div style="margin-top: 6px; font-size: 11.5px; color: var(--text-dim);">Sem data de validade cadastrada</div>'}
+        ${p.dataValidade ? `<div style="margin-top: 8px; font-size: 12px; color: #fbbf24; font-weight: 700;">Validade Atual: ${new Date(p.dataValidade + 'T00:00:00').toLocaleDateString('pt-BR')}</div>` : '<div style="margin-top: 8px; font-size: 12px; color: var(--text-dim);">Sem data de validade cadastrada</div>'}
       `;
     }
 
@@ -2200,38 +2206,40 @@ window.MobileApp = {
     if (!venda) return;
 
     const itensHtml = (venda.itens || []).map(it => `
-      <div style="display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 8px 0; border-bottom: 1px dashed var(--border-card); font-size: 12.5px;">
+      <div style="display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 8px 0; border-bottom: 1px dashed var(--border-card); font-size: 13px;">
         <span style="flex: 1; min-width: 0; word-break: break-word; line-height: 1.35; color: var(--text-main);">${it.quantidade}x ${it.nome}</span>
-        <strong style="font-family: 'JetBrains Mono'; color: var(--accent-green); white-space: nowrap; flex-shrink: 0; font-size: 13px; text-align: right;">${this.formatarMoeda((it.precoUnitario || 0) * (it.quantidade || 1))}</strong>
+        <strong style="font-family: 'JetBrains Mono'; color: var(--accent-green); white-space: nowrap; flex-shrink: 0; font-size: 13.5px; text-align: right; margin-left: 10px;">${this.formatarMoeda((it.precoUnitario || 0) * (it.quantidade || 1))}</strong>
       </div>
     `).join('');
 
     const html = `
-      <div style="display: flex; flex-direction: column; gap: 12px;">
-        <div style="background: var(--bg-surface-2); padding: 12px; border-radius: 10px; display: flex; justify-content: space-between; align-items: center;">
-          <div>
-            <span style="font-size: 11px; color: var(--text-dim);">Operador</span>
-            <strong style="display: block; font-size: 13px;">${venda.operador || 'Caixa'}</strong>
+      <div style="display: flex; flex-direction: column; gap: 14px;">
+        <div style="background: var(--bg-surface-2); padding: 12px 14px; border-radius: 10px; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; align-items: center; border: 1px solid var(--border-card);">
+          <div style="min-width: 0;">
+            <span style="font-size: 11px; color: var(--text-dim); display: block; font-weight: 700; text-transform: uppercase;">Operador</span>
+            <strong style="display: block; font-size: 13.5px; color: var(--text-main); word-break: break-word; margin-top: 2px;">${venda.operador || 'Caixa'}</strong>
           </div>
-          <div style="text-align: right;">
-            <span style="font-size: 11px; color: var(--text-dim);">Forma de Pagamento</span>
-            <strong style="display: block; font-size: 13px; color: var(--accent-blue);">${venda.formaPagamento || 'Dinheiro'}</strong>
+          <div style="text-align: right; min-width: 0;">
+            <span style="font-size: 11px; color: var(--text-dim); display: block; font-weight: 700; text-transform: uppercase;">Forma de Pagamento</span>
+            <strong style="display: block; font-size: 13.5px; color: var(--accent-cyan); word-break: break-word; margin-top: 2px;">${venda.formaPagamento || 'Dinheiro'}</strong>
           </div>
         </div>
 
-        <div style="margin-top: 6px;">
-          <span style="font-size: 11px; font-weight: 800; color: var(--text-dim); text-transform: uppercase;">Itens Vendidos</span>
-          <div style="margin-top: 6px; max-height: 220px; overflow-y: auto;">${itensHtml}</div>
+        <div>
+          <span style="font-size: 11.5px; font-weight: 800; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.5px; display: block; margin-bottom: 6px;">🛒 Itens Vendidos</span>
+          <div style="background: var(--bg-surface-2); border: 1px solid var(--border-card); border-radius: 10px; padding: 6px 14px; max-height: 240px; overflow-y: auto;">
+            ${itensHtml}
+          </div>
         </div>
 
-        <div style="background: var(--bg-surface-2); border: 1px solid var(--border-card); padding: 14px; border-radius: 10px; display: flex; justify-content: space-between; align-items: center; margin-top: 8px;">
-          <span style="font-size: 14px; font-weight: 800; color: var(--text-main);">Total da Venda</span>
-          <strong style="font-size: 20px; font-family: 'JetBrains Mono'; color: var(--accent-green); white-space: nowrap; flex-shrink: 0;">${this.formatarMoeda(venda.total)}</strong>
+        <div style="background: var(--bg-surface-2); border: 1px solid var(--border-card); padding: 14px 16px; border-radius: 10px; display: flex; justify-content: space-between; align-items: center;">
+          <span style="font-size: 14.5px; font-weight: 800; color: var(--text-main); white-space: nowrap;">Total da Venda</span>
+          <strong style="font-size: 21px; font-family: 'JetBrains Mono'; color: var(--accent-green); white-space: nowrap; flex-shrink: 0; margin-left: 12px;">${this.formatarMoeda(venda.total)}</strong>
         </div>
       </div>
     `;
 
-    this.abrirModalSheet(`Detalhes da Venda #${venda.id ? venda.id.slice(-5) : ''}`, html);
+    this.abrirModalSheet(`Venda #${venda.id ? venda.id.slice(-5) : ''}`, html);
   },
 
   verDetalhesAuditoria(logId) {
