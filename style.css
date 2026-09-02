@@ -1907,3 +1907,38 @@ body {
   to { opacity: 1; }
 }
 
+/* ==========================================================================
+   POLIMENTO EXTRA DO TEMA CLARO (LIGHT MODE) EM INPUTS E MODAIS
+   ========================================================================== */
+[data-theme="light"] .input-mobile,
+body.theme-light .input-mobile {
+  background: #ffffff !important;
+  color: #0f172a !important;
+  border-color: #cbd5e1 !important;
+}
+
+[data-theme="light"] .input-mobile:focus,
+body.theme-light .input-mobile:focus {
+  border-color: #0284c7 !important;
+  box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.2) !important;
+}
+
+[data-theme="light"] .modal-bottom-content,
+body.theme-light .modal-bottom-content {
+  background: #ffffff !important;
+  border-color: #cbd5e1 !important;
+  color: #0f172a !important;
+}
+
+[data-theme="light"] .mobile-search-bar,
+body.theme-light .mobile-search-bar {
+  background: #ffffff !important;
+  border-color: #cbd5e1 !important;
+  color: #0f172a !important;
+}
+
+[data-theme="light"] .mobile-search-input,
+body.theme-light .mobile-search-input {
+  color: #0f172a !important;
+}
+

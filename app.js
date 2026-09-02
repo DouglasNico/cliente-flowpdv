@@ -1141,82 +1141,422 @@ window.MobileApp = {
       }).join('');
     }
 
-    // 2. Fiado / Caderneta
-    const clientesDevedores = clientes.filter(cli => (parseFloat(cli.saldoDevedor) || 0) > 0.05);
-    const totalFiado = clientesDevedores.reduce((acc, cli) => acc + (parseFloat(cli.saldoDevedor) || 0), 0);
+    // 2. Fiado & Gestão Completa de Clientes (CRM & Delivery)
+    this.renderClientesMobile();
+  },
 
-    document.getElementById('metric-total-fiado-receber').textContent = this.formatarMoeda(totalFiado);
-    document.getElementById('metric-qtd-clientes-devedores').textContent = clientesDevedores.length;
-    document.getElementById('badge-total-devedores').textContent = clientesDevedores.length;
+  filtroClientesMobileAtual: 'todos',
 
-    const containerFiado = document.getElementById('lista-clientes-fiado');
-    if (clientesDevedores.length === 0) {
-      containerFiado.innerHTML = `
+  setFiltroClientesMobile(filtro, el) {
+    this.filtroClientesMobileAtual = filtro;
+    document.querySelectorAll('#chips-clientes-container .chip-btn').forEach(b => b.classList.remove('active'));
+    if (el) {
+      el.classList.add('active');
+      el.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+    }
+    this.renderClientesMobile();
+  },
+
+  filtrarClientesMobile() {
+    this.renderClientesMobile();
+  },
+
+  renderClientesMobile() {
+    const backup = this.dadosBackup || {};
+    const clientes = backup.clientes || [];
+    const busca = (document.getElementById('input-busca-clientes-mobile')?.value || '').toLowerCase().trim();
+    const container = document.getElementById('lista-clientes-fiado');
+    const badgeTotal = document.getElementById('badge-total-devedores');
+
+    const clientesDevedoresGeral = clientes.filter(cli => (parseFloat(cli.saldoDevedor) || 0) > 0.05);
+    const totalFiado = clientesDevedoresGeral.reduce((acc, cli) => acc + (parseFloat(cli.saldoDevedor) || 0), 0);
+
+    const elTotal = document.getElementById('metric-total-fiado-receber');
+    const elQtdDev = document.getElementById('metric-qtd-clientes-devedores');
+    if (elTotal) elTotal.textContent = this.formatarMoeda(totalFiado);
+    if (elQtdDev) elQtdDev.textContent = clientesDevedoresGeral.length;
+
+    // Filtragem geral
+    let filtrados = clientes.filter(cli => {
+      if (!cli) return false;
+      const nome = (cli.nome || '').toLowerCase();
+      const tel = (cli.telefone || '').toLowerCase();
+      const end = (cli.endereco || '').toLowerCase();
+      const bairro = (cli.bairro || '').toLowerCase();
+      const doc = (cli.cpfCnpj || cli.cpf || '').toLowerCase();
+
+      const matchBusca = !busca ||
+        nome.includes(busca) ||
+        tel.includes(busca) ||
+        end.includes(busca) ||
+        bairro.includes(busca) ||
+        doc.includes(busca);
+
+      if (!matchBusca) return false;
+
+      const saldo = parseFloat(cli.saldoDevedor) || 0;
+      const temEnd = Boolean(cli.endereco && cli.endereco.trim().length > 0);
+      const temWhats = (cli.telefone || '').replace(/\D/g, '').length >= 10;
+
+      if (this.filtroClientesMobileAtual === 'devedores') return saldo > 0.05;
+      if (this.filtroClientesMobileAtual === 'delivery') return temEnd;
+      if (this.filtroClientesMobileAtual === 'whats') return temWhats;
+
+      return true;
+    });
+
+    if (badgeTotal) badgeTotal.textContent = filtrados.length;
+
+    if (!container) return;
+
+    if (filtrados.length === 0) {
+      container.innerHTML = `
         <div class="empty-state-mobile">
-          <span class="empty-state-icon">📖</span>
-          <span style="font-size: 13px;">Nenhum cliente com saldo devedor em aberto.</span>
+          <span class="empty-state-icon">👥</span>
+          <span style="font-size: 13px;">Nenhum cliente encontrado neste filtro.</span>
         </div>
       `;
-    } else {
-      const nomeLoja = (this.dadosLoja && (this.dadosLoja.razaoSocial || this.dadosLoja.nomeFantasia)) || 'nossa loja';
+      return;
+    }
 
-      containerFiado.innerHTML = clientesDevedores.map(cli => {
-        const saldo = parseFloat(cli.saldoDevedor) || 0;
-        const telLimpo = (cli.telefone || '').replace(/\D/g, '');
+    const nomeLoja = (this.dadosLoja && (this.dadosLoja.razaoSocial || this.dadosLoja.nomeFantasia)) ||
+                     (backup.config && backup.config.nomeEmpresa) || 'FlowPDV';
 
-        let btnZap = '';
-        if (telLimpo.length >= 10) {
-          const msg = encodeURIComponent(`Olá ${cli.nome}, tudo bem? Passando para lembrar do seu saldo em aberto de ${this.formatarMoeda(saldo)} aqui no ${nomeLoja}. Qualquer dúvida estamos à disposição!`);
+    container.innerHTML = filtrados.map(cli => {
+      const saldo = parseFloat(cli.saldoDevedor) || 0;
+      const limite = parseFloat(cli.limiteFiado) || 0;
+      const hasDebt = saldo > 0.05;
+      const telLimpo = (cli.telefone || '').replace(/\D/g, '');
+
+      // Endereço resumido para delivery
+      let endResumo = '';
+      let endCompleto = '';
+      if (cli.endereco) {
+        endResumo = `${cli.endereco}${cli.numero ? ', ' + cli.numero : ''}${cli.bairro ? ' - ' + cli.bairro : ''}`;
+        endCompleto = `${cli.endereco}${cli.numero ? ', ' + cli.numero : ''}${cli.bairro ? ' - ' + cli.bairro : ''}${cli.cidade ? ' (' + cli.cidade + ')' : ''}${cli.cep ? ' - CEP: ' + cli.cep : ''}${cli.complemento ? ' [Comp: ' + cli.complemento + ']' : ''}${cli.pontoReferencia ? ' [Ref: ' + cli.pontoReferencia + ']' : ''}`;
+      }
+
+      let btnZap = '';
+      if (telLimpo.length >= 10) {
+        if (hasDebt) {
+          const msg = encodeURIComponent(`Olá ${cli.nome}, tudo bem? Passando para lembrar que consta um saldo em aberto de ${this.formatarMoeda(saldo)} referente à sua conta aqui no ${nomeLoja}. Qualquer dúvida ou para PIX, estamos à disposição!`);
           btnZap = `
-            <a href="https://wa.me/55${telLimpo}?text=${msg}" target="_blank" onclick="event.stopPropagation()" class="btn-whatsapp-mobile">
-              <span>💬 Zap</span>
+            <a href="https://wa.me/55${telLimpo}?text=${msg}" target="_blank" onclick="event.stopPropagation()" class="btn-whatsapp-mobile" style="padding: 4px 8px; font-size: 11px; background: #059669;" title="Enviar cobrança amigável no WhatsApp">
+              <span>💬 Cobrar</span>
+            </a>
+          `;
+        } else {
+          const msg = encodeURIComponent(`Olá ${cli.nome}, tudo bem? Aqui é do atendimento do ${nomeLoja}.`);
+          btnZap = `
+            <a href="https://wa.me/55${telLimpo}?text=${msg}" target="_blank" onclick="event.stopPropagation()" class="btn-whatsapp-mobile" style="padding: 4px 8px; font-size: 11px; background: #22c55e;" title="Conversar no WhatsApp">
+              <span>🟢 Zap</span>
             </a>
           `;
         }
+      }
 
-        return `
-          <div class="mobile-list-card" onclick="MobileApp.verDetalhesClienteFiado('${cli.id}')">
-            <div class="card-top-row">
-              <strong class="card-item-title">👤 ${cli.nome}</strong>
-              <span class="card-item-price" style="color: #fbbf24; white-space: nowrap; flex-shrink: 0;">${this.formatarMoeda(saldo)}</span>
+      let btnCopiarEnd = '';
+      if (endCompleto) {
+        btnCopiarEnd = `
+          <button type="button" class="chip-btn" style="height: 28px; padding: 0 8px; font-size: 10.5px; border-color: #38bdf8; color: #38bdf8;" onclick="event.stopPropagation(); MobileApp.copiarEnderecoMobile('${encodeURIComponent(endCompleto)}')" title="Copiar endereço para mandar ao entregador">
+            📋 Copiar End.
+          </button>
+        `;
+      }
+
+      let btnReceber = '';
+      if (hasDebt) {
+        btnReceber = `
+          <button type="button" class="btn-primary-mobile" style="height: 28px; padding: 0 10px; font-size: 11px; font-weight: 800; background: linear-gradient(135deg, #10b981, #059669); border-radius: 6px; box-shadow: none;" onclick="event.stopPropagation(); MobileApp.abrirModalReceberFiadoMobile('${cli.id}')">
+            💵 Receber
+          </button>
+        `;
+      }
+
+      return `
+        <div class="mobile-list-card" onclick="MobileApp.verDetalhesClienteFiado('${cli.id}')">
+          <div class="card-top-row">
+            <div style="flex: 1; min-width: 0;">
+              <strong class="card-item-title" style="font-size: 14px; color: var(--text-main);">${cli.nome}</strong>
+              ${cli.cpfCnpj || cli.cpf ? `<span style="font-size: 10.5px; color: var(--text-dim); font-family: 'JetBrains Mono'; display: block;">Doc: ${cli.cpfCnpj || cli.cpf}</span>` : ''}
             </div>
-            <div class="card-bottom-row" style="margin-top: 4px;">
-              <span class="card-info-meta">📞 ${cli.telefone || 'Sem telefone'}</span>
-              <div style="display: flex; align-items: center; gap: 8px;">
-                ${btnZap}
-                <span style="color: var(--accent-cyan); font-size: 11px; font-weight: 700;">Toque para ver ➔</span>
-              </div>
+            <div style="text-align: right; flex-shrink: 0; margin-left: 8px;">
+              <span class="card-item-price ${hasDebt ? 'valor-sensivel' : ''}" style="color: ${hasDebt ? '#fbbf24' : 'var(--accent-green)'}; font-size: 14.5px;">
+                ${hasDebt ? this.formatarMoeda(saldo) : 'Quitado'}
+              </span>
+              <span class="badge-tag-sm ${hasDebt ? 'low' : 'ok'}" style="font-size: 9.5px; padding: 1px 5px; margin-top: 2px; display: inline-block;">
+                ${hasDebt ? 'Em Débito' : 'OK'}
+              </span>
             </div>
           </div>
-        `;
-      }).join('');
-    }
+
+          <!-- Linha de Contato & Endereço -->
+          <div style="margin-top: 6px; font-size: 12px; color: var(--text-muted); display: flex; flex-direction: column; gap: 2px;">
+            ${cli.telefone ? `<span>📞 <strong style="color: var(--text-main); font-family: 'JetBrains Mono';">${cli.telefone}</strong></span>` : ''}
+            ${endResumo ? `<span>🛵 <strong style="color: #0284c7;">${endResumo}</strong></span>` : ''}
+          </div>
+
+          <!-- Linha de Ações Rápidas -->
+          <div class="card-bottom-row" style="margin-top: 8px; padding-top: 8px; border-top: 1px dashed var(--border-card); flex-wrap: wrap; gap: 6px;">
+            <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
+              ${btnReceber}
+              ${btnZap}
+              ${btnCopiarEnd}
+            </div>
+            <div style="display: flex; align-items: center; gap: 6px;">
+              <button type="button" class="btn-action-sm" style="font-size: 11px; padding: 2px 6px;" onclick="event.stopPropagation(); MobileApp.abrirModalEditarClienteMobile('${cli.id}')" title="Editar dados">✏️</button>
+              <span style="color: var(--accent-cyan); font-size: 11px; font-weight: 700;">Ver ➔</span>
+            </div>
+          </div>
+        </div>
+      `;
+    }).join('');
+  },
+
+  copiarEnderecoMobile(endCodificado) {
+    const end = decodeURIComponent(endCodificado || '');
+    if (!end) return;
+    navigator.clipboard.writeText(end).then(() => {
+      alert('📋 Endereço completo copiado para a área de transferência!');
+    }).catch(() => {
+      prompt('Copie o endereço abaixo:', end);
+    });
   },
 
   // -------------------------------------------------------------
-  // ABA 4: CENTRAL DE GERÊNCIA (EQUIPE, AUDITORIA & MESAS)
+  // ABA 4: CENTRAL DE GERÊNCIA (EQUIPE, AUDITORIA, MESAS, AJUSTES & DRE)
   // -------------------------------------------------------------
   setSubAbaGerencia(subAba) {
     this.subAbaGerenciaAtual = subAba;
-    document.querySelectorAll('.gerencia-subnav-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('#chips-subnav-gerencia .chip-btn').forEach(b => b.classList.remove('active'));
     const btn = document.getElementById(`btn-sub-ger-${subAba}`);
-    if (btn) btn.classList.add('active');
+    if (btn) {
+      btn.classList.add('active');
+      btn.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+    }
 
     const secEquipe = document.getElementById('subsecao-gerencia-equipe');
     const secAudit = document.getElementById('subsecao-gerencia-auditoria');
     const secMesas = document.getElementById('subsecao-gerencia-mesas');
+    const secAjustes = document.getElementById('subsecao-gerencia-ajustes');
+    const secDre = document.getElementById('subsecao-gerencia-dre');
 
     if (secEquipe) secEquipe.style.display = subAba === 'equipe' ? 'flex' : 'none';
     if (secAudit) secAudit.style.display = subAba === 'auditoria' ? 'flex' : 'none';
     if (secMesas) secMesas.style.display = subAba === 'mesas' ? 'flex' : 'none';
+    if (secAjustes) secAjustes.style.display = subAba === 'ajustes' ? 'flex' : 'none';
+    if (secDre) secDre.style.display = subAba === 'dre' ? 'flex' : 'none';
 
     this.renderGerencia();
   },
 
   renderGerencia() {
-    this.renderGerenciaFuncionarios();
-    this.renderAuditoria();
-    this.renderGerenciaMesas();
+    if (this.subAbaGerenciaAtual === 'equipe') this.renderGerenciaFuncionarios();
+    else if (this.subAbaGerenciaAtual === 'auditoria') this.renderAuditoria();
+    else if (this.subAbaGerenciaAtual === 'mesas') this.renderGerenciaMesas();
+    else if (this.subAbaGerenciaAtual === 'ajustes') this.renderGerenciaAjustes();
+    else if (this.subAbaGerenciaAtual === 'dre') this.renderGerenciaDRE();
+  },
+
+  renderGerenciaAjustes() {
+    const backup = this.dadosBackup || {};
+    const config = (backup.config) || {};
+    const modulos = (this.dadosLoja && this.dadosLoja.modulos) || config.modulos || {};
+    const licData = this.dadosLoja || {};
+
+    // 1. Perfil da Loja
+    const infoEl = document.getElementById('gerencia-perfil-loja-info');
+    if (infoEl) {
+      infoEl.innerHTML = `
+        <div style="display: flex; justify-content: space-between; border-bottom: 1px dashed var(--border-card); padding: 4px 0;">
+          <span>Razão Social / Nome:</span>
+          <strong style="color: var(--text-main);">${licData.razaoSocial || config.nomeEmpresa || 'Minha Loja'}</strong>
+        </div>
+        <div style="display: flex; justify-content: space-between; border-bottom: 1px dashed var(--border-card); padding: 4px 0;">
+          <span>CNPJ / CPF:</span>
+          <strong style="color: var(--text-main); font-family: 'JetBrains Mono';">${licData.cnpj || config.cnpj || 'Não cadastrado'}</strong>
+        </div>
+        <div style="display: flex; justify-content: space-between; border-bottom: 1px dashed var(--border-card); padding: 4px 0;">
+          <span>Chave PIX da Loja:</span>
+          <strong style="color: #38bdf8; font-family: 'JetBrains Mono';">${config.chavePix || 'Não informada'}</strong>
+        </div>
+        <div style="display: flex; justify-content: space-between; border-bottom: 1px dashed var(--border-card); padding: 4px 0;">
+          <span>WhatsApp de Atendimento:</span>
+          <strong style="color: #22c55e; font-family: 'JetBrains Mono';">${config.whatsappSuporte || config.telefone || 'Não informado'}</strong>
+        </div>
+        <div style="display: flex; justify-content: space-between; padding: 4px 0;">
+          <span>Chave de Licença:</span>
+          <strong style="color: var(--text-dim); font-family: 'JetBrains Mono'; font-size: 11px;">${this.chaveLicenca}</strong>
+        </div>
+      `;
+    }
+
+    // 2. Módulos & Recursos
+    const containerModulos = document.getElementById('lista-gerencia-modulos-toggles');
+    if (!containerModulos) return;
+
+    const modulosDef = [
+      { key: 'validadeLotes', nome: '📅 Controle de Validade & Lotes', desc: 'Alertas de produtos vencendo em 15/30 dias e queima de estoque.' },
+      { key: 'fiadoWhatsApp', nome: '📖 Módulo Fiado & CRM de Clientes', desc: 'Controle de limite de crédito, histórico e cobrança via WhatsApp.' },
+      { key: 'comandasMesas', nome: '🍽️ Mesas & Comandas (Salão)', desc: 'Gerenciamento de consumos e atendimento de salão.' },
+      { key: 'descontoMaximo', nome: '🏷️ Limite de Desconto no Caixa', desc: 'Exige liberação de gerente para descontos acima do limite.' }
+    ];
+
+    containerModulos.innerHTML = modulosDef.map(m => {
+      const isAtivo = modulos[m.key] !== false;
+
+      return `
+        <div class="mobile-list-card" style="padding: 12px 14px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; gap: 10px;">
+            <div style="flex: 1;">
+              <strong style="font-size: 13.5px; color: var(--text-main); display: block;">${m.nome}</strong>
+              <span style="font-size: 11px; color: var(--text-muted); line-height: 1.35; display: block; margin-top: 2px;">${m.desc}</span>
+            </div>
+            <label style="position: relative; display: inline-block; width: 44px; height: 24px; flex-shrink: 0; cursor: pointer;">
+              <input type="checkbox" ${isAtivo ? 'checked' : ''} onchange="MobileApp.toggleModuloLojaNuvem('${m.key}', this.checked)" style="opacity: 0; width: 0; height: 0;">
+              <span style="position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: ${isAtivo ? 'var(--accent-green)' : '#475569'}; transition: .3s; border-radius: 24px;"></span>
+              <span style="position: absolute; content: ''; height: 18px; width: 18px; left: ${isAtivo ? '22px' : '3px'}; bottom: 3px; background-color: white; transition: .3s; border-radius: 50%;"></span>
+            </label>
+          </div>
+        </div>
+      `;
+    }).join('');
+  },
+
+  async toggleModuloLojaNuvem(moduloKey, novoStatus) {
+    if (!this.dadosBackup) this.dadosBackup = {};
+    if (!this.dadosBackup.config) this.dadosBackup.config = {};
+    if (!this.dadosBackup.config.modulos) this.dadosBackup.config.modulos = {};
+
+    this.dadosBackup.config.modulos[moduloKey] = novoStatus;
+    if (this.dadosLoja && this.dadosLoja.modulos) {
+      this.dadosLoja.modulos[moduloKey] = novoStatus;
+    }
+
+    localStorage.setItem(`flowpdv_cache_${this.chaveLicenca}`, JSON.stringify(this.dadosBackup));
+    this.renderGerenciaAjustes();
+
+    // Sincronizar no Firestore
+    if (window.FirebaseDB && window.FirebaseDB.db) {
+      try {
+        const { db, doc, setDoc } = window.FirebaseDB;
+        await setDoc(doc(db, 'backups_lojas', this.chaveLicenca), {
+          config: this.dadosBackup.config,
+          atualizadoEm: new Date().toISOString()
+        }, { merge: true });
+        
+        // Também atualiza na coleção de licenças se existir
+        await setDoc(doc(db, 'licencas', this.chaveLicenca), {
+          modulos: { [moduloKey]: novoStatus }
+        }, { merge: true });
+
+        alert(`✅ Módulo "${moduloKey}" atualizado com sucesso e sincronizado com o PDV!`);
+      } catch (e) {
+        console.error('[Modulos] Erro ao sincronizar:', e);
+        alert('❌ Erro ao sincronizar módulo: ' + e.message);
+      }
+    }
+  },
+
+  renderGerenciaDRE() {
+    const backup = this.dadosBackup || {};
+    const vendas = backup.vendas || [];
+    const contas = backup.contasPagar || [];
+    const produtos = backup.produtos || [];
+    const container = document.getElementById('lista-gerencia-dre-cards');
+
+    // 1. Filtrar Vendas do Mês Atual
+    const agora = new Date();
+    const anoAtual = agora.getFullYear();
+    const mesAtual = String(agora.getMonth() + 1).padStart(2, '0');
+    const prefixoMes = `${anoAtual}-${mesAtual}`;
+
+    const vendasMes = vendas.filter(v => {
+      const dataV = v.data || v.dataHora || '';
+      return dataV.startsWith(prefixoMes);
+    });
+
+    const faturamentoBrutoMes = vendasMes.reduce((acc, v) => acc + (parseFloat(v.total) || 0), 0);
+
+    // 2. Calcular Custo dos Produtos Vendidos (CPV Estimado)
+    let custoTotalVendido = 0;
+    const prodMap = new Map();
+    produtos.forEach(p => prodMap.set(String(p.id), p));
+
+    vendasMes.forEach(v => {
+      (v.itens || []).forEach(it => {
+        const pRef = prodMap.get(String(it.id));
+        const custoUnit = pRef ? (parseFloat(pRef.precoCusto) || 0) : ((parseFloat(it.precoUnitario) || 0) * 0.6); // 60% fallback
+        custoTotalVendido += custoUnit * (parseFloat(it.quantidade) || 1);
+      });
+    });
+
+    const lucroBruto = Math.max(0, faturamentoBrutoMes - custoTotalVendido);
+    const margemBrutaPct = faturamentoBrutoMes > 0 ? ((lucroBruto / faturamentoBrutoMes) * 100).toFixed(1) : 0;
+
+    // 3. Despesas Pagas no Mês
+    const despesasPagasMes = contas.filter(c => {
+      if (!c || (c.status !== 'pago' && c.status !== 'paga')) return false;
+      const dp = c.dataPagamento || c.vencimento || '';
+      return dp.startsWith(prefixoMes);
+    }).reduce((acc, c) => acc + (parseFloat(c.valor) || 0), 0);
+
+    // 4. Lucro Líquido Real Estimado
+    const lucroLiquido = lucroBruto - despesasPagasMes;
+    const margemLiqPct = faturamentoBrutoMes > 0 ? ((lucroLiquido / faturamentoBrutoMes) * 100).toFixed(1) : 0;
+
+    const elLucroLiq = document.getElementById('metric-dre-lucro-liquido');
+    const elMargemLiq = document.getElementById('metric-dre-margem-liq');
+    if (elLucroLiq) {
+      elLucroLiq.textContent = this.formatarMoeda(lucroLiquido);
+      elLucroLiq.style.color = lucroLiquido >= 0 ? 'var(--accent-green)' : '#f87171';
+    }
+    if (elMargemLiq) elMargemLiq.textContent = `${margemLiqPct}%`;
+
+    if (!container) return;
+
+    container.innerHTML = `
+      <div class="mobile-list-card" style="padding: 12px 14px;">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+          <span style="font-size: 13px; color: var(--text-muted);">(+) Receita Bruta / Vendas</span>
+          <strong style="font-size: 15px; color: var(--accent-cyan); font-family: 'JetBrains Mono';">${this.formatarMoeda(faturamentoBrutoMes)}</strong>
+        </div>
+      </div>
+
+      <div class="mobile-list-card" style="padding: 12px 14px;">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+          <span style="font-size: 13px; color: var(--text-muted);">(-) Custo das Mercadorias (CPV)</span>
+          <strong style="font-size: 15px; color: #f87171; font-family: 'JetBrains Mono';">${this.formatarMoeda(custoTotalVendido)}</strong>
+        </div>
+      </div>
+
+      <div class="mobile-list-card" style="padding: 12px 14px; background: rgba(56, 189, 248, 0.08); border-color: rgba(56, 189, 248, 0.3);">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+          <div>
+            <strong style="font-size: 13.5px; color: #38bdf8; display: block;">(=) Lucro Bruto da Operação</strong>
+            <span style="font-size: 11px; color: var(--text-dim);">Margem Bruta: ${margemBrutaPct}%</span>
+          </div>
+          <strong style="font-size: 16px; color: #38bdf8; font-family: 'JetBrains Mono';">${this.formatarMoeda(lucroBruto)}</strong>
+        </div>
+      </div>
+
+      <div class="mobile-list-card" style="padding: 12px 14px;">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+          <span style="font-size: 13px; color: var(--text-muted);">(-) Despesas Operacionais Pagas</span>
+          <strong style="font-size: 15px; color: #fbbf24; font-family: 'JetBrains Mono';">${this.formatarMoeda(despesasPagasMes)}</strong>
+        </div>
+      </div>
+
+      <div class="mobile-list-card" style="padding: 14px; background: ${lucroLiquido >= 0 ? 'rgba(16, 185, 129, 0.12)' : 'rgba(239, 68, 68, 0.12)'}; border-color: ${lucroLiquido >= 0 ? 'rgba(16, 185, 129, 0.4)' : 'rgba(239, 68, 68, 0.4)'};">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+          <div>
+            <strong style="font-size: 14.5px; color: ${lucroLiquido >= 0 ? '#34d399' : '#f87171'}; display: block;">(=) Resultado Líquido Final</strong>
+            <span style="font-size: 11.5px; color: var(--text-muted);">Lucro Real no Bolso</span>
+          </div>
+          <strong style="font-size: 19px; color: ${lucroLiquido >= 0 ? '#34d399' : '#f87171'}; font-family: 'JetBrains Mono';">${this.formatarMoeda(lucroLiquido)}</strong>
+        </div>
+      </div>
+    `;
   },
 
   renderGerenciaFuncionarios() {
@@ -2053,63 +2393,545 @@ window.MobileApp = {
 
     const saldo = parseFloat(cli.saldoDevedor) || 0;
     const limite = parseFloat(cli.limiteFiado) || 0;
+    const hasDebt = saldo > 0.05;
     const telLimpo = (cli.telefone || '').replace(/\D/g, '');
-    const nomeLoja = (this.dadosLoja && (this.dadosLoja.razaoSocial || this.dadosLoja.nomeFantasia)) || 'nossa loja';
+    const nomeLoja = (this.dadosLoja && (this.dadosLoja.razaoSocial || this.dadosLoja.nomeFantasia)) ||
+                     (backup.config && backup.config.nomeEmpresa) || 'FlowPDV';
+
+    let endCompleto = '';
+    if (cli.endereco) {
+      endCompleto = `${cli.endereco}${cli.numero ? ', ' + cli.numero : ''}${cli.bairro ? ' - ' + cli.bairro : ''}${cli.cidade ? ' (' + cli.cidade + ')' : ''}${cli.cep ? ' - CEP: ' + cli.cep : ''}${cli.complemento ? ' [Comp: ' + cli.complemento + ']' : ''}${cli.pontoReferencia ? ' [Ref: ' + cli.pontoReferencia + ']' : ''}`;
+    }
 
     let btnZap = '';
     if (telLimpo.length >= 10) {
-      const msg = encodeURIComponent(`Olá ${cli.nome}, tudo bem? Passando para lembrar do seu saldo em aberto de ${this.formatarMoeda(saldo)} aqui no ${nomeLoja}. Qualquer dúvida estamos à disposição!`);
-      btnZap = `
-        <a href="https://wa.me/55${telLimpo}?text=${msg}" target="_blank" class="btn-whatsapp-mobile" style="margin-top: 6px; text-decoration: none; justify-content: center; width: 100%;">
-          <span>💬 Cobrar no WhatsApp</span>
-        </a>
-      `;
+      if (hasDebt) {
+        const msg = encodeURIComponent(`Olá ${cli.nome}, tudo bem? Passando para lembrar que consta um saldo em aberto de ${this.formatarMoeda(saldo)} referente à sua conta aqui no ${nomeLoja}. Qualquer dúvida ou para PIX, estamos à disposição!`);
+        btnZap = `
+          <a href="https://wa.me/55${telLimpo}?text=${msg}" target="_blank" class="btn-whatsapp-mobile" style="text-decoration: none; justify-content: center; width: 100%; padding: 10px; font-size: 13px; background: #059669;">
+            <span>💬 Cobrar Saldo no WhatsApp</span>
+          </a>
+        `;
+      } else {
+        const msg = encodeURIComponent(`Olá ${cli.nome}, tudo bem? Aqui é do atendimento do ${nomeLoja}.`);
+        btnZap = `
+          <a href="https://wa.me/55${telLimpo}?text=${msg}" target="_blank" class="btn-whatsapp-mobile" style="text-decoration: none; justify-content: center; width: 100%; padding: 10px; font-size: 13px; background: #22c55e;">
+            <span>🟢 Conversar no WhatsApp</span>
+          </a>
+        `;
+      }
     }
 
     const html = `
       <div style="display: flex; flex-direction: column; gap: 12px;">
+        
+        <!-- Header do Saldo / Situação -->
         <div style="background: var(--bg-surface-2); padding: 14px; border-radius: 12px; display: flex; justify-content: space-between; align-items: center;">
           <div>
-            <span style="font-size: 11px; color: var(--text-dim); text-transform: uppercase; font-weight: 800;">Saldo Devedor</span>
-            <strong style="display: block; font-size: 22px; font-family: 'JetBrains Mono'; color: #fbbf24; margin-top: 2px;">
-              ${this.formatarMoeda(saldo)}
+            <span style="font-size: 11px; color: var(--text-dim); text-transform: uppercase; font-weight: 800;">Saldo Devedor (Fiado)</span>
+            <strong style="display: block; font-size: 22px; font-family: 'JetBrains Mono'; color: ${hasDebt ? '#fbbf24' : 'var(--accent-green)'}; margin-top: 2px;">
+              ${hasDebt ? this.formatarMoeda(saldo) : 'R$ 0,00 (Quitado)'}
             </strong>
           </div>
           <div style="text-align: right;">
-            <span class="badge-tag-sm low">Caderneta</span>
+            <span class="badge-tag-sm ${hasDebt ? 'low' : 'ok'}">${hasDebt ? 'Em Débito' : 'Quitado'}</span>
           </div>
         </div>
 
+        <!-- Telefone & Limite -->
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
           <div style="background: var(--bg-surface-2); padding: 10px 12px; border-radius: 8px;">
-            <span style="font-size: 11px; color: var(--text-dim); display: block;">📞 Telefone</span>
-            <strong style="font-size: 13px; color: var(--text-main); margin-top: 2px; display: block;">${cli.telefone || 'Não informado'}</strong>
+            <span style="font-size: 11px; color: var(--text-dim); display: block;">📞 Telefone / WhatsApp</span>
+            <strong style="font-size: 13px; color: var(--text-main); font-family: 'JetBrains Mono'; margin-top: 2px; display: block;">${cli.telefone || 'Não informado'}</strong>
           </div>
           <div style="background: var(--bg-surface-2); padding: 10px 12px; border-radius: 8px;">
-            <span style="font-size: 11px; color: var(--text-dim); display: block;">💳 Limite Fiado</span>
-            <strong style="font-size: 13px; color: var(--accent-cyan); font-family: 'JetBrains Mono'; margin-top: 2px; display: block;">${limite > 0 ? this.formatarMoeda(limite) : 'Sem limite'}</strong>
+            <span style="font-size: 11px; color: var(--text-dim); display: block;">💳 Limite de Crédito</span>
+            <strong style="font-size: 13px; color: var(--accent-cyan); font-family: 'JetBrains Mono'; margin-top: 2px; display: block;">${limite > 0 ? this.formatarMoeda(limite) : 'R$ 200,00'}</strong>
           </div>
         </div>
 
-        ${cli.cpf ? `
+        ${cli.cpfCnpj || cli.cpf ? `
           <div style="background: var(--bg-surface-2); padding: 10px 12px; border-radius: 8px;">
-            <span style="font-size: 11px; color: var(--text-dim); display: block;">🪪 CPF / Documento</span>
-            <strong style="font-size: 13px; color: var(--text-main); margin-top: 2px; display: block;">${cli.cpf}</strong>
+            <span style="font-size: 11px; color: var(--text-dim); display: block;">🪪 CPF / CNPJ</span>
+            <strong style="font-size: 13px; color: var(--text-main); font-family: 'JetBrains Mono'; margin-top: 2px; display: block;">${cli.cpfCnpj || cli.cpf}</strong>
           </div>
         ` : ''}
 
-        ${cli.endereco ? `
-          <div style="background: var(--bg-surface-2); padding: 10px 12px; border-radius: 8px;">
-            <span style="font-size: 11px; color: var(--text-dim); display: block;">📍 Endereço</span>
-            <span style="font-size: 12.5px; color: var(--text-main); line-height: 1.4; margin-top: 2px; display: block;">${cli.endereco}</span>
+        <!-- Endereço para Delivery -->
+        <div style="background: var(--bg-surface-2); padding: 12px; border-radius: 10px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+            <span style="font-size: 11px; color: #38bdf8; text-transform: uppercase; font-weight: 800;">🛵 Endereço para Delivery</span>
+            ${endCompleto ? `
+              <button type="button" class="chip-btn" style="height: 26px; padding: 0 8px; font-size: 10.5px; border-color: #38bdf8; color: #38bdf8;" onclick="MobileApp.copiarEnderecoMobile('${encodeURIComponent(endCompleto)}')">
+                📋 Copiar
+              </button>
+            ` : ''}
+          </div>
+          <div style="font-size: 13.5px; font-weight: 600; color: var(--text-main); line-height: 1.4;">
+            ${cli.endereco ? `${cli.endereco}, Nº ${cli.numero || 'S/N'}` : '<span style="color: var(--text-dim);">Nenhum endereço cadastrado.</span>'}
+          </div>
+          <div style="font-size: 12px; color: var(--text-muted); margin-top: 2px;">
+            ${cli.bairro ? `Bairro: <strong>${cli.bairro}</strong>` : ''} ${cli.cidade ? `• ${cli.cidade}` : ''} ${cli.cep ? `• CEP: ${cli.cep}` : ''}
+          </div>
+          ${cli.complemento ? `<div style="font-size: 11.5px; color: var(--text-dim); margin-top: 2px;">Comp: ${cli.complemento}</div>` : ''}
+          ${cli.pontoReferencia ? `<div style="font-size: 11.5px; color: #38bdf8; margin-top: 2px;">Ref: ${cli.pontoReferencia}</div>` : ''}
+        </div>
+
+        ${cli.observacoes ? `
+          <div style="background: rgba(245, 158, 11, 0.08); border: 1px solid rgba(245, 158, 11, 0.25); border-radius: 8px; padding: 10px 12px;">
+            <span style="font-size: 11px; color: #fbbf24; font-weight: 800; display: block; margin-bottom: 2px;">📝 Observações:</span>
+            <span style="font-size: 12.5px; color: var(--text-main);">${cli.observacoes}</span>
           </div>
         ` : ''}
 
         ${btnZap}
+
+        <!-- Botões de Ação do Cliente -->
+        <div style="display: grid; grid-template-columns: ${hasDebt ? '1fr 1fr' : '1fr'}; gap: 8px; margin-top: 4px;">
+          ${hasDebt ? `
+            <button type="button" class="btn-primary-mobile" style="height: 44px; font-size: 13.5px; font-weight: 800; background: linear-gradient(135deg, #10b981, #059669); border-radius: 8px;" onclick="MobileApp.abrirModalReceberFiadoMobile('${cli.id}')">
+              💵 Receber Pagamento
+            </button>
+          ` : ''}
+          <button type="button" class="btn-secondary-mobile" style="height: 44px; font-size: 13px; font-weight: 700; border-radius: 8px;" onclick="MobileApp.abrirModalEditarClienteMobile('${cli.id}')">
+            ✏️ Editar Cliente
+          </button>
+        </div>
       </div>
     `;
 
-    this.abrirModalSheet(`Cliente: ${cli.nome}`, html);
+    this.abrirModalSheet(`👤 Cliente: ${cli.nome}`, html);
+  },
+
+  abrirModalNovoClienteMobile() {
+    const html = `
+      <form onsubmit="MobileApp.salvarClienteNuvemMobile(event)" style="display: flex; flex-direction: column; gap: 10px;">
+        <input type="hidden" id="edit-cli-id" value="">
+        
+        <div class="form-group-mobile" style="margin-bottom: 0;">
+          <label class="form-label-mobile">Nome Completo / Razão Social *</label>
+          <input type="text" id="edit-cli-nome" class="input-mobile" placeholder="Ex: Lucas Henrique" required>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+          <div class="form-group-mobile" style="margin-bottom: 0;">
+            <label class="form-label-mobile">WhatsApp / Telefone</label>
+            <input type="tel" id="edit-cli-tel" class="input-mobile mono" placeholder="(19) 99999-8888">
+          </div>
+          <div class="form-group-mobile" style="margin-bottom: 0;">
+            <label class="form-label-mobile">CPF ou CNPJ</label>
+            <input type="text" id="edit-cli-cpf" class="input-mobile mono" placeholder="000.000.000-00">
+          </div>
+        </div>
+
+        <!-- Endereço & CEP -->
+        <div style="display: grid; grid-template-columns: 110px 1fr; gap: 8px;">
+          <div class="form-group-mobile" style="margin-bottom: 0;">
+            <label class="form-label-mobile">CEP (Auto)</label>
+            <input type="text" id="edit-cli-cep" class="input-mobile mono" placeholder="00000-000" maxlength="9" oninput="MobileApp.buscarCepMobile(this.value)">
+          </div>
+          <div class="form-group-mobile" style="margin-bottom: 0;">
+            <label class="form-label-mobile">Rua / Logradouro</label>
+            <input type="text" id="edit-cli-end" class="input-mobile" placeholder="Rua das Acácias">
+          </div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 80px 1fr 1fr; gap: 8px;">
+          <div class="form-group-mobile" style="margin-bottom: 0;">
+            <label class="form-label-mobile">Número</label>
+            <input type="text" id="edit-cli-num" class="input-mobile" placeholder="123">
+          </div>
+          <div class="form-group-mobile" style="margin-bottom: 0;">
+            <label class="form-label-mobile">Bairro</label>
+            <input type="text" id="edit-cli-bairro" class="input-mobile" placeholder="Centro">
+          </div>
+          <div class="form-group-mobile" style="margin-bottom: 0;">
+            <label class="form-label-mobile">Cidade</label>
+            <input type="text" id="edit-cli-cidade" class="input-mobile" placeholder="São Paulo - SP">
+          </div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+          <div class="form-group-mobile" style="margin-bottom: 0;">
+            <label class="form-label-mobile">Complemento</label>
+            <input type="text" id="edit-cli-comp" class="input-mobile" placeholder="Apto 12, Bloco B">
+          </div>
+          <div class="form-group-mobile" style="margin-bottom: 0;">
+            <label class="form-label-mobile">Limite Fiado (R$)</label>
+            <input type="number" id="edit-cli-limite" class="input-mobile mono" value="200" step="10">
+          </div>
+        </div>
+
+        <div class="form-group-mobile" style="margin-bottom: 0;">
+          <label class="form-label-mobile">Ponto de Referência / Obs Delivery</label>
+          <input type="text" id="edit-cli-obs" class="input-mobile" placeholder="Próximo à praça central">
+        </div>
+
+        <button type="submit" id="btn-salvar-cli-mobile" class="btn-login-submit" style="margin-top: 6px; height: 46px; font-size: 14px;">
+          <span>💾 Cadastrar Cliente</span>
+        </button>
+      </form>
+    `;
+
+    this.abrirModalSheet('➕ Novo Cliente', html);
+  },
+
+  abrirModalEditarClienteMobile(cliId) {
+    const backup = this.dadosBackup || {};
+    const clientes = backup.clientes || [];
+    const cli = clientes.find(item => String(item.id) === String(cliId));
+    if (!cli) return;
+
+    const html = `
+      <form onsubmit="MobileApp.salvarClienteNuvemMobile(event)" style="display: flex; flex-direction: column; gap: 10px;">
+        <input type="hidden" id="edit-cli-id" value="${cli.id}">
+        
+        <div class="form-group-mobile" style="margin-bottom: 0;">
+          <label class="form-label-mobile">Nome Completo / Razão Social *</label>
+          <input type="text" id="edit-cli-nome" class="input-mobile" value="${cli.nome || ''}" required>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+          <div class="form-group-mobile" style="margin-bottom: 0;">
+            <label class="form-label-mobile">WhatsApp / Telefone</label>
+            <input type="tel" id="edit-cli-tel" class="input-mobile mono" value="${cli.telefone || ''}" placeholder="(19) 99999-8888">
+          </div>
+          <div class="form-group-mobile" style="margin-bottom: 0;">
+            <label class="form-label-mobile">CPF ou CNPJ</label>
+            <input type="text" id="edit-cli-cpf" class="input-mobile mono" value="${cli.cpfCnpj || cli.cpf || ''}" placeholder="000.000.000-00">
+          </div>
+        </div>
+
+        <!-- Endereço & CEP -->
+        <div style="display: grid; grid-template-columns: 110px 1fr; gap: 8px;">
+          <div class="form-group-mobile" style="margin-bottom: 0;">
+            <label class="form-label-mobile">CEP (Auto)</label>
+            <input type="text" id="edit-cli-cep" class="input-mobile mono" value="${cli.cep || ''}" placeholder="00000-000" maxlength="9" oninput="MobileApp.buscarCepMobile(this.value)">
+          </div>
+          <div class="form-group-mobile" style="margin-bottom: 0;">
+            <label class="form-label-mobile">Rua / Logradouro</label>
+            <input type="text" id="edit-cli-end" class="input-mobile" value="${cli.endereco || ''}" placeholder="Rua das Acácias">
+          </div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 80px 1fr 1fr; gap: 8px;">
+          <div class="form-group-mobile" style="margin-bottom: 0;">
+            <label class="form-label-mobile">Número</label>
+            <input type="text" id="edit-cli-num" class="input-mobile" value="${cli.numero || ''}" placeholder="123">
+          </div>
+          <div class="form-group-mobile" style="margin-bottom: 0;">
+            <label class="form-label-mobile">Bairro</label>
+            <input type="text" id="edit-cli-bairro" class="input-mobile" value="${cli.bairro || ''}" placeholder="Centro">
+          </div>
+          <div class="form-group-mobile" style="margin-bottom: 0;">
+            <label class="form-label-mobile">Cidade</label>
+            <input type="text" id="edit-cli-cidade" class="input-mobile" value="${cli.cidade || ''}" placeholder="São Paulo - SP">
+          </div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+          <div class="form-group-mobile" style="margin-bottom: 0;">
+            <label class="form-label-mobile">Complemento</label>
+            <input type="text" id="edit-cli-comp" class="input-mobile" value="${cli.complemento || ''}" placeholder="Apto 12">
+          </div>
+          <div class="form-group-mobile" style="margin-bottom: 0;">
+            <label class="form-label-mobile">Limite Fiado (R$)</label>
+            <input type="number" id="edit-cli-limite" class="input-mobile mono" value="${cli.limiteFiado || 200}" step="10">
+          </div>
+        </div>
+
+        <div class="form-group-mobile" style="margin-bottom: 0;">
+          <label class="form-label-mobile">Ponto de Referência / Obs</label>
+          <input type="text" id="edit-cli-obs" class="input-mobile" value="${cli.pontoReferencia || cli.observacoes || ''}" placeholder="Próximo ao mercado">
+        </div>
+
+        <div style="display: flex; gap: 8px; margin-top: 6px;">
+          <button type="submit" id="btn-salvar-cli-mobile" class="btn-login-submit" style="flex: 1; height: 46px; font-size: 14px;">
+            <span>💾 Salvar Alterações</span>
+          </button>
+          <button type="button" class="btn-login-submit" style="background: rgba(239, 68, 68, 0.15); color: #ef4444; border: 1px solid #ef4444; width: auto; padding: 0 14px; height: 46px;" onclick="MobileApp.excluirClienteNuvemMobile('${cli.id}')">
+            <span>🗑️ Excluir</span>
+          </button>
+        </div>
+      </form>
+    `;
+
+    this.abrirModalSheet(`✏️ Editar: ${cli.nome}`, html);
+  },
+
+  async buscarCepMobile(cepValor) {
+    const cepClean = (cepValor || '').replace(/\D/g, '');
+    if (cepClean.length !== 8) return;
+
+    try {
+      const res = await fetch(`https://viacep.com.br/ws/${cepClean}/json/`);
+      const data = await res.json();
+      if (data && !data.erro) {
+        const inputEnd = document.getElementById('edit-cli-end');
+        const inputBairro = document.getElementById('edit-cli-bairro');
+        const inputCidade = document.getElementById('edit-cli-cidade');
+        const inputNum = document.getElementById('edit-cli-num');
+        if (inputEnd) inputEnd.value = data.logradouro || '';
+        if (inputBairro) inputBairro.value = data.bairro || '';
+        if (inputCidade) inputCidade.value = `${data.localidade || ''} - ${data.uf || ''}`;
+        if (inputNum) inputNum.focus();
+      }
+    } catch(e) {}
+  },
+
+  async salvarClienteNuvemMobile(e) {
+    e.preventDefault();
+    const btnSubmit = document.getElementById('btn-salvar-cli-mobile');
+    if (btnSubmit) {
+      btnSubmit.disabled = true;
+      btnSubmit.innerHTML = '<span>⏳ Salvando na Nuvem...</span>';
+    }
+
+    try {
+      const id = document.getElementById('edit-cli-id').value;
+      const nome = document.getElementById('edit-cli-nome').value.trim();
+      const telefone = document.getElementById('edit-cli-tel')?.value.trim() || '';
+      const cpfCnpj = document.getElementById('edit-cli-cpf')?.value.trim() || '';
+      const cep = document.getElementById('edit-cli-cep')?.value.trim() || '';
+      const endereco = document.getElementById('edit-cli-end')?.value.trim() || '';
+      const numero = document.getElementById('edit-cli-num')?.value.trim() || '';
+      const bairro = document.getElementById('edit-cli-bairro')?.value.trim() || '';
+      const cidade = document.getElementById('edit-cli-cidade')?.value.trim() || '';
+      const complemento = document.getElementById('edit-cli-comp')?.value.trim() || '';
+      const observacoes = document.getElementById('edit-cli-obs')?.value.trim() || '';
+      const limiteFiado = parseFloat(document.getElementById('edit-cli-limite')?.value) || 200;
+
+      if (!nome) {
+        alert('Informe o nome do cliente.');
+        return;
+      }
+
+      if (!this.dadosBackup) this.dadosBackup = {};
+      if (!Array.isArray(this.dadosBackup.clientes)) this.dadosBackup.clientes = [];
+
+      let clientes = [...this.dadosBackup.clientes];
+
+      if (id) {
+        const idx = clientes.findIndex(c => String(c.id) === String(id));
+        if (idx !== -1) {
+          clientes[idx] = {
+            ...clientes[idx],
+            nome,
+            telefone,
+            cpfCnpj,
+            cep,
+            endereco,
+            numero,
+            bairro,
+            cidade,
+            complemento,
+            observacoes,
+            limiteFiado,
+            atualizadoEm: new Date().toISOString()
+          };
+        }
+      } else {
+        clientes.push({
+          id: 'CLI-' + Date.now().toString().slice(-6),
+          nome,
+          telefone,
+          cpfCnpj,
+          cep,
+          endereco,
+          numero,
+          bairro,
+          cidade,
+          complemento,
+          observacoes,
+          limiteFiado,
+          saldoDevedor: 0.00,
+          historico: [],
+          criadoEm: new Date().toISOString()
+        });
+      }
+
+      this.dadosBackup.clientes = clientes;
+      localStorage.setItem(`flowpdv_cache_${this.chaveLicenca}`, JSON.stringify(this.dadosBackup));
+
+      if (window.FirebaseDB && window.FirebaseDB.db) {
+        const { db, doc, setDoc } = window.FirebaseDB;
+        await setDoc(doc(db, 'backups_lojas', this.chaveLicenca), {
+          clientes,
+          atualizadoEm: new Date().toISOString()
+        }, { merge: true });
+      }
+
+      this.fecharModalSheet();
+      this.renderClientesMobile();
+      alert('✅ Cliente salvo com sucesso e sincronizado!');
+    } catch (err) {
+      console.error('[Clientes] Erro ao salvar:', err);
+      alert('❌ Erro ao salvar na nuvem: ' + err.message);
+    } finally {
+      if (btnSubmit) {
+        btnSubmit.disabled = false;
+        btnSubmit.innerHTML = '<span>💾 Salvar</span>';
+      }
+    }
+  },
+
+  async excluirClienteNuvemMobile(cliId) {
+    if (!this.dadosBackup) return;
+    const clientes = this.dadosBackup.clientes || [];
+    const cli = clientes.find(c => String(c.id) === String(cliId));
+    if (!cli) return;
+
+    if ((parseFloat(cli.saldoDevedor) || 0) > 0.05) {
+      alert(`Não é possível excluir ${cli.nome} pois há débito de R$ ${cli.saldoDevedor.toFixed(2)} em aberto!`);
+      return;
+    }
+
+    if (!confirm(`Tem certeza que deseja excluir o cliente "${cli.nome}"?`)) return;
+
+    try {
+      const novaLista = clientes.filter(c => String(c.id) !== String(cliId));
+      this.dadosBackup.clientes = novaLista;
+      localStorage.setItem(`flowpdv_cache_${this.chaveLicenca}`, JSON.stringify(this.dadosBackup));
+
+      if (window.FirebaseDB && window.FirebaseDB.db) {
+        const { db, doc, setDoc } = window.FirebaseDB;
+        await setDoc(doc(db, 'backups_lojas', this.chaveLicenca), {
+          clientes: novaLista,
+          atualizadoEm: new Date().toISOString()
+        }, { merge: true });
+      }
+
+      this.fecharModalSheet();
+      this.renderClientesMobile();
+      alert(`🗑️ Cliente "${cli.nome}" excluído com sucesso.`);
+    } catch (e) {
+      console.error('[Clientes] Erro ao excluir:', e);
+      alert('❌ Erro ao excluir na nuvem: ' + e.message);
+    }
+  },
+
+  abrirModalReceberFiadoMobile(cliId) {
+    const backup = this.dadosBackup || {};
+    const clientes = backup.clientes || [];
+    const cli = clientes.find(item => String(item.id) === String(cliId));
+    if (!cli || (parseFloat(cli.saldoDevedor) || 0) <= 0) return;
+
+    const saldo = parseFloat(cli.saldoDevedor) || 0;
+
+    const html = `
+      <form onsubmit="MobileApp.confirmarRecebimentoFiadoNuvemMobile(event)" style="display: flex; flex-direction: column; gap: 12px;">
+        <input type="hidden" id="rec-cli-id" value="${cli.id}">
+        
+        <div style="background: var(--bg-surface-2); padding: 14px; border-radius: 12px; display: flex; justify-content: space-between; align-items: center;">
+          <div>
+            <span style="font-size: 11px; color: var(--text-dim); text-transform: uppercase; font-weight: 800;">Cliente</span>
+            <strong style="display: block; font-size: 16px; color: var(--text-main);">${cli.nome}</strong>
+          </div>
+          <div style="text-align: right;">
+            <span style="font-size: 11px; color: var(--text-dim); text-transform: uppercase; font-weight: 800;">Dívida Total</span>
+            <strong style="display: block; font-size: 18px; font-family: 'JetBrains Mono'; color: #fbbf24;">${this.formatarMoeda(saldo)}</strong>
+          </div>
+        </div>
+
+        <div class="form-group-mobile" style="margin-bottom: 0;">
+          <label class="form-label-mobile">Valor a Receber (R$) *</label>
+          <input type="number" id="rec-cli-valor" class="input-mobile mono" step="0.01" min="0.01" max="${saldo}" value="${saldo.toFixed(2)}" style="font-size: 20px; font-weight: 900; text-align: center; color: var(--accent-green); height: 48px;" required>
+        </div>
+
+        <div class="form-group-mobile" style="margin-bottom: 0;">
+          <label class="form-label-mobile">Forma de Pagamento *</label>
+          <select id="rec-cli-forma" class="input-mobile" style="cursor: pointer; font-weight: 700;">
+            <option value="Dinheiro">💵 Dinheiro</option>
+            <option value="PIX" selected>⚡ PIX</option>
+            <option value="Cartão de Débito">💳 Cartão de Débito</option>
+            <option value="Cartão de Crédito">💳 Cartão de Crédito</option>
+          </select>
+        </div>
+
+        <button type="submit" id="btn-confirmar-rec-mobile" class="btn-login-submit" style="margin-top: 6px; height: 48px; font-size: 14.5px; background: linear-gradient(135deg, #10b981, #059669);">
+          <span>✅ Confirmar Recebimento</span>
+        </button>
+      </form>
+    `;
+
+    this.abrirModalSheet(`💵 Receber Fiado: ${cli.nome}`, html);
+  },
+
+  async confirmarRecebimentoFiadoNuvemMobile(e) {
+    e.preventDefault();
+    const btnSubmit = document.getElementById('btn-confirmar-rec-mobile');
+    if (btnSubmit) {
+      btnSubmit.disabled = true;
+      btnSubmit.innerHTML = '<span>⏳ Processando pagamento...</span>';
+    }
+
+    try {
+      const cliId = document.getElementById('rec-cli-id').value;
+      const valor = parseFloat(document.getElementById('rec-cli-valor').value) || 0;
+      const formaPagto = document.getElementById('rec-cli-forma').value || 'PIX';
+
+      if (valor <= 0) {
+        alert('Digite um valor válido maior que zero.');
+        return;
+      }
+
+      if (!this.dadosBackup) this.dadosBackup = {};
+      const clientes = this.dadosBackup.clientes || [];
+      const cli = clientes.find(c => String(c.id) === String(cliId));
+      if (!cli) return;
+
+      // Abater saldo
+      cli.saldoDevedor = Math.max(0, parseFloat((cli.saldoDevedor - valor).toFixed(2)));
+      cli.historico = cli.historico || [];
+      cli.historico.unshift({
+        data: new Date().toISOString(),
+        valor: valor,
+        tipo: 'pagamento',
+        formaPagamento: formaPagto,
+        descricao: `Pagamento recebido no Gestor Mobile via ${formaPagto}`
+      });
+
+      // Lançar no histórico de vendas do PDV
+      const venda = {
+        id: 'REC-MOB-' + Date.now().toString().slice(-5),
+        data: new Date().toISOString(),
+        itens: [{ id: 'FIADO-REC', nome: `Quitação Fiado: ${cli.nome}`, quantidade: 1, precoUnitario: valor }],
+        subtotal: valor,
+        desconto: 0,
+        total: valor,
+        formaPagamento: formaPagto,
+        valorPago: valor,
+        troco: 0,
+        operador: 'Gestor Mobile'
+      };
+
+      if (!Array.isArray(this.dadosBackup.vendas)) this.dadosBackup.vendas = [];
+      this.dadosBackup.vendas.unshift(venda);
+      this.dadosBackup.clientes = clientes;
+      localStorage.setItem(`flowpdv_cache_${this.chaveLicenca}`, JSON.stringify(this.dadosBackup));
+
+      if (window.FirebaseDB && window.FirebaseDB.db) {
+        const { db, doc, setDoc } = window.FirebaseDB;
+        await setDoc(doc(db, 'backups_lojas', this.chaveLicenca), {
+          clientes: clientes,
+          vendas: this.dadosBackup.vendas,
+          atualizadoEm: new Date().toISOString()
+        }, { merge: true });
+      }
+
+      this.fecharModalSheet();
+      this.renderClientesMobile();
+      this.renderResumoDashboard();
+      alert(`🎉 Pagamento de R$ ${valor.toFixed(2)} recebido com sucesso de ${cli.nome}!`);
+    } catch (err) {
+      console.error('[Recebimento] Erro:', err);
+      alert('❌ Erro ao registrar pagamento: ' + err.message);
+    } finally {
+      if (btnSubmit) {
+        btnSubmit.disabled = false;
+        btnSubmit.innerHTML = '<span>✅ Confirmar</span>';
+      }
+    }
   },
 
   abrirModalSheet(title, html) {

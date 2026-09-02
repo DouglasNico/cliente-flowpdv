@@ -327,8 +327,10 @@
           </div>
         </div>
 
-        <!-- SEÇÃO: FIADO / CADERNETA -->
+        <!-- SEÇÃO: FIADO & CLIENTES (CRM & DELIVERY) -->
         <div id="secao-fiado-clientes" style="display: none; flex-direction: column; gap: 12px;">
+          
+          <!-- Card de Resumo Financeiro de Fiado -->
           <div class="hero-metric-card glass-amber">
             <div class="hero-label">
               <span>📖 Total a Receber de Clientes</span>
@@ -339,8 +341,27 @@
             </div>
           </div>
 
+          <!-- Busca Rápida de Clientes -->
+          <div class="mobile-search-bar">
+            <span>🔍</span>
+            <input type="text" id="input-busca-clientes-mobile" class="mobile-search-input" placeholder="Buscar por nome, telefone, endereço ou doc..." oninput="MobileApp.filtrarClientesMobile()">
+          </div>
+
+          <!-- Filtros de Clientes & Botão Novo Cliente -->
+          <div style="display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap;">
+            <div class="filter-chips-row" id="chips-clientes-container" style="flex: 1; margin-bottom: 0;">
+              <button type="button" class="chip-btn active" id="chip-cli-todos" onclick="MobileApp.setFiltroClientesMobile('todos', this)">Todos</button>
+              <button type="button" class="chip-btn" id="chip-cli-devedores" onclick="MobileApp.setFiltroClientesMobile('devedores', this)">⚠️ Em Aberto</button>
+              <button type="button" class="chip-btn" id="chip-cli-delivery" onclick="MobileApp.setFiltroClientesMobile('delivery', this)">🛵 Delivery</button>
+              <button type="button" class="chip-btn" id="chip-cli-whats" onclick="MobileApp.setFiltroClientesMobile('whats', this)">🟢 WhatsApp</button>
+            </div>
+            <button type="button" class="btn-novo-colaborador" style="background: linear-gradient(135deg, #0284c7, #0369a1); white-space: nowrap;" onclick="MobileApp.abrirModalNovoClienteMobile()">
+              <span>➕ Novo Cliente</span>
+            </button>
+          </div>
+
           <div class="section-title-mobile">
-            <span>Clientes com Saldo Devedor</span>
+            <span>👥 Clientes Cadastrados</span>
             <span class="badge-pill-count" id="badge-total-devedores">0</span>
           </div>
 
@@ -352,21 +373,29 @@
       </div>
 
       <!-- ========================================================
-           ABA 4: CENTRAL DE GERÊNCIA (EQUIPE, AUDITORIA & MESAS)
+           ABA 4: CENTRAL DE GERÊNCIA (EQUIPE, AUDITORIA, MESAS, MÓDULOS & DRE)
            ======================================================== -->
       <div class="mobile-tab-view" id="tab-gerencia">
         
-        <!-- Sub-Navegação da Gerência -->
-        <div class="gerencia-subnav-row">
-          <button type="button" class="gerencia-subnav-btn active" id="btn-sub-ger-equipe" onclick="MobileApp.setSubAbaGerencia('equipe')">
-            <span>👥</span> <span>Equipe</span>
-          </button>
-          <button type="button" class="gerencia-subnav-btn" id="btn-sub-ger-auditoria" onclick="MobileApp.setSubAbaGerencia('auditoria')">
-            <span>🛡️</span> <span>Auditoria</span>
-          </button>
-          <button type="button" class="gerencia-subnav-btn" id="btn-sub-ger-mesas" onclick="MobileApp.setSubAbaGerencia('mesas')">
-            <span>🍽️</span> <span>Mesas & Cmd</span>
-          </button>
+        <!-- Sub-Navegação da Gerência com Carrossel Suave -->
+        <div class="filter-carousel-wrapper" style="margin-bottom: 8px;">
+          <div class="filter-chips-row" id="chips-subnav-gerencia">
+            <button type="button" class="chip-btn active" id="btn-sub-ger-equipe" onclick="MobileApp.setSubAbaGerencia('equipe')">
+              <span>👥</span> <span>Equipe</span>
+            </button>
+            <button type="button" class="chip-btn" id="btn-sub-ger-auditoria" onclick="MobileApp.setSubAbaGerencia('auditoria')">
+              <span>🛡️</span> <span>Auditoria</span>
+            </button>
+            <button type="button" class="chip-btn" id="btn-sub-ger-mesas" onclick="MobileApp.setSubAbaGerencia('mesas')">
+              <span>🍽️</span> <span>Mesas & Cmd</span>
+            </button>
+            <button type="button" class="chip-btn" id="btn-sub-ger-ajustes" onclick="MobileApp.setSubAbaGerencia('ajustes')">
+              <span>⚙️</span> <span>Ajustes & Módulos</span>
+            </button>
+            <button type="button" class="chip-btn" id="btn-sub-ger-dre" onclick="MobileApp.setSubAbaGerencia('dre')">
+              <span>📈</span> <span>DRE & Lucro</span>
+            </button>
+          </div>
         </div>
 
         <!-- SUB-SEÇÃO 1: EQUIPE & FUNCIONÁRIOS -->
@@ -392,7 +421,7 @@
               <span style="font-size: 24px;">🛡️</span>
               <div>
                 <strong style="font-size: 13.5px; color: #c084fc; display: block;">Auditoria da Loja</strong>
-                <span style="font-size: 11.5px; color: var(--text-muted);">Cortesias, sangrias, cancelamentos e fechamentos em tempo real.</span>
+                <span style="font-size: 11.5px; color: var(--text-muted);">Cortesias, sangrias, cancelamentos, produtos e fechamentos em tempo real.</span>
               </div>
             </div>
           </div>
@@ -409,6 +438,7 @@
               <button type="button" class="chip-btn" id="chip-aud-suprimento" onclick="MobileApp.setFiltroAuditoria('suprimento_caixa', this)">💵 Suprimentos</button>
               <button type="button" class="chip-btn" id="chip-aud-cancelamento" onclick="MobileApp.setFiltroAuditoria('cancelamento_venda', this)">🛑 Cancelamentos</button>
               <button type="button" class="chip-btn" id="chip-aud-ajuste" onclick="MobileApp.setFiltroAuditoria('ajuste_estoque', this)">📦 Ajuste Estoque</button>
+              <button type="button" class="chip-btn" id="chip-aud-clientes" onclick="MobileApp.setFiltroAuditoria('clientes', this)">👥 Clientes & Fiado</button>
               <button type="button" class="chip-btn" id="chip-aud-comandas" onclick="MobileApp.setFiltroAuditoria('comandas', this)">🍽️ Mesas</button>
               <button type="button" class="chip-btn" id="chip-aud-produtos" onclick="MobileApp.setFiltroAuditoria('produtos', this)">✨ Produtos</button>
             </div>
@@ -448,6 +478,51 @@
             <!-- Renderizado dinamicamente -->
           </div>
         </div>
+
+        <!-- SUB-SEÇÃO 4: AJUSTES & MÓDULOS DA LOJA -->
+        <div id="subsecao-gerencia-ajustes" style="display: none; flex-direction: column; gap: 12px;">
+          <!-- Card de Dados da Empresa -->
+          <div class="mobile-list-card" style="padding: 14px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+              <strong style="font-size: 14px; color: var(--text-main);">🏢 Perfil da Loja</strong>
+              <span class="badge-tag-sm cyan" id="badge-licenca-tipo">Licença Ativa</span>
+            </div>
+            <div id="gerencia-perfil-loja-info" style="font-size: 12.5px; color: var(--text-muted); display: flex; flex-direction: column; gap: 4px;">
+              <!-- Preenchido via JS -->
+            </div>
+          </div>
+
+          <!-- Módulos Opcionais Ativos -->
+          <div class="section-title-mobile">
+            <span>⚙️ Módulos & Recursos Ativos</span>
+          </div>
+          <div id="lista-gerencia-modulos-toggles" style="display: flex; flex-direction: column; gap: 8px;">
+            <!-- Renderizado dinamicamente via JS -->
+          </div>
+        </div>
+
+        <!-- SUB-SEÇÃO 5: DRE & LUCRATIVIDADE -->
+        <div id="subsecao-gerencia-dre" style="display: none; flex-direction: column; gap: 12px;">
+          <div class="hero-metric-card glass-primary">
+            <div class="hero-label">
+              <span>📈 Lucro Líquido Estimado (Mês)</span>
+            </div>
+            <span class="hero-value valor-sensivel" id="metric-dre-lucro-liquido" style="color: var(--accent-green);">R$ 0,00</span>
+            <div class="hero-stats-row">
+              <span>🎯 Margem Líquida: <strong id="metric-dre-margem-liq">0%</strong></span>
+            </div>
+          </div>
+
+          <div class="section-title-mobile">
+            <span>📊 Demonstrativo do Mês Atual</span>
+          </div>
+
+          <div id="lista-gerencia-dre-cards" style="display: flex; flex-direction: column; gap: 8px;">
+            <!-- Renderizado dinamicamente via JS -->
+          </div>
+        </div>
+
+      </div>
 
       </div>
 
