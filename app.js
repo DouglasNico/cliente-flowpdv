@@ -9,12 +9,211 @@ window.MobileApp = {
   dadosLoja: null,
   dadosBackup: null,
   dadosAuditoria: [],
+  dadosAuditoriaRaw: [],
   filtroEstoqueAtual: 'todos',
   filtroFinanceiroAtual: 'contas',
   filtroContasAtual: 'todos',
   subAbaGerenciaAtual: 'equipe',
   modoPrivacidadeAtivo: false,
   temaAtual: 'dark',
+  unsubAuditoriaRealtime: null,
+
+  limparSessaoInvalida(mensagem = '🔒 Sessão inválida. Faça login novamente.') {
+    if (this.timerInatividadeId) clearTimeout(this.timerInatividadeId);
+    localStorage.removeItem('flowpdv_mob_chave');
+    localStorage.removeItem('flowpdv_mob_pin');
+    localStorage.removeItem('flowpdv_mob_manter_conectado');
+    localStorage.removeItem('flowpdv_mob_sessao');
+    localStorage.removeItem('flowpdv_mob_cache_expiracao');
+
+    this.chaveLicenca = '';
+    this.pinGerente = '';
+    this.dadosLoja = null;
+    this.dadosBackup = null;
+
+    const app = document.getElementById('screen-app');
+    const login = document.getElementById('screen-login');
+    if (app) app.style.display = 'none';
+    if (login) login.style.display = 'flex';
+
+    const toastErro = document.getElementById('login-error-toast');
+    if (toastErro) {
+      toastErro.innerHTML = mensagem;
+      toastErro.style.display = 'block';
+    }
+  },
+
+  prepararBackupSegura(backup, chaveEsperada = this.chaveLicenca) {
+    if (!backup || typeof backup !== 'object') return null;
+
+    const copia = typeof structuredClone === 'function' ? structuredClone(backup) : JSON.parse(JSON.stringify(backup));
+    if (!copia.chaveLicenca) copia.chaveLicenca = chaveEsperada || '';
+
+    const chaveReal = String(copia.chaveLicenca || '').trim();
+    const chaveEsperadaNormalizada = String(chaveEsperada || '').trim();
+
+    if (chaveEsperadaNormalizada && chaveReal && chaveReal !== chaveEsperadaNormalizada) {
+      console.warn('[Tenant] backup rejeitado por chave incompatível.', { recebido: chaveReal, esperado: chaveEsperadaNormalizada });
+      return null;
+    }
+
+    return copia;
+  },
+
+  produtoComControleEstoque(produto) {
+    if (!produto) return false;
+    return produto.controlarEstoque !== false && produto.controlaEstoque !== false;
+  },
+
+  async validarSessaoSalva() {
+    const chave = localStorage.getItem('flowpdv_mob_chave');
+    const pin = localStorage.getItem('flowpdv_mob_pin');
+    const sessaoPersistida = localStorage.getItem('flowpdv_mob_sessao');
+
+    if (!chave || !pin) {
+      if (sessaoPersistida) localStorage.removeItem('flowpdv_mob_sessao');
+      const app = document.getElementById('screen-app');
+      const login = document.getElementById('screen-login');
+      if (app) app.style.display = 'none';
+      if (login) login.style.display = 'flex';
+      return;
+    }
+
+    try {
+      if (sessaoPersistida) {
+        const dadosSessao = JSON.parse(sessaoPersistida);
+        const ttlMs = 1000 * 60 * 60 * 12;
+        const expirou = Number(dadosSessao.expiresAt || 0) <= Date.now() || (dadosSessao.storedAt && Date.now() - Number(dadosSessao.storedAt) > ttlMs);
+        if (expirou || String(dadosSessao.chave || '').trim() !== String(chave || '').trim()) {
+          throw new Error('Sessão expirada ou inválida para este dispositivo.');
+        }
+      }
+    } catch (e) {
+      console.warn('[Sessão] Dados locais expirados:', e);
+      this.limparSessaoInvalida('🔒 Sessão salva expirada por segurança. Faça login novamente.');
+      return;
+    }
+
+    try {
+      if (!window.FirebaseDB || !window.FirebaseDB.db) {
+        throw new Error('Firebase não inicializado.');
+      }
+
+      const { db, doc, getDoc } = window.FirebaseDB;
+      const snapLic = await getDoc(doc(db, 'licencas', chave));
+
+      if (!snapLic.exists()) {
+        this.limparSessaoInvalida('🔒 Sessão inválida: licença não encontrada no sistema.');
+        return;
+      }
+
+      const licData = snapLic.data();
+      const status = String(licData.status || '').trim().toLowerCase();
+      if (status === 'bloqueado' || status === 'bloqueada') {
+        this.limparSessaoInvalida('🔒 Esta licença está bloqueada no Painel Central.');
+        return;
+      }
+
+      const pinCorreto = String(licData.pinGerente || licData.pinMestre || '').trim();
+      const pinDigitado = String(pin).trim();
+      if (!pinCorreto || pinDigitado !== pinCorreto) {
+        this.limparSessaoInvalida('🔒 PIN salvo da sessão é inválido. Faça login novamente.');
+        return;
+      }
+
+      this.chaveLicenca = chave;
+      this.pinGerente = pinDigitado;
+      this.dadosLoja = licData;
+      this.salvarSessaoLocal(chave, pinDigitado, true);
+
+      const cached = localStorage.getItem(`flowpdv_cache_${chave}`);
+      if (cached) {
+        try {
+          this.dadosBackup = JSON.parse(cached);
+          this.atualizarHeaderUI();
+          this.renderResumoDashboard();
+          this.renderEstoque();
+          this.renderFinanceiro();
+          this.renderGerencia();
+        } catch (e) {
+          console.warn('[Cache] Erro ao ler cache local:', e);
+        }
+      }
+
+      const loginEl = document.getElementById('screen-login');
+      const appEl = document.getElementById('screen-app');
+      if (loginEl) loginEl.style.display = 'none';
+      if (appEl) appEl.style.display = 'flex';
+
+      this.carregarDadosLoja();
+    } catch (err) {
+      console.warn('[Sessão] Revalidação falhou:', err);
+      this.limparSessaoInvalida('🔒 Sessão salva inválida ou indisponível. Faça login novamente.');
+    }
+  },
+
+  salvarSessaoLocal(chave, pin, lembrar = true) {
+    const ttlMs = 1000 * 60 * 60 * 12;
+    const payload = { chave: String(chave || '').trim(), pin: String(pin || '').trim(), storedAt: Date.now(), expiresAt: Date.now() + ttlMs };
+
+    if (!lembrar || !payload.chave || !payload.pin) {
+      localStorage.removeItem('flowpdv_mob_chave');
+      localStorage.removeItem('flowpdv_mob_pin');
+      localStorage.removeItem('flowpdv_mob_sessao');
+      return;
+    }
+
+    localStorage.setItem('flowpdv_mob_chave', payload.chave);
+    localStorage.setItem('flowpdv_mob_pin', payload.pin);
+    localStorage.setItem('flowpdv_mob_sessao', JSON.stringify(payload));
+    localStorage.setItem('flowpdv_mob_manter_conectado', 'true');
+  },
+
+  async exigirOperacaoAutorizada(mensagem = '⚠️ Operação administrativa indisponível para esta sessão.') {
+    if (!this.chaveLicenca) {
+      this.limparSessaoInvalida('🔒 Sessão inválida. Faça login novamente.');
+      return false;
+    }
+
+    const chaveLocal = localStorage.getItem('flowpdv_mob_chave');
+    const pinLocal = localStorage.getItem('flowpdv_mob_pin');
+    if (!chaveLocal || !pinLocal || String(chaveLocal).trim() !== String(this.chaveLicenca).trim()) {
+      this.limparSessaoInvalida('🔒 Sessão expirada ou não autorizada para esta licença.');
+      return false;
+    }
+
+    try {
+      if (!window.FirebaseDB || !window.FirebaseDB.db) {
+        throw new Error('Firebase não inicializado.');
+      }
+
+      const { db, doc, getDoc } = window.FirebaseDB;
+      const snapLic = await getDoc(doc(db, 'licencas', this.chaveLicenca));
+      if (!snapLic.exists()) {
+        this.limparSessaoInvalida('🔒 Licença não encontrada no sistema.');
+        return false;
+      }
+
+      const licData = snapLic.data();
+      const status = String(licData.status || '').trim().toLowerCase();
+      if (status === 'bloqueado' || status === 'bloqueada') {
+        this.limparSessaoInvalida('🔒 Esta licença está bloqueada no Painel Central.');
+        return false;
+      }
+
+      const pinCorreto = String(licData.pinGerente || licData.pinMestre || '').trim();
+      if (!pinCorreto || String(pinLocal).trim() !== pinCorreto) {
+        this.limparSessaoInvalida('🔒 PIN da sessão inválido para esta licença.');
+        return false;
+      }
+
+      return true;
+    } catch (err) {
+      console.error('[Segurança] Falha ao validar operação administrativa:', err);
+      alert(mensagem);
+      return false;
+    }
+  },
 
   // -------------------------------------------------------------
   // INICIALIZAÇÃO
@@ -88,38 +287,8 @@ window.MobileApp = {
     }
   },
 
-  verificarSessaoSalva() {
-    const chave = localStorage.getItem('flowpdv_mob_chave');
-    const pin = localStorage.getItem('flowpdv_mob_pin');
-
-    if (chave && pin) {
-      this.chaveLicenca = chave;
-      this.pinGerente = pin;
-
-      // ⚡ CARREGAMENTO INSTANTÂNEO (0ms): Exibe os dados do cache local imediatamente
-      const cached = localStorage.getItem(`flowpdv_cache_${chave}`);
-      if (cached) {
-        try {
-          this.dadosBackup = JSON.parse(cached);
-          this.atualizarHeaderUI();
-          this.renderResumoDashboard();
-          this.renderEstoque();
-          this.renderFinanceiro();
-          this.renderGerencia();
-        } catch (e) {
-          console.warn('[Cache] Erro ao ler cache local:', e);
-        }
-      }
-
-      document.getElementById('screen-login').style.display = 'none';
-      document.getElementById('screen-app').style.display = 'flex';
-
-      // Sincroniza dados frescos em segundo plano
-      this.carregarDadosLoja();
-    } else {
-      document.getElementById('screen-login').style.display = 'flex';
-      document.getElementById('screen-app').style.display = 'none';
-    }
+  async verificarSessaoSalva() {
+    await this.validarSessaoSalva();
   },
 
   // -------------------------------------------------------------
@@ -151,17 +320,19 @@ window.MobileApp = {
       }
 
       const licData = snapLic.data();
+      const status = String(licData.status || '').trim().toLowerCase();
 
       // Validação de Status
-      if (licData.status === 'bloqueado') {
+      if (status === 'bloqueado' || status === 'bloqueada') {
         throw new Error('Esta licença está bloqueada no Painel Central.');
       }
 
-      // Validação de PIN do Gerente / PIN Mestre
-      const pinCorreto = String(licData.pinGerente || licData.pinMestre || '1234').trim();
+      const pinCorreto = String(licData.pinGerente || licData.pinMestre || '').trim();
       const pinDigitado = String(pinInput).trim();
-
-      if (pinDigitado !== pinCorreto && pinDigitado !== '1234') {
+      if (!pinCorreto) {
+        throw new Error('PIN do Gerente não configurado para esta licença.');
+      }
+      if (pinDigitado !== pinCorreto) {
         throw new Error('PIN do Gerente incorreto.');
       }
 
@@ -171,11 +342,12 @@ window.MobileApp = {
       this.dadosLoja = licData;
 
       if (lembrar) {
-        localStorage.setItem('flowpdv_mob_chave', chaveInput);
-        localStorage.setItem('flowpdv_mob_pin', pinInput);
-        localStorage.setItem('flowpdv_mob_manter_conectado', 'true');
+        this.salvarSessaoLocal(chaveInput, pinInput, true);
       } else {
+        localStorage.removeItem('flowpdv_mob_chave');
+        localStorage.removeItem('flowpdv_mob_pin');
         localStorage.removeItem('flowpdv_mob_manter_conectado');
+        localStorage.removeItem('flowpdv_mob_sessao');
       }
 
       // Transição visual imediata para a tela principal
@@ -262,6 +434,7 @@ window.MobileApp = {
     if (this.timerInatividadeId) clearTimeout(this.timerInatividadeId);
     localStorage.removeItem('flowpdv_mob_chave');
     localStorage.removeItem('flowpdv_mob_pin');
+    localStorage.removeItem('flowpdv_mob_sessao');
     this.chaveLicenca = '';
     this.pinGerente = '';
     this.dadosLoja = null;
@@ -284,6 +457,7 @@ window.MobileApp = {
     localStorage.removeItem('flowpdv_mob_chave');
     localStorage.removeItem('flowpdv_mob_pin');
     localStorage.removeItem('flowpdv_mob_manter_conectado');
+    localStorage.removeItem('flowpdv_mob_sessao');
     this.chaveLicenca = '';
     this.pinGerente = '';
     this.dadosLoja = null;
@@ -342,7 +516,10 @@ window.MobileApp = {
       const { db, doc, onSnapshot } = window.FirebaseDB;
       this.unsubRealtime = onSnapshot(doc(db, 'backups_lojas', this.chaveLicenca), (snap) => {
         if (snap && snap.exists()) {
-          this.dadosBackup = snap.data();
+          const backupSegura = this.prepararBackupSegura(snap.data(), this.chaveLicenca);
+          if (!backupSegura) return;
+
+          this.dadosBackup = backupSegura;
           localStorage.setItem(`flowpdv_cache_${this.chaveLicenca}`, JSON.stringify(this.dadosBackup));
           this.atualizarHeaderUI();
           this.renderResumoDashboard();
@@ -357,9 +534,45 @@ window.MobileApp = {
     } catch(e) {
       console.warn('[MobileApp] Falha ao ligar listener realtime:', e);
     }
+
+    this.iniciarListenerAuditoriaTempoReal();
   },
 
-  dadosAuditoriaRaw: [],
+  iniciarListenerAuditoriaTempoReal() {
+    if (!this.chaveLicenca || !window.FirebaseDB || !window.FirebaseDB.onSnapshot) return;
+
+    if (this.unsubAuditoriaRealtime) {
+      this.unsubAuditoriaRealtime();
+      this.unsubAuditoriaRealtime = null;
+    }
+
+    try {
+      const { db, collection, query, where, onSnapshot, orderBy, limit } = window.FirebaseDB;
+      const q = query(
+        collection(db, 'auditoria_lojas'),
+        where('chaveLicenca', '==', this.chaveLicenca),
+        orderBy('criadoEm', 'desc'),
+        limit(100)
+      );
+
+      this.unsubAuditoriaRealtime = onSnapshot(q, (snap) => {
+        const logs = [];
+        snap.forEach((docSnap) => {
+          const data = docSnap.data();
+          if (!data || String(data.chaveLicenca || '').trim() !== String(this.chaveLicenca || '').trim()) return;
+          logs.push({ id: docSnap.id, ...data });
+        });
+
+        this.dadosAuditoriaRaw = logs;
+        this.processarLogsAuditoria(logs);
+        this.renderAuditoria();
+      }, (err) => {
+        console.warn('[MobileApp] Erro no listener de auditoria:', err);
+      });
+    } catch (e) {
+      console.warn('[MobileApp] Falha ao ligar listener de auditoria:', e);
+    }
+  },
 
   async carregarDadosLoja() {
     if (!this.chaveLicenca) return;
@@ -386,15 +599,21 @@ window.MobileApp = {
 
       // 2. Processa Backup da Loja (Produtos, Vendas, Turnos, Contas, etc)
       if (resBackup.status === 'fulfilled' && resBackup.value.exists()) {
-        this.dadosBackup = resBackup.value.data();
-        localStorage.setItem(`flowpdv_cache_${this.chaveLicenca}`, JSON.stringify(this.dadosBackup));
+        const backupSegura = this.prepararBackupSegura(resBackup.value.data(), this.chaveLicenca);
+        if (backupSegura) {
+          this.dadosBackup = backupSegura;
+          localStorage.setItem(`flowpdv_cache_${this.chaveLicenca}`, JSON.stringify(this.dadosBackup));
+        }
       } else if (!this.dadosBackup) {
         // Tenta buscar no backup legado apenas se necessário
         try {
           const snapLeg = await getDoc(doc(db, 'backups_adegas', this.chaveLicenca));
           if (snapLeg.exists()) {
-            this.dadosBackup = snapLeg.data();
-            localStorage.setItem(`flowpdv_cache_${this.chaveLicenca}`, JSON.stringify(this.dadosBackup));
+            const backupLegado = this.prepararBackupSegura(snapLeg.data(), this.chaveLicenca);
+            if (backupLegado) {
+              this.dadosBackup = backupLegado;
+              localStorage.setItem(`flowpdv_cache_${this.chaveLicenca}`, JSON.stringify(this.dadosBackup));
+            }
           }
         } catch(e) {}
       }
@@ -550,7 +769,7 @@ window.MobileApp = {
 
     // Alerta de Estoque Baixo
     const produtosBaixo = produtos.filter(p => {
-      if (p.controlaEstoque === false) return false;
+      if (!this.produtoComControleEstoque(p)) return false;
       const est = parseFloat(p.estoque) || 0;
       const min = parseFloat(p.estoqueMinimo) || 5;
       return est <= min;
@@ -844,7 +1063,7 @@ window.MobileApp = {
       const min = parseFloat(p.estoqueMinimo) || 5;
 
       if (this.filtroEstoqueAtual === 'baixo') {
-        return p.controlaEstoque !== false && est <= min;
+        return this.produtoComControleEstoque(p) && est <= min;
       } else if (isValidadeAtivo && this.filtroEstoqueAtual === 'vencidos') {
         if (!p.dataValidade) return false;
         const diff = Math.ceil((new Date(p.dataValidade + 'T00:00:00') - hoje) / (1000 * 60 * 60 * 24));
@@ -858,7 +1077,7 @@ window.MobileApp = {
         const diff = Math.ceil((new Date(p.dataValidade + 'T00:00:00') - hoje) / (1000 * 60 * 60 * 24));
         return diff >= 0 && diff <= 30;
       } else if (this.filtroEstoqueAtual === 'compras') {
-        return p.controlaEstoque !== false && est < min;
+        return this.produtoComControleEstoque(p) && est < min;
       }
 
       return true;
@@ -882,7 +1101,7 @@ window.MobileApp = {
       const min = parseFloat(p.estoqueMinimo) || 5;
 
       let badgeEstoque = '';
-      if (p.controlaEstoque === false) {
+      if (!this.produtoComControleEstoque(p)) {
         badgeEstoque = `<span class="badge-tag-sm blue">♾️ Serviço</span>`;
       } else if (estoque <= 0) {
         badgeEstoque = `<span class="badge-tag-sm zero">🚨 Esgotado</span>`;
@@ -996,6 +1215,8 @@ window.MobileApp = {
 
   async salvarValidadeMobile() {
     if (!this.produtoValidadeMobileId) return;
+    const autorizado = await this.exigirOperacaoAutorizada('⚠️ Não foi possível alterar a validade: sessão inválida.');
+    if (!autorizado) return;
     const inputVal = document.getElementById('input-mobile-data-validade');
     const novaData = inputVal?.value || '';
 
@@ -1430,6 +1651,9 @@ window.MobileApp = {
   },
 
   async toggleModuloLojaNuvem(moduloKey, novoStatus) {
+    const autorizado = await this.exigirOperacaoAutorizada('⚠️ Não foi possível alterar módulo da loja: sessão inválida.');
+    if (!autorizado) return;
+
     if (!this.dadosBackup) this.dadosBackup = {};
     if (!this.dadosBackup.config) this.dadosBackup.config = {};
     if (!this.dadosBackup.config.modulos) this.dadosBackup.config.modulos = {};
@@ -1770,6 +1994,9 @@ window.MobileApp = {
 
   async salvarFuncionarioNuvem(e) {
     e.preventDefault();
+    const autorizado = await this.exigirOperacaoAutorizada('⚠️ Não foi possível salvar o colaborador: sessão inválida.');
+    if (!autorizado) return;
+
     const btnSubmit = document.getElementById('btn-salvar-func-modal');
     if (btnSubmit) {
       btnSubmit.disabled = true;
@@ -2689,6 +2916,9 @@ window.MobileApp = {
 
   async salvarClienteNuvemMobile(e) {
     e.preventDefault();
+    const autorizado = await this.exigirOperacaoAutorizada('⚠️ Não foi possível salvar o cliente: sessão inválida.');
+    if (!autorizado) return;
+
     const btnSubmit = document.getElementById('btn-salvar-cli-mobile');
     if (btnSubmit) {
       btnSubmit.disabled = true;
@@ -2784,6 +3014,9 @@ window.MobileApp = {
   },
 
   async excluirClienteNuvemMobile(cliId) {
+    const autorizado = await this.exigirOperacaoAutorizada('⚠️ Não foi possível excluir o cliente: sessão inválida.');
+    if (!autorizado) return;
+
     if (!this.dadosBackup) return;
     const clientes = this.dadosBackup.clientes || [];
     const cli = clientes.find(c => String(c.id) === String(cliId));
@@ -2867,6 +3100,9 @@ window.MobileApp = {
 
   async confirmarRecebimentoFiadoNuvemMobile(e) {
     e.preventDefault();
+    const autorizado = await this.exigirOperacaoAutorizada('⚠️ Não foi possível confirmar recebimento: sessão inválida.');
+    if (!autorizado) return;
+
     const btnSubmit = document.getElementById('btn-confirmar-rec-mobile');
     if (btnSubmit) {
       btnSubmit.disabled = true;
