@@ -2029,6 +2029,22 @@ body {
   text-align: right;
 }
 
+.flow-item-side--row {
+  flex-direction: row;
+  align-items: center;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 6px;
+  max-width: 58%;
+}
+
+.badge-sep {
+  color: #64748b;
+  font-weight: 800;
+  font-size: 12px;
+  line-height: 1;
+}
+
 .flow-item-value {
   font-family: 'JetBrains Mono', monospace;
   font-size: 14px;
@@ -2273,4 +2289,28 @@ body {
   font-weight: 800;
   cursor: pointer;
   white-space: nowrap;
+}
+
+.section-header-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  min-height: 40px;
+}
+
+.section-header-row .section-title-mobile {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.section-header-row .btn-novo-colaborador {
+  flex-shrink: 0;
+  height: 36px;
+  padding: 0 12px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }

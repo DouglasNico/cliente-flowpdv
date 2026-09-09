@@ -1920,20 +1920,26 @@ window.MobileApp = {
       const turno = this.obterTurnoAtivoDoTerminal(turnosAtivos, t.id);
       const caixaAberto = this.isTurnoCaixaAberto(turno, backup);
       const ultimoMs = t.ultimoAcesso ? new Date(t.ultimoAcesso).getTime() : 0;
-      const vistoRecente = ultimoMs > 0 && (Date.now() - ultimoMs) < (1000 * 60 * 60 * 12);
+      // Online = app visto nos últimos 10 min (não confundir com caixa aberto)
+      const ONLINE_MS = 1000 * 60 * 10;
+      const isOnline = ultimoMs > 0 && (Date.now() - ultimoMs) < ONLINE_MS;
       const ultimo = t.ultimoAcesso ? new Date(t.ultimoAcesso).toLocaleString('pt-BR') : '—';
       const operador = (caixaAberto && turno && turno.operador) ? turno.operador : (t.usuario || turno?.operador || '—');
       const host = t.hostname || 'Computador';
 
-      let badgeStatus = `<span class="badge-tag-sm blue">Fechado</span>`;
-      let statusHint = 'Caixa fechado';
-      if (caixaAberto) {
-        badgeStatus = `<span class="badge-tag-sm ok">Aberto</span>`;
-        statusHint = `Caixa aberto${turno?.operador ? ` · ${turno.operador}` : ''}`;
-      } else if (vistoRecente) {
-        badgeStatus = `<span class="badge-tag-sm cyan">Online</span>`;
-        statusHint = 'App recente · caixa fechado';
+      const badges = [];
+      if (isOnline) {
+        badges.push(`<span class="badge-tag-sm ok">Online</span>`);
       }
+      if (caixaAberto) {
+        badges.push(`<span class="badge-tag-sm ok">Aberto</span>`);
+      } else {
+        badges.push(`<span class="badge-tag-sm zero">Fechado</span>`);
+      }
+
+      let statusHint = caixaAberto
+        ? `Caixa aberto${turno?.operador ? ` · ${turno.operador}` : ''}`
+        : (isOnline ? 'App online · caixa fechado' : 'Caixa fechado');
 
       return `
         <div class="flow-item-card terminal-card">
@@ -1945,8 +1951,8 @@ window.MobileApp = {
                 <span class="flow-item-meta">👤 ${operador}</span>
               </div>
             </div>
-            <div class="flow-item-side">
-              ${badgeStatus}
+            <div class="flow-item-side flow-item-side--row">
+              ${badges.join('<span class="badge-sep">·</span>')}
             </div>
           </div>
           <div class="terminal-card-footer">
@@ -2448,12 +2454,15 @@ window.MobileApp = {
     container.innerHTML = funcionarios.map(func => {
       const cargo = (func.cargo || func.funcao || 'operador').toLowerCase();
       const isAdmin = cargo.includes('admin') || cargo.includes('gerente') || cargo.includes('superadmin') || cargo.includes('dono');
-      const badgeCargo = isAdmin 
-        ? `<span class="badge-tag-sm purple">👑 ${func.cargo === 'gerente' ? 'Gerente' : (func.cargo || 'Gerente')}</span>`
-        : `<span class="badge-tag-sm blue">👤 ${func.cargo || 'Operador'}</span>`;
+      const cargoLabel = isAdmin
+        ? (func.cargo === 'gerente' || !func.cargo ? 'Gerente' : (func.cargo || 'Gerente'))
+        : (func.cargo || 'Operador');
+      const badgeCargo = isAdmin
+        ? `<span class="badge-tag-sm purple">👑 ${cargoLabel}</span>`
+        : `<span class="badge-tag-sm blue">👤 ${cargoLabel}</span>`;
 
       const isAtivo = func.ativo !== false;
-      const idFunc = func.id || func.usuario || func.login || func.nome;
+      const idFunc = String(func.id || func.usuario || func.login || func.nome || '').replace(/'/g, "\\'");
 
       return `
         <div class="flow-item-card clickable" onclick="MobileApp.abrirModalEditarFuncionario('${idFunc}')">
@@ -2464,8 +2473,9 @@ window.MobileApp = {
               <span class="flow-item-meta">🔑 ${func.login || func.usuario || func.nome}</span>
             </div>
           </div>
-          <div class="flow-item-side">
+          <div class="flow-item-side flow-item-side--row">
             ${badgeCargo}
+            <span class="badge-sep">·</span>
             <span class="badge-tag-sm ${isAtivo ? 'ok' : 'zero'}">${isAtivo ? 'Ativo' : 'Inativo'}</span>
           </div>
         </div>
