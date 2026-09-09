@@ -605,7 +605,8 @@
   <!-- Firebase JS SDK v11 -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.4.0/firebase-app.js";
-    import { getFirestore, doc, getDoc, setDoc, collection, query, where, orderBy, limit, getDocs, onSnapshot } from "https://www.gstatic.com/firebasejs/11.4.0/firebase-firestore.js";
+    import { getFirestore, doc, getDoc, setDoc, deleteDoc, deleteField, collection, query, where, orderBy, limit, getDocs, onSnapshot } from "https://www.gstatic.com/firebasejs/11.4.0/firebase-firestore.js";
+    import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/11.4.0/firebase-auth.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyBn1tl0IBQoWZBmunYtRSb-i74Yhe5OAFg",
@@ -619,8 +620,130 @@
 
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
+    const auth = getAuth(app);
 
-    window.FirebaseDB = { db, doc, getDoc, setDoc, collection, query, where, orderBy, limit, getDocs, onSnapshot };
+    window.FirebaseDB = { db, doc, getDoc, setDoc, deleteDoc, deleteField, collection, query, where, orderBy, limit, getDocs, onSnapshot };
+
+    // Listas grandes do PDV moram na subcoleção `partes` (limite de 1 MiB por
+    // documento). O gestor precisa saber montar e regravar essas partes.
+    // Precisa bater exatamente com o cloud-sync.js do PDV: mesmos tamanhos de
+    // lote e mesma ordem de gravação, senão os dois lados se atropelam.
+    const PARTES = {
+      produtos: { lote: 300, inverter: false },
+      vendas: { lote: 200, inverter: true },
+      clientes: { lote: 400, inverter: false },
+      turnosHistorico: { lote: 100, inverter: true }
+    };
+
+    // Conta de máquina da loja: precisa ser idêntica à do PDV (firebase-config.js),
+    // porque é o e-mail dela que as regras do Firestore conferem.
+    const DOMINIO_LOJA = "pdv.flowpdv.com.br";
+    const SAL_ACESSO = "flowpdv-2026-acesso-loja";
+
+    let lojaAutenticada = "";
+
+    async function entrarComoLoja(chave) {
+      const alvo = String(chave || "").trim().toUpperCase();
+      if (!alvo) return false;
+      if (lojaAutenticada === alvo && auth.currentUser) return true;
+
+      const email = `loja_${alvo.toLowerCase()}@${DOMINIO_LOJA}`;
+      const senha = `${alvo}.${SAL_ACESSO}`;
+
+      try {
+        await signInWithEmailAndPassword(auth, email, senha);
+      } catch (e) {
+        const codigo = (e && e.code) || "";
+        const podeCriar = codigo === "auth/user-not-found"
+          || codigo === "auth/invalid-credential"
+          || codigo === "auth/invalid-login-credentials";
+        if (!podeCriar) throw e;
+
+        try {
+          await createUserWithEmailAndPassword(auth, email, senha);
+        } catch (eCriacao) {
+          if ((eCriacao && eCriacao.code) !== "auth/email-already-in-use") throw eCriacao;
+          await signInWithEmailAndPassword(auth, email, senha);
+        }
+      }
+
+      lojaAutenticada = alvo;
+      return true;
+    }
+
+    async function sairDaLoja() {
+      lojaAutenticada = "";
+      try { await signOut(auth); } catch (e) {}
+    }
+
+    async function lerParte(chave, nome, total) {
+      const qtd = parseInt(total, 10) || 0;
+      if (qtd <= 0) return [];
+      const snaps = await Promise.all(
+        Array.from({ length: qtd }, (_, i) =>
+          getDoc(doc(db, "backups_lojas", chave, "partes", `${nome}_${i}`)).catch(() => null))
+      );
+      const itens = [];
+      snaps.forEach(snap => {
+        if (!snap || !snap.exists()) return;
+        const dados = snap.data() || {};
+        if (Array.isArray(dados.itens)) itens.push(...dados.itens);
+      });
+      return (PARTES[nome] && PARTES[nome].inverter) ? itens.reverse() : itens;
+    }
+
+    async function completarPartes(chave, dados) {
+      if (!dados || !dados.partes) return dados;
+      const manifesto = dados.partes || {};
+      const nomes = Object.keys(PARTES).filter(nome => manifesto[nome] !== undefined);
+      const listas = await Promise.all(nomes.map(nome => lerParte(chave, nome, manifesto[nome])));
+      const completo = { ...dados };
+      nomes.forEach((nome, i) => { completo[nome] = listas[i]; });
+      return completo;
+    }
+
+    async function gravarLista(chave, nome, lista, manifestoAtual) {
+      const config = PARTES[nome] || { lote: 200, inverter: false };
+      const base = Array.isArray(lista) ? lista : [];
+      const itens = config.inverter ? [...base].reverse() : base;
+      const lotes = [];
+      for (let i = 0; i < itens.length; i += config.lote) lotes.push(itens.slice(i, i + config.lote));
+
+      const atualizadoEm = new Date().toISOString();
+      await Promise.all(lotes.map((parte, indice) => setDoc(
+        doc(db, "backups_lojas", chave, "partes", `${nome}_${indice}`),
+        { nome, indice, total: lotes.length, itens: parte, atualizadoEm }
+      )));
+
+      const anterior = parseInt((manifestoAtual || {})[nome], 10) || 0;
+      const remocoes = [];
+      for (let i = lotes.length; i < anterior; i++) {
+        remocoes.push(deleteDoc(doc(db, "backups_lojas", chave, "partes", `${nome}_${i}`)).catch(() => {}));
+      }
+      await Promise.all(remocoes);
+
+      return lotes.length;
+    }
+
+    /** Grava um patch no backup mandando cada lista grande para a sua parte. */
+    async function salvarBackup(chave, patch, manifestoAtual) {
+      const envio = { ...(patch || {}) };
+      const manifesto = {};
+
+      for (const nome of Object.keys(PARTES)) {
+        if (!Array.isArray(envio[nome])) continue;
+        manifesto[nome] = await gravarLista(chave, nome, envio[nome], manifestoAtual);
+        envio[nome] = deleteField();
+      }
+
+      if (Object.keys(manifesto).length > 0) envio.partes = manifesto;
+      envio.atualizadoEm = envio.atualizadoEm || new Date().toISOString();
+
+      await setDoc(doc(db, "backups_lojas", chave), envio, { merge: true });
+      return manifesto;
+    }
+
+    window.FlowNuvem = { entrarComoLoja, sairDaLoja, completarPartes, salvarBackup, PARTES };
 
     if (window.MobileApp && typeof window.MobileApp.init === 'function') {
       window.MobileApp.init();

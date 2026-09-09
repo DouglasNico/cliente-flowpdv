@@ -20,6 +20,9 @@ window.MobileApp = {
 
   limparSessaoInvalida(mensagem = '🔒 Sessão inválida. Faça login novamente.') {
     if (this.timerInatividadeId) clearTimeout(this.timerInatividadeId);
+    if (window.FlowNuvem && typeof window.FlowNuvem.sairDaLoja === 'function') {
+      window.FlowNuvem.sairDaLoja();
+    }
     localStorage.removeItem('flowpdv_mob_chave');
     localStorage.removeItem('flowpdv_mob_pin');
     localStorage.removeItem('flowpdv_mob_manter_conectado');
@@ -40,6 +43,39 @@ window.MobileApp = {
     if (toastErro) {
       toastErro.innerHTML = mensagem;
       toastErro.style.display = 'block';
+    }
+  },
+
+  async garantirSessaoNuvem(chave = this.chaveLicenca) {
+    if (!window.FlowNuvem || typeof window.FlowNuvem.entrarComoLoja !== 'function') return false;
+    try {
+      return await window.FlowNuvem.entrarComoLoja(chave);
+    } catch (e) {
+      console.warn('[Sessão] Falha ao autenticar a loja na nuvem:', e);
+      throw new Error(e && e.message ? e.message : 'Não foi possível autenticar esta loja.');
+    }
+  },
+
+  /** Junta o resumo com as partes (produtos, vendas, clientes, turnos). */
+  async montarBackupCompleto(dados, chave = this.chaveLicenca) {
+    const segura = this.prepararBackupSegura(dados, chave);
+    if (!segura) return null;
+    if (!window.FlowNuvem || typeof window.FlowNuvem.completarPartes !== 'function') return segura;
+    try {
+      return await window.FlowNuvem.completarPartes(chave, segura);
+    } catch (e) {
+      console.warn('[Backup] Falha ao carregar as partes do backup:', e);
+      return segura;
+    }
+  },
+
+  /** Grava um patch no backup da loja respeitando as partes. */
+  async salvarNoBackup(patch) {
+    if (!this.chaveLicenca || !window.FlowNuvem || typeof window.FlowNuvem.salvarBackup !== 'function') return;
+    const manifesto = (this.dadosBackup && this.dadosBackup.partes) || {};
+    const novoManifesto = await window.FlowNuvem.salvarBackup(this.chaveLicenca, patch, manifesto);
+    if (this.dadosBackup) {
+      this.dadosBackup.partes = { ...manifesto, ...(novoManifesto || {}) };
     }
   },
 
@@ -98,6 +134,8 @@ window.MobileApp = {
       if (!window.FirebaseDB || !window.FirebaseDB.db) {
         throw new Error('Firebase não inicializado.');
       }
+
+      await this.garantirSessaoNuvem(chave);
 
       const { db, doc, getDoc } = window.FirebaseDB;
       const snapLic = await getDoc(doc(db, 'licencas', chave));
@@ -186,6 +224,8 @@ window.MobileApp = {
       if (!window.FirebaseDB || !window.FirebaseDB.db) {
         throw new Error('Firebase não inicializado.');
       }
+
+      await this.garantirSessaoNuvem(this.chaveLicenca);
 
       const { db, doc, getDoc } = window.FirebaseDB;
       const snapLic = await getDoc(doc(db, 'licencas', this.chaveLicenca));
@@ -310,6 +350,8 @@ window.MobileApp = {
       if (!window.FirebaseDB || !window.FirebaseDB.db) {
         throw new Error('Firebase não inicializado. Verifique sua conexão.');
       }
+
+      await this.garantirSessaoNuvem(chaveInput);
 
       const { db, doc, getDoc } = window.FirebaseDB;
       const refLic = doc(db, 'licencas', chaveInput);
@@ -453,6 +495,9 @@ window.MobileApp = {
   fazerLogout(silencioso = false) {
     if (!silencioso && !confirm('Deseja sair do aplicativo?')) return;
     if (this.timerInatividadeId) clearTimeout(this.timerInatividadeId);
+    if (window.FlowNuvem && typeof window.FlowNuvem.sairDaLoja === 'function') {
+      window.FlowNuvem.sairDaLoja();
+    }
 
     localStorage.removeItem('flowpdv_mob_chave');
     localStorage.removeItem('flowpdv_mob_pin');
@@ -514,9 +559,9 @@ window.MobileApp = {
 
     try {
       const { db, doc, onSnapshot } = window.FirebaseDB;
-      this.unsubRealtime = onSnapshot(doc(db, 'backups_lojas', this.chaveLicenca), (snap) => {
+      this.unsubRealtime = onSnapshot(doc(db, 'backups_lojas', this.chaveLicenca), async (snap) => {
         if (snap && snap.exists()) {
-          const backupSegura = this.prepararBackupSegura(snap.data(), this.chaveLicenca);
+          const backupSegura = await this.montarBackupCompleto(snap.data(), this.chaveLicenca);
           if (!backupSegura) return;
 
           this.dadosBackup = backupSegura;
@@ -599,7 +644,7 @@ window.MobileApp = {
 
       // 2. Processa Backup da Loja (Produtos, Vendas, Turnos, Contas, etc)
       if (resBackup.status === 'fulfilled' && resBackup.value.exists()) {
-        const backupSegura = this.prepararBackupSegura(resBackup.value.data(), this.chaveLicenca);
+        const backupSegura = await this.montarBackupCompleto(resBackup.value.data(), this.chaveLicenca);
         if (backupSegura) {
           this.dadosBackup = backupSegura;
           localStorage.setItem(`flowpdv_cache_${this.chaveLicenca}`, JSON.stringify(this.dadosBackup));
@@ -1231,14 +1276,11 @@ window.MobileApp = {
       this.renderEstoque();
       this.fecharModalValidade();
 
-      // Sincronizar na Nuvem Firebase
-      if (this.chaveLicenca && window.FirebaseDB && window.FirebaseDB.setDoc) {
-        try {
-          const { db, doc, setDoc } = window.FirebaseDB;
-          await setDoc(doc(db, 'backups_lojas', this.chaveLicenca), this.dadosBackup, { merge: true });
-        } catch(e) {
-          console.warn('[MobileApp] Erro ao sincronizar validade na nuvem:', e);
-        }
+      // Sincronizar na Nuvem Firebase (só a lista de produtos, nunca o backup inteiro)
+      try {
+        await this.salvarNoBackup({ produtos });
+      } catch(e) {
+        console.warn('[MobileApp] Erro ao sincronizar validade na nuvem:', e);
       }
     }
   },
@@ -1670,15 +1712,18 @@ window.MobileApp = {
     if (window.FirebaseDB && window.FirebaseDB.db) {
       try {
         const { db, doc, setDoc } = window.FirebaseDB;
-        await setDoc(doc(db, 'backups_lojas', this.chaveLicenca), {
-          config: this.dadosBackup.config,
-          atualizadoEm: new Date().toISOString()
-        }, { merge: true });
-        
-        // Também atualiza na coleção de licenças se existir
-        await setDoc(doc(db, 'licencas', this.chaveLicenca), {
-          modulos: { [moduloKey]: novoStatus }
-        }, { merge: true });
+        await this.salvarNoBackup({ config: this.dadosBackup.config });
+
+        // Espelha na licença quando permitido; se as regras recusarem, o que
+        // vale para o PDV continua sendo a config acima.
+        try {
+          await setDoc(doc(db, 'licencas', this.chaveLicenca), {
+            modulos: { [moduloKey]: novoStatus },
+            atualizadoEm: new Date().toISOString()
+          }, { merge: true });
+        } catch (eLic) {
+          console.warn('[Modulos] Licença não aceitou o espelhamento:', eLic);
+        }
 
         alert(`✅ Módulo "${moduloKey}" atualizado com sucesso e sincronizado com o PDV!`);
       } catch (e) {
@@ -2075,13 +2120,7 @@ window.MobileApp = {
       localStorage.setItem(`flowpdv_cache_${this.chaveLicenca}`, JSON.stringify(this.dadosBackup));
 
       // Sincronizar diretamente no Firestore com merge seguro
-      if (window.FirebaseDB && window.FirebaseDB.db) {
-        const { db, doc, setDoc } = window.FirebaseDB;
-        const refDoc = doc(db, 'backups_lojas', this.chaveLicenca);
-        if (setDoc) {
-          await setDoc(refDoc, { usuarios, funcionarios: usuarios, atualizadoEm: new Date().toISOString() }, { merge: true });
-        }
-      }
+      await this.salvarNoBackup({ usuarios, funcionarios: usuarios });
 
       this.fecharModalSheet();
       this.renderGerenciaFuncionarios();
@@ -2109,13 +2148,7 @@ window.MobileApp = {
       this.dadosBackup.funcionarios = usuarios;
       localStorage.setItem(`flowpdv_cache_${this.chaveLicenca}`, JSON.stringify(this.dadosBackup));
 
-      if (window.FirebaseDB && window.FirebaseDB.db) {
-        const { db, doc, setDoc } = window.FirebaseDB;
-        const refDoc = doc(db, 'backups_lojas', this.chaveLicenca);
-        if (setDoc) {
-          await setDoc(refDoc, { usuarios, funcionarios: usuarios, atualizadoEm: new Date().toISOString() }, { merge: true });
-        }
-      }
+      await this.salvarNoBackup({ usuarios, funcionarios: usuarios });
 
       this.fecharModalSheet();
       this.renderGerenciaFuncionarios();
@@ -2991,13 +3024,7 @@ window.MobileApp = {
       this.dadosBackup.clientes = clientes;
       localStorage.setItem(`flowpdv_cache_${this.chaveLicenca}`, JSON.stringify(this.dadosBackup));
 
-      if (window.FirebaseDB && window.FirebaseDB.db) {
-        const { db, doc, setDoc } = window.FirebaseDB;
-        await setDoc(doc(db, 'backups_lojas', this.chaveLicenca), {
-          clientes,
-          atualizadoEm: new Date().toISOString()
-        }, { merge: true });
-      }
+      await this.salvarNoBackup({ clientes });
 
       this.fecharModalSheet();
       this.renderClientesMobile();
@@ -3034,13 +3061,7 @@ window.MobileApp = {
       this.dadosBackup.clientes = novaLista;
       localStorage.setItem(`flowpdv_cache_${this.chaveLicenca}`, JSON.stringify(this.dadosBackup));
 
-      if (window.FirebaseDB && window.FirebaseDB.db) {
-        const { db, doc, setDoc } = window.FirebaseDB;
-        await setDoc(doc(db, 'backups_lojas', this.chaveLicenca), {
-          clientes: novaLista,
-          atualizadoEm: new Date().toISOString()
-        }, { merge: true });
-      }
+      await this.salvarNoBackup({ clientes: novaLista });
 
       this.fecharModalSheet();
       this.renderClientesMobile();
@@ -3154,14 +3175,7 @@ window.MobileApp = {
       this.dadosBackup.clientes = clientes;
       localStorage.setItem(`flowpdv_cache_${this.chaveLicenca}`, JSON.stringify(this.dadosBackup));
 
-      if (window.FirebaseDB && window.FirebaseDB.db) {
-        const { db, doc, setDoc } = window.FirebaseDB;
-        await setDoc(doc(db, 'backups_lojas', this.chaveLicenca), {
-          clientes: clientes,
-          vendas: this.dadosBackup.vendas,
-          atualizadoEm: new Date().toISOString()
-        }, { merge: true });
-      }
+      await this.salvarNoBackup({ clientes, vendas: this.dadosBackup.vendas });
 
       this.fecharModalSheet();
       this.renderClientesMobile();
