@@ -744,7 +744,13 @@ window.MobileApp = {
     }
 
     // 🏦 TOTAL EM CAIXA ATUAL (Suporta 1 terminal ou múltiplos PDVs simultâneos)
-    const turnosAbertos = this.listarTurnosCaixaAbertos(backup).map(x => x.turno);
+    const idsTerminaisLicenca = (Array.isArray(this.dadosLoja?.terminaisAtivos) ? this.dadosLoja.terminaisAtivos : [])
+      .map(t => (typeof t === 'string' ? t : t?.id))
+      .filter(Boolean);
+    const turnosAbertos = this.listarTurnosCaixaAbertos(
+      backup,
+      idsTerminaisLicenca.length ? { terminalIds: idsTerminaisLicenca } : {}
+    ).map(x => x.turno);
 
     let gavetaCaixa = 0;
     let labelCaixa = 'Dinheiro em caixa / turno';
@@ -1821,23 +1827,44 @@ window.MobileApp = {
   },
 
   /** Turno conta como caixa aberto só com status explícito aberto (não basta ter dataAbertura). */
-  isTurnoCaixaAberto(turno) {
+  isTurnoCaixaAberto(turno, backup = this.dadosBackup || {}) {
     if (!turno || typeof turno !== 'object') return false;
     if (turno.dataFechamento) return false;
+
     const status = String(turno.status || '').toLowerCase().trim();
     if (status === 'fechado' || status === 'closed' || status === 'encerrado') return false;
+
+    // Se o mesmo turno já foi arquivado no histórico, trata como fechado (lixo em turnosAtivos).
+    const turnoId = turno.id != null ? String(turno.id) : '';
+    if (turnoId) {
+      const hist = Array.isArray(backup.turnosHistorico) ? backup.turnosHistorico : [];
+      const arquivado = hist.find(t => t && String(t.id) === turnoId);
+      if (arquivado && (arquivado.dataFechamento || ['fechado', 'closed', 'encerrado'].includes(String(arquivado.status || '').toLowerCase()))) {
+        return false;
+      }
+    }
+
     return status === 'aberto' || status === 'open';
   },
 
-  listarTurnosCaixaAbertos(backup = this.dadosBackup || {}) {
+  listarTurnosCaixaAbertos(backup = this.dadosBackup || {}, opts = {}) {
     const abertos = [];
+    const vistos = new Set();
     const mapa = (backup.turnosAtivos && typeof backup.turnosAtivos === 'object') ? backup.turnosAtivos : {};
+    const filtrarIds = Array.isArray(opts.terminalIds) && opts.terminalIds.length
+      ? new Set(opts.terminalIds.map(id => String(id).toLowerCase()))
+      : null;
+
     Object.entries(mapa).forEach(([deviceId, turno]) => {
-      if (this.isTurnoCaixaAberto(turno)) {
-        abertos.push({ deviceId, turno });
-      }
+      if (filtrarIds && !filtrarIds.has(String(deviceId).toLowerCase())) return;
+      if (!this.isTurnoCaixaAberto(turno, backup)) return;
+      const chave = String(turno?.id || deviceId);
+      if (vistos.has(chave)) return;
+      vistos.add(chave);
+      abertos.push({ deviceId, turno });
     });
-    if (abertos.length === 0 && this.isTurnoCaixaAberto(backup.turnoAtual)) {
+
+    if (abertos.length === 0 && !filtrarIds && this.isTurnoCaixaAberto(backup.turnoAtual, backup)) {
       abertos.push({ deviceId: 'local', turno: backup.turnoAtual });
     }
     return abertos;
@@ -1868,7 +1895,8 @@ window.MobileApp = {
     terminais = Array.from(mapa.values()).sort((a, b) => new Date(b.ultimoAcesso || 0) - new Date(a.ultimoAcesso || 0));
 
     const turnosAtivos = (backup.turnosAtivos && typeof backup.turnosAtivos === 'object') ? backup.turnosAtivos : {};
-    const caixasAbertos = this.listarTurnosCaixaAbertos(backup).length;
+    const idsTerminais = terminais.map(t => t.id).filter(Boolean);
+    const caixasAbertos = this.listarTurnosCaixaAbertos(backup, { terminalIds: idsTerminais }).length;
 
     const elLimite = document.getElementById('metric-limite-terminais');
     const elCaixas = document.getElementById('metric-terminais-caixa-aberto');
@@ -1890,31 +1918,40 @@ window.MobileApp = {
 
     container.innerHTML = terminais.map(t => {
       const turno = this.obterTurnoAtivoDoTerminal(turnosAtivos, t.id);
-      const caixaAberto = this.isTurnoCaixaAberto(turno);
+      const caixaAberto = this.isTurnoCaixaAberto(turno, backup);
       const ultimoMs = t.ultimoAcesso ? new Date(t.ultimoAcesso).getTime() : 0;
       const vistoRecente = ultimoMs > 0 && (Date.now() - ultimoMs) < (1000 * 60 * 60 * 12);
       const ultimo = t.ultimoAcesso ? new Date(t.ultimoAcesso).toLocaleString('pt-BR') : '—';
-      const operador = (caixaAberto && turno && turno.operador) ? turno.operador : (t.usuario || '—');
+      const operador = (caixaAberto && turno && turno.operador) ? turno.operador : (t.usuario || turno?.operador || '—');
+      const host = t.hostname || 'Computador';
 
-      let badgeStatus = `<span class="badge-tag-sm blue">⚪ Caixa Fechado</span>`;
+      let badgeStatus = `<span class="badge-tag-sm blue">Fechado</span>`;
+      let statusHint = 'Caixa fechado';
       if (caixaAberto) {
-        badgeStatus = `<span class="badge-tag-sm ok">🟢 Caixa Aberto</span>`;
+        badgeStatus = `<span class="badge-tag-sm ok">Aberto</span>`;
+        statusHint = `Caixa aberto${turno?.operador ? ` · ${turno.operador}` : ''}`;
       } else if (vistoRecente) {
-        badgeStatus = `<span class="badge-tag-sm cyan">💻 App recente · Caixa fechado</span>`;
+        badgeStatus = `<span class="badge-tag-sm cyan">Online</span>`;
+        statusHint = 'App recente · caixa fechado';
       }
 
       return `
-        <div class="flow-item-card">
-          <div class="flow-item-main">
-            <div class="flow-item-icon">💻</div>
-            <div class="flow-item-info">
-              <strong class="flow-item-title">${t.hostname || 'Computador'}</strong>
-              <span class="flow-item-meta">👤 ${operador}</span>
-              <span class="flow-item-meta">🕒 ${ultimo}</span>
+        <div class="flow-item-card terminal-card">
+          <div class="terminal-card-top">
+            <div class="flow-item-main">
+              <div class="flow-item-icon">💻</div>
+              <div class="flow-item-info">
+                <strong class="flow-item-title terminal-card-title" title="${host}">${host}</strong>
+                <span class="flow-item-meta">👤 ${operador}</span>
+              </div>
+            </div>
+            <div class="flow-item-side">
+              ${badgeStatus}
             </div>
           </div>
-          <div class="flow-item-side">
-            ${badgeStatus}
+          <div class="terminal-card-footer">
+            <span class="flow-item-meta">🕒 ${ultimo}</span>
+            <span class="flow-item-hint">${statusHint}</span>
           </div>
         </div>`;
     }).join('');
@@ -2438,21 +2475,21 @@ window.MobileApp = {
 
   abrirModalNovoFuncionario() {
     const html = `
-      <form onsubmit="MobileApp.salvarFuncionarioNuvem(event)" style="display: flex; flex-direction: column; gap: 12px;">
+      <form onsubmit="MobileApp.salvarFuncionarioNuvem(event)" class="modal-form">
         <input type="hidden" id="edit-func-id" value="">
-        
+
         <div class="form-group-mobile" style="margin-bottom: 0;">
           <label class="form-label-mobile">Nome do Colaborador *</label>
           <input type="text" id="edit-func-nome" class="input-mobile" placeholder="Ex: Carlos Oliveira" required>
         </div>
 
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+        <div class="modal-form-row">
           <div class="form-group-mobile" style="margin-bottom: 0;">
             <label class="form-label-mobile">Login / Usuário *</label>
             <input type="text" id="edit-func-login" class="input-mobile" placeholder="Ex: carlos" required>
           </div>
           <div class="form-group-mobile" style="margin-bottom: 0;">
-            <label class="form-label-mobile">PIN / Senha (4 a 6 dígitos) *</label>
+            <label class="form-label-mobile">PIN / Senha *</label>
             <input type="password" id="edit-func-pin" class="input-mobile mono" placeholder="1234" required>
           </div>
         </div>
@@ -2465,46 +2502,37 @@ window.MobileApp = {
           </select>
         </div>
 
-        <div style="background: var(--bg-surface-2); padding: 10px 12px; border-radius: 8px; margin-top: 4px;">
-          <span class="form-label-mobile" style="margin-bottom: 6px;">Permissões no PDV</span>
-          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; font-size: 12px; color: var(--text-main);">
-            <label style="display: flex; align-items: center; gap: 6px; cursor: pointer;">
-              <input type="checkbox" id="perm-cancelar-item" checked style="accent-color: var(--accent-purple);"> Cancelar Itens
-            </label>
-            <label style="display: flex; align-items: center; gap: 6px; cursor: pointer;">
-              <input type="checkbox" id="perm-cancelar-venda" style="accent-color: var(--accent-purple);"> Cancelar Vendas
-            </label>
-            <label style="display: flex; align-items: center; gap: 6px; cursor: pointer;">
-              <input type="checkbox" id="perm-dar-desconto" checked style="accent-color: var(--accent-purple);"> Dar Desconto
-            </label>
-            <label style="display: flex; align-items: center; gap: 6px; cursor: pointer;">
-              <input type="checkbox" id="perm-realizar-sangria" checked style="accent-color: var(--accent-purple);"> Realizar Sangria
-            </label>
-            <label style="display: flex; align-items: center; gap: 6px; cursor: pointer;">
-              <input type="checkbox" id="perm-ver-custo" style="accent-color: var(--accent-purple);"> Ver Custo Estoque
-            </label>
-            <label style="display: flex; align-items: center; gap: 6px; cursor: pointer;">
-              <input type="checkbox" id="perm-reimprimir-cupons" checked style="accent-color: var(--accent-purple);"> Reimprimir Cupons
-            </label>
+        <div class="modal-perms-box">
+          <span class="form-label-mobile" style="margin-bottom: 8px;">Permissões no PDV</span>
+          <div class="modal-perms-grid">
+            <label class="modal-perm-item"><input type="checkbox" id="perm-cancelar-item" checked> Cancelar Itens</label>
+            <label class="modal-perm-item"><input type="checkbox" id="perm-cancelar-venda"> Cancelar Vendas</label>
+            <label class="modal-perm-item"><input type="checkbox" id="perm-dar-desconto" checked> Dar Desconto</label>
+            <label class="modal-perm-item"><input type="checkbox" id="perm-realizar-sangria" checked> Realizar Sangria</label>
+            <label class="modal-perm-item"><input type="checkbox" id="perm-ver-custo"> Ver Custo Estoque</label>
+            <label class="modal-perm-item"><input type="checkbox" id="perm-reimprimir-cupons" checked> Reimprimir Cupons</label>
           </div>
         </div>
 
-        <div style="display: flex; align-items: center; justify-content: space-between; padding: 4px 0;">
-          <label style="display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 700; color: var(--text-main); cursor: pointer;">
-            <input type="checkbox" id="edit-func-ativo" checked style="width: 16px; height: 16px; accent-color: var(--accent-green);">
-            <span>🟢 Acesso Ativo no Sistema</span>
-          </label>
-        </div>
+        <label class="modal-status-toggle">
+          <input type="checkbox" id="edit-func-ativo" checked>
+          <span class="modal-status-dot ok"></span>
+          <span>Acesso ativo no sistema</span>
+        </label>
 
-        <div style="display: flex; gap: 8px; margin-top: 8px;">
-          <button type="submit" id="btn-salvar-func-modal" class="btn-login-submit" style="flex: 1; height: 46px; font-size: 14px;">
-            <span>💾 Salvar Colaborador</span>
+        <div class="modal-form-actions">
+          <button type="submit" id="btn-salvar-func-modal" class="btn-login-submit modal-btn-primary">
+            <span>Salvar Colaborador</span>
           </button>
         </div>
       </form>
     `;
 
-    this.abrirModalSheet('➕ Novo Colaborador', html);
+    this.abrirModalSheet('Novo Colaborador', html, {
+      icon: '✨',
+      eyebrow: 'Equipe',
+      subtitle: 'Cadastro com acesso ao PDV'
+    });
   },
 
   abrirModalEditarFuncionario(funcId) {
@@ -2514,22 +2542,26 @@ window.MobileApp = {
     if (!func) return;
 
     const cargo = (func.cargo || func.funcao || 'operador').toLowerCase();
+    const isGerente = cargo === 'gerente' || cargo === 'administrador' || cargo === 'superadmin' || cargo.includes('admin') || cargo.includes('dono');
+    const cargoLabel = isGerente ? 'Gerente' : 'Operador';
     const isAtivo = func.ativo !== false;
     const perms = func.permissoes || {};
+    const login = func.login || func.usuario || func.nome || '—';
+    const nome = func.nome || 'Colaborador';
 
     const html = `
-      <form onsubmit="MobileApp.salvarFuncionarioNuvem(event)" style="display: flex; flex-direction: column; gap: 12px;">
+      <form onsubmit="MobileApp.salvarFuncionarioNuvem(event)" class="modal-form">
         <input type="hidden" id="edit-func-id" value="${func.id || ''}">
-        
+
         <div class="form-group-mobile" style="margin-bottom: 0;">
           <label class="form-label-mobile">Nome do Colaborador *</label>
-          <input type="text" id="edit-func-nome" class="input-mobile" value="${func.nome || ''}" required>
+          <input type="text" id="edit-func-nome" class="input-mobile" value="${nome}" required>
         </div>
 
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+        <div class="modal-form-row">
           <div class="form-group-mobile" style="margin-bottom: 0;">
             <label class="form-label-mobile">Login / Usuário *</label>
-            <input type="text" id="edit-func-login" class="input-mobile" value="${func.login || func.usuario || func.nome}" required>
+            <input type="text" id="edit-func-login" class="input-mobile" value="${login}" required>
           </div>
           <div class="form-group-mobile" style="margin-bottom: 0;">
             <label class="form-label-mobile">PIN / Senha de Acesso</label>
@@ -2540,54 +2572,45 @@ window.MobileApp = {
         <div class="form-group-mobile" style="margin-bottom: 0;">
           <label class="form-label-mobile">Cargo / Função *</label>
           <select id="edit-func-cargo" class="input-mobile" style="cursor: pointer;">
-            <option value="operador" ${cargo === 'operador' ? 'selected' : ''}>👤 Operador</option>
-            <option value="gerente" ${cargo === 'gerente' || cargo === 'administrador' || cargo === 'superadmin' ? 'selected' : ''}>👑 Gerente</option>
+            <option value="operador" ${!isGerente ? 'selected' : ''}>👤 Operador</option>
+            <option value="gerente" ${isGerente ? 'selected' : ''}>👑 Gerente</option>
           </select>
         </div>
 
-        <div style="background: var(--bg-surface-2); padding: 10px 12px; border-radius: 8px; margin-top: 4px;">
-          <span class="form-label-mobile" style="margin-bottom: 6px;">Permissões no PDV</span>
-          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; font-size: 12px; color: var(--text-main);">
-            <label style="display: flex; align-items: center; gap: 6px; cursor: pointer;">
-              <input type="checkbox" id="perm-cancelar-item" ${perms.cancelarItem !== false ? 'checked' : ''} style="accent-color: var(--accent-purple);"> Cancelar Itens
-            </label>
-            <label style="display: flex; align-items: center; gap: 6px; cursor: pointer;">
-              <input type="checkbox" id="perm-cancelar-venda" ${perms.cancelarVenda ? 'checked' : ''} style="accent-color: var(--accent-purple);"> Cancelar Vendas
-            </label>
-            <label style="display: flex; align-items: center; gap: 6px; cursor: pointer;">
-              <input type="checkbox" id="perm-dar-desconto" ${perms.darDesconto !== false ? 'checked' : ''} style="accent-color: var(--accent-purple);"> Dar Desconto
-            </label>
-            <label style="display: flex; align-items: center; gap: 6px; cursor: pointer;">
-              <input type="checkbox" id="perm-realizar-sangria" ${perms.realizarSangria !== false ? 'checked' : ''} style="accent-color: var(--accent-purple);"> Realizar Sangria
-            </label>
-            <label style="display: flex; align-items: center; gap: 6px; cursor: pointer;">
-              <input type="checkbox" id="perm-ver-custo" ${perms.verCustoEstoque ? 'checked' : ''} style="accent-color: var(--accent-purple);"> Ver Custo Estoque
-            </label>
-            <label style="display: flex; align-items: center; gap: 6px; cursor: pointer;">
-              <input type="checkbox" id="perm-reimprimir-cupons" ${perms.reimprimirCupons !== false ? 'checked' : ''} style="accent-color: var(--accent-purple);"> Reimprimir Cupons
-            </label>
+        <div class="modal-perms-box">
+          <span class="form-label-mobile" style="margin-bottom: 8px;">Permissões no PDV</span>
+          <div class="modal-perms-grid">
+            <label class="modal-perm-item"><input type="checkbox" id="perm-cancelar-item" ${perms.cancelarItem !== false ? 'checked' : ''}> Cancelar Itens</label>
+            <label class="modal-perm-item"><input type="checkbox" id="perm-cancelar-venda" ${perms.cancelarVenda ? 'checked' : ''}> Cancelar Vendas</label>
+            <label class="modal-perm-item"><input type="checkbox" id="perm-dar-desconto" ${perms.darDesconto !== false ? 'checked' : ''}> Dar Desconto</label>
+            <label class="modal-perm-item"><input type="checkbox" id="perm-realizar-sangria" ${perms.realizarSangria !== false ? 'checked' : ''}> Realizar Sangria</label>
+            <label class="modal-perm-item"><input type="checkbox" id="perm-ver-custo" ${perms.verCustoEstoque ? 'checked' : ''}> Ver Custo Estoque</label>
+            <label class="modal-perm-item"><input type="checkbox" id="perm-reimprimir-cupons" ${perms.reimprimirCupons !== false ? 'checked' : ''}> Reimprimir Cupons</label>
           </div>
         </div>
 
-        <div style="display: flex; align-items: center; justify-content: space-between; padding: 4px 0;">
-          <label style="display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 700; color: var(--text-main); cursor: pointer;">
-            <input type="checkbox" id="edit-func-ativo" ${isAtivo ? 'checked' : ''} style="width: 16px; height: 16px; accent-color: var(--accent-green);">
-            <span>🟢 Acesso Ativo no Sistema</span>
-          </label>
-        </div>
+        <label class="modal-status-toggle">
+          <input type="checkbox" id="edit-func-ativo" ${isAtivo ? 'checked' : ''}>
+          <span class="modal-status-dot ${isAtivo ? 'ok' : 'off'}"></span>
+          <span>Acesso ativo no sistema</span>
+        </label>
 
-        <div style="display: flex; gap: 8px; margin-top: 8px;">
-          <button type="submit" id="btn-salvar-func-modal" class="btn-login-submit" style="flex: 1; height: 46px; font-size: 14px;">
-            <span>💾 Salvar Alterações</span>
+        <div class="modal-form-actions">
+          <button type="submit" id="btn-salvar-func-modal" class="btn-login-submit modal-btn-primary">
+            <span>Salvar Alterações</span>
           </button>
-          <button type="button" class="btn-login-submit" style="background: rgba(239, 68, 68, 0.15); color: #ef4444; border: 1px solid #ef4444; width: auto; padding: 0 14px; height: 46px;" onclick="MobileApp.excluirFuncionarioNuvem('${func.id || func.usuario || func.login}')">
-            <span>🗑️ Excluir</span>
+          <button type="button" class="modal-btn-danger" onclick="MobileApp.excluirFuncionarioNuvem('${func.id || func.usuario || func.login}')">
+            <span>Excluir</span>
           </button>
         </div>
       </form>
     `;
 
-    this.abrirModalSheet(`👤 Editar: ${func.nome}`, html);
+    this.abrirModalSheet(nome, html, {
+      icon: isGerente ? '👑' : '👤',
+      eyebrow: 'Editar colaborador',
+      subtitle: `@${login} · ${cargoLabel}${isAtivo ? '' : ' · Inativo'}`
+    });
   },
 
   async salvarFuncionarioNuvem(e) {
@@ -3744,14 +3767,48 @@ window.MobileApp = {
     }
   },
 
-  abrirModalSheet(title, html) {
+  abrirModalSheet(title, html, opts = {}) {
     const titleEl = document.getElementById('sheet-title');
+    const iconEl = document.getElementById('sheet-icon');
+    const eyebrowEl = document.getElementById('sheet-eyebrow');
+    const subtitleEl = document.getElementById('sheet-subtitle');
     const bodyEl = document.getElementById('sheet-body');
     const modal = document.getElementById('modal-bottom-sheet');
+
+    const icon = opts.icon || this._inferModalIcon(title);
+    const eyebrow = opts.eyebrow || '';
+    const subtitle = opts.subtitle || '';
+
     if (titleEl) titleEl.textContent = title;
+    if (iconEl) iconEl.textContent = icon;
+
+    if (eyebrowEl) {
+      eyebrowEl.textContent = eyebrow;
+      eyebrowEl.hidden = !eyebrow;
+    }
+    if (subtitleEl) {
+      subtitleEl.textContent = subtitle;
+      subtitleEl.hidden = !subtitle;
+    }
+
     if (bodyEl) bodyEl.innerHTML = html;
     if (modal) modal.style.display = 'flex';
     document.body.style.overflow = 'hidden';
+  },
+
+  _inferModalIcon(title) {
+    const t = String(title || '').toLowerCase();
+    if (t.includes('colaborador') || t.includes('funcion')) return '👤';
+    if (t.includes('categoria')) return '🏷️';
+    if (t.includes('cliente')) return '🧍';
+    if (t.includes('caixa') || t.includes('fechamento')) return '🧾';
+    if (t.includes('mesa')) return '🪑';
+    if (t.includes('auditoria')) return '🕵️';
+    if (t.includes('fiado') || t.includes('receber')) return '💵';
+    if (t.includes('despesa')) return '📉';
+    if (t.includes('venda')) return '🛒';
+    if (t.includes('novo') || t.includes('nova')) return '✨';
+    return '📋';
   },
 
   fecharModalSheet(e) {

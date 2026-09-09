@@ -17,7 +17,7 @@
   <link rel="icon" type="image/png" href="icon.png">
   <link rel="shortcut icon" href="favicon.ico">
   <link rel="apple-touch-icon" href="icon.png">
-  <link rel="stylesheet" href="style.css?v=2.2.7">
+  <link rel="stylesheet" href="style.css?v=2.2.8">
 
   <script>
     // Silencia ruído de extensões do navegador (senha, autofill, etc.)
@@ -628,11 +628,18 @@
     <!-- MODAL BOTTOM SHEET DE DETALHES -->
     <div id="modal-bottom-sheet" class="modal-bottom-sheet" onclick="MobileApp.fecharModalSheet(event)">
       <div class="modal-bottom-content" onclick="event.stopPropagation()">
-        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px;">
-          <h3 id="sheet-title" style="font-size: 16px; font-weight: 800; color: var(--text-main);">Detalhes</h3>
-          <button type="button" onclick="MobileApp.fecharModalSheet()" style="background: transparent; border: none; color: var(--text-muted); font-size: 18px; cursor: pointer; padding: 4px;">✕</button>
+        <div class="modal-sheet-header">
+          <div class="modal-sheet-header-main">
+            <div id="sheet-icon" class="modal-sheet-icon" aria-hidden="true">📋</div>
+            <div class="modal-sheet-titles">
+              <span id="sheet-eyebrow" class="modal-sheet-eyebrow" hidden></span>
+              <h3 id="sheet-title" class="modal-sheet-title">Detalhes</h3>
+              <span id="sheet-subtitle" class="modal-sheet-subtitle" hidden></span>
+            </div>
+          </div>
+          <button type="button" class="modal-sheet-close" onclick="MobileApp.fecharModalSheet()" aria-label="Fechar">✕</button>
         </div>
-        <div id="sheet-body">
+        <div id="sheet-body" class="modal-sheet-body">
           <!-- Conteúdo dinâmico -->
         </div>
       </div>
@@ -834,6 +841,6 @@
   </script>
 
   <!-- Lógica Principal do Companion App -->
-  <script src="app.js?v=2.2.7"></script>
+  <script src="app.js?v=2.2.8"></script>
 </body>
 </html>
