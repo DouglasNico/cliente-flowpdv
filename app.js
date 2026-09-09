@@ -1892,6 +1892,23 @@ window.MobileApp = {
     return ultimoMs > 0 && (Date.now() - ultimoMs) < (1000 * 60 * 10);
   },
 
+  /**
+   * Caixa aberto de verdade: slot aberto, e não é lixo antigo
+   * (app fechado há mais de 30 min e abertura também antiga).
+   * Abertura recente conta mesmo se o heartbeat da licença atrasou.
+   */
+  isCaixaAbertoNaTela(turno, terminal, backup) {
+    if (!this.isTurnoCaixaAberto(turno, backup, terminal && terminal.id)) return false;
+    if (this.isTerminalOnline(terminal)) return true;
+    const agora = Date.now();
+    const aberturaMs = this.msDataTurno(turno && turno.dataAbertura);
+    const ultimoMs = terminal && terminal.ultimoAcesso ? new Date(terminal.ultimoAcesso).getTime() : 0;
+    const MEIA_HORA = 30 * 60 * 1000;
+    if (aberturaMs > 0 && (agora - aberturaMs) < MEIA_HORA) return true;
+    if (ultimoMs > 0 && (agora - ultimoMs) < MEIA_HORA) return true;
+    return false;
+  },
+
   /** Turno aberto: slot explícito do terminal da lista. Histórico/auditoria só do MESMO turno. */
   isTurnoCaixaAberto(turno, backup = this.dadosBackup || {}, deviceId = '') {
     if (!turno || typeof turno !== 'object') return false;
@@ -1934,9 +1951,11 @@ window.MobileApp = {
     const abertos = [];
     const vistos = new Set();
 
-    terminais.forEach(t => {
-      const turno = this.resolverTurnoDoTerminal(backup, t, bruto);
-      if (!this.isTerminalOnline(t) || !this.isTurnoCaixaAberto(turno, backup, t.id)) return;
+    const orfao = this.turnoAbertoOrfao(backup, bruto);
+    terminais.forEach((t, idx) => {
+      let turno = this.resolverTurnoDoTerminal(backup, t, bruto);
+      if (!this.isCaixaAbertoNaTela(turno, t, backup) && idx === 0 && orfao) turno = orfao;
+      if (!this.isCaixaAbertoNaTela(turno, t, backup)) return;
       const chave = String((turno && turno.id) || t.id).toLowerCase();
       if (vistos.has(chave)) return;
       vistos.add(chave);
@@ -1977,23 +1996,52 @@ window.MobileApp = {
 
   resolverTurnoDoTerminal(backup, terminal, bruto) {
     const mapa = (backup.turnosAtivos && typeof backup.turnosAtivos === 'object') ? backup.turnosAtivos : {};
-    const direto = this.obterTurnoAtivoDoTerminal(mapa, terminal && terminal.id);
-    if (direto) return direto;
-
     const ids = this.idsIrmaosTerminal(terminal, bruto);
+    const idsLower = new Set(ids.map(id => String(id).toLowerCase()));
+    const candidatos = [];
+
+    ids.forEach(id => {
+      const turno = this.obterTurnoAtivoDoTerminal(mapa, id);
+      if (turno) candidatos.push({ id, turno });
+    });
+
+    Object.keys(mapa).forEach(id => {
+      const turno = mapa[id];
+      if (!turno || typeof turno !== 'object') return;
+      const tid = String(turno.terminalId || '').toLowerCase();
+      if (tid && idsLower.has(tid) && !candidatos.some(c => String(c.id).toLowerCase() === String(id).toLowerCase())) {
+        candidatos.push({ id, turno });
+      }
+    });
+
+    const abertos = candidatos.filter(c => this.isTurnoCaixaAberto(c.turno, backup, c.id));
+    if (abertos.length) {
+      abertos.sort((a, b) => this.msDataTurno(b.turno.dataAbertura) - this.msDataTurno(a.turno.dataAbertura));
+      return abertos[0].turno;
+    }
+
+    return this.obterTurnoAtivoDoTerminal(mapa, terminal && terminal.id) || (candidatos[0] && candidatos[0].turno) || null;
+  },
+
+  turnoAbertoOrfao(backup, bruto) {
+    const mapa = (backup.turnosAtivos && typeof backup.turnosAtivos === 'object') ? backup.turnosAtivos : {};
+    const conhecidos = new Set();
+    this.consolidarTerminaisLicenca(bruto).forEach(t => {
+      this.idsIrmaosTerminal(t, bruto).forEach(id => conhecidos.add(String(id).toLowerCase()));
+    });
+
     let melhor = null;
     let melhorMs = -1;
-    for (let i = 0; i < ids.length; i++) {
-      const id = ids[i];
-      if (terminal && String(id) === String(terminal.id)) continue;
-      const turno = this.obterTurnoAtivoDoTerminal(mapa, id);
-      if (!turno) continue;
-      const ms = Math.max(this.msDataTurno(turno.dataAbertura), this.msDataTurno(turno.dataFechamento));
+    Object.keys(mapa).forEach(id => {
+      if (conhecidos.has(String(id).toLowerCase())) return;
+      const turno = mapa[id];
+      if (!this.isTurnoCaixaAberto(turno, backup, id)) return;
+      const ms = this.msDataTurno(turno.dataAbertura);
       if (ms >= melhorMs) {
         melhor = turno;
         melhorMs = ms;
       }
-    }
+    });
     return melhor;
   },
 
@@ -2052,10 +2100,14 @@ window.MobileApp = {
       return;
     }
 
+    const orfao = this.turnoAbertoOrfao(backup, brutoTerminais);
+    const maisRecenteId = terminais[0] && terminais[0].id;
+
     container.innerHTML = terminais.map(t => {
-      const turno = this.resolverTurnoDoTerminal(backup, t, brutoTerminais);
+      let turno = this.resolverTurnoDoTerminal(backup, t, brutoTerminais);
+      if (!this.isCaixaAbertoNaTela(turno, t, backup) && t.id === maisRecenteId && orfao) turno = orfao;
       const isOnline = this.isTerminalOnline(t);
-      const caixaAberto = isOnline && this.isTurnoCaixaAberto(turno, backup, (turno && turno.terminalId) || t.id);
+      const caixaAberto = this.isCaixaAbertoNaTela(turno, t, backup);
       const ultimo = t.ultimoAcesso ? new Date(t.ultimoAcesso).toLocaleString('pt-BR') : '—';
       const operador = this.nomeOperadorTerminal(t, turno);
       const host = t.hostname || 'Computador';
