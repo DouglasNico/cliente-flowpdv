@@ -1855,11 +1855,17 @@ window.MobileApp = {
 
     const status = String(turno.status || '').toLowerCase().trim();
     if (status === 'fechado' || status === 'closed' || status === 'encerrado') return false;
+    if (status !== 'aberto' && status !== 'open') return false;
 
     const ids = this.idsDoTurno(turno);
     const hist = Array.isArray(backup.turnosHistorico) ? backup.turnosHistorico : [];
     const aberturaMs = this.msDataTurno(turno.dataAbertura);
     const terminal = String(deviceId || turno.terminalId || '').trim();
+    const mapa = (backup.turnosAtivos && typeof backup.turnosAtivos === 'object') ? backup.turnosAtivos : {};
+
+    if (turno.terminalId && deviceId && String(turno.terminalId).toLowerCase() !== String(deviceId).toLowerCase()) {
+      return false;
+    }
 
     const historicoFechaEste = hist.some(h => {
       if (!h || !this.isRegistroTurnoFechado(h)) return false;
@@ -1887,7 +1893,20 @@ window.MobileApp = {
       return tid && ids.includes(tid);
     })) return false;
 
-    return status === 'aberto' || status === 'open';
+    if (ids.length) {
+      const copias = Object.entries(mapa).filter(([, t]) => t && this.idsDoTurno(t).some(id => ids.includes(id)));
+      if (copias.length > 1 && deviceId) {
+        const donoPorTerminal = copias.find(([, t]) => String(t.terminalId || '').toLowerCase() === String(deviceId).toLowerCase());
+        if (donoPorTerminal) {
+          if (String(donoPorTerminal[0]).toLowerCase() !== String(deviceId).toLowerCase()) return false;
+        } else {
+          const maisNovo = copias.slice().sort((a, b) => this.msDataTurno(b[1].dataAbertura) - this.msDataTurno(a[1].dataAbertura))[0];
+          if (String(maisNovo[0]).toLowerCase() !== String(deviceId).toLowerCase()) return false;
+        }
+      }
+    }
+
+    return true;
   },
 
   listarTurnosCaixaAbertos(backup = this.dadosBackup || {}, opts = {}) {
@@ -1920,10 +1939,7 @@ window.MobileApp = {
     if (direto && typeof direto === 'object') return direto;
     const key = Object.keys(turnosAtivos).find(k => String(k).toLowerCase() === id.toLowerCase());
     const porChave = key ? turnosAtivos[key] : null;
-    if (porChave && typeof porChave === 'object') return porChave;
-
-    const porCampo = Object.values(turnosAtivos).find(t => t && typeof t === 'object' && String(t.terminalId || '').toLowerCase() === id.toLowerCase());
-    return porCampo || null;
+    return (porChave && typeof porChave === 'object') ? porChave : null;
   },
 
   renderGerenciaTerminais() {
