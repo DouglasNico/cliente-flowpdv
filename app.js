@@ -1873,7 +1873,22 @@ window.MobileApp = {
     return !host || host === 'computador' || host === 'computador local' || host === 'desktop';
   },
 
-  /** Turno aberto: confia no slot da nuvem. Histórico só desmente o MESMO turno. */
+  usuarioGenericoWindows(nome) {
+    const n = String(nome || '').trim().toLowerCase();
+    return !n || ['user', 'usuario', 'usuário', 'administrator', 'administrador', 'admin', 'convidado', 'guest'].includes(n);
+  },
+
+  nomeOperadorTerminal(terminal, turno, caixaAberto) {
+    const preferido = caixaAberto
+      ? (turno && turno.operador) || (terminal && terminal.usuario)
+      : (terminal && terminal.usuario) || (turno && turno.operador);
+    if (!this.usuarioGenericoWindows(preferido)) return String(preferido).trim();
+    const outro = caixaAberto ? (terminal && terminal.usuario) : (turno && turno.operador);
+    if (!this.usuarioGenericoWindows(outro)) return String(outro).trim();
+    return '—';
+  },
+
+  /** Turno aberto: slot explícito do terminal da lista. Histórico/auditoria só do MESMO turno. */
   isTurnoCaixaAberto(turno, backup = this.dadosBackup || {}, deviceId = '') {
     if (!turno || typeof turno !== 'object') return false;
     if (this.isRegistroTurnoFechado(turno)) return false;
@@ -1894,35 +1909,34 @@ window.MobileApp = {
       const fechaMs = this.msDataTurno(h.dataFechamento);
       return !aberturaMs || fechaMs >= aberturaMs;
     });
-    return !mesmoTurnoJaFechado;
+    if (mesmoTurnoJaFechado) return false;
+
+    const logs = Array.isArray(this.dadosAuditoriaRaw) && this.dadosAuditoriaRaw.length
+      ? this.dadosAuditoriaRaw
+      : (this.dadosAuditoria || []);
+    if (logs.some(l => {
+      const tipo = String(l.tipo || '').toLowerCase();
+      if (tipo !== 'fechamento_caixa' && tipo !== 'fechamento') return false;
+      const tid = String(l.detalhes?.turnoId || l.turnoId || l.detalhes?.id || '').trim();
+      return tid && ids.includes(tid);
+    })) return false;
+
+    return true;
   },
 
   listarTurnosCaixaAbertos(backup = this.dadosBackup || {}) {
+    const bruto = this.dadosLoja?.terminaisAtivos;
+    const terminais = this.consolidarTerminaisLicenca(bruto);
     const abertos = [];
-    const vistosTurno = new Set();
-    const vistosHost = new Set();
-    const mapa = (backup.turnosAtivos && typeof backup.turnosAtivos === 'object') ? backup.turnosAtivos : {};
-    const bruto = Array.isArray(this.dadosLoja?.terminaisAtivos) ? this.dadosLoja.terminaisAtivos : [];
+    const vistos = new Set();
 
-    const hostDoDevice = (deviceId) => {
-      const achado = bruto.find(t => {
-        const obj = typeof t === 'string' ? { id: t } : t;
-        return obj && String(obj.id || '').toLowerCase() === String(deviceId).toLowerCase();
-      });
-      const obj = typeof achado === 'string' ? { hostname: '' } : (achado || {});
-      return String(obj.hostname || '').trim().toLowerCase();
-    };
-
-    Object.entries(mapa).forEach(([deviceId, turno]) => {
-      if (!this.isTurnoCaixaAberto(turno, backup, deviceId)) return;
-      const chaveTurno = String(turno?.id || deviceId).toLowerCase();
-      if (vistosTurno.has(chaveTurno)) return;
-      const host = hostDoDevice(deviceId);
-      const chaveHost = this.hostGenerico(host) ? `id:${String(deviceId).toLowerCase()}` : `host:${host}`;
-      if (vistosHost.has(chaveHost)) return;
-      vistosTurno.add(chaveTurno);
-      vistosHost.add(chaveHost);
-      abertos.push({ deviceId, turno });
+    terminais.forEach(t => {
+      const turno = this.resolverTurnoDoTerminal(backup, t, bruto);
+      if (!this.isTurnoCaixaAberto(turno, backup, t.id)) return;
+      const chave = String((turno && turno.id) || t.id).toLowerCase();
+      if (vistos.has(chave)) return;
+      vistos.add(chave);
+      abertos.push({ deviceId: t.id, turno });
     });
 
     return abertos;
@@ -1959,28 +1973,24 @@ window.MobileApp = {
 
   resolverTurnoDoTerminal(backup, terminal, bruto) {
     const mapa = (backup.turnosAtivos && typeof backup.turnosAtivos === 'object') ? backup.turnosAtivos : {};
-    const ids = this.idsIrmaosTerminal(terminal, bruto);
-    let fallback = null;
+    const direto = this.obterTurnoAtivoDoTerminal(mapa, terminal && terminal.id);
+    if (direto) return direto;
 
+    const ids = this.idsIrmaosTerminal(terminal, bruto);
+    let melhor = null;
+    let melhorMs = -1;
     for (let i = 0; i < ids.length; i++) {
       const id = ids[i];
+      if (terminal && String(id) === String(terminal.id)) continue;
       const turno = this.obterTurnoAtivoDoTerminal(mapa, id);
       if (!turno) continue;
-      if (this.isTurnoCaixaAberto(turno, backup, id)) return turno;
-      if (!fallback) fallback = turno;
+      const ms = Math.max(this.msDataTurno(turno.dataAbertura), this.msDataTurno(turno.dataFechamento));
+      if (ms >= melhorMs) {
+        melhor = turno;
+        melhorMs = ms;
+      }
     }
-
-    const idsLower = new Set(ids.map(id => String(id).toLowerCase()));
-    const chaves = Object.keys(mapa);
-    for (let i = 0; i < chaves.length; i++) {
-      const id = chaves[i];
-      const turno = mapa[id];
-      if (!turno || typeof turno !== 'object') continue;
-      const tid = String(turno.terminalId || '').toLowerCase();
-      if (tid && idsLower.has(tid) && this.isTurnoCaixaAberto(turno, backup, id)) return turno;
-    }
-
-    return fallback;
+    return melhor;
   },
 
   consolidarTerminaisLicenca(lista) {
@@ -2046,7 +2056,7 @@ window.MobileApp = {
       const ONLINE_MS = 1000 * 60 * 30;
       const isOnline = ultimoMs > 0 && (Date.now() - ultimoMs) < ONLINE_MS;
       const ultimo = t.ultimoAcesso ? new Date(t.ultimoAcesso).toLocaleString('pt-BR') : '—';
-      const operador = (caixaAberto && turno && turno.operador) ? turno.operador : (t.usuario || turno?.operador || '—');
+      const operador = this.nomeOperadorTerminal(t, turno, caixaAberto);
       const host = t.hostname || 'Computador';
 
       const badges = [];
@@ -2060,7 +2070,7 @@ window.MobileApp = {
       }
 
       let statusHint = caixaAberto
-        ? `Caixa aberto${turno?.operador ? ` · ${turno.operador}` : ''}`
+        ? `Caixa aberto${operador !== '—' ? ` · ${operador}` : ''}`
         : (isOnline ? 'App online · caixa fechado' : 'Caixa fechado');
 
       return `
