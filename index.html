@@ -378,6 +378,12 @@
             <button type="button" class="chip-btn" id="btn-sub-ger-auditoria" onclick="MobileApp.setSubAbaGerencia('auditoria')">
               <span>🛡️</span> <span>Auditoria</span>
             </button>
+            <button type="button" class="chip-btn" id="btn-sub-ger-abc" onclick="MobileApp.setSubAbaGerencia('abc')">
+              <span>📈</span> <span>Curva ABC</span>
+            </button>
+            <button type="button" class="chip-btn" id="btn-sub-ger-historico" onclick="MobileApp.setSubAbaGerencia('historico')">
+              <span>🕒</span> <span>Histórico Caixas</span>
+            </button>
             <button type="button" class="chip-btn" id="btn-sub-ger-mesas" onclick="MobileApp.setSubAbaGerencia('mesas')">
               <span>🍽️</span> <span>Mesas & Cmd</span>
             </button>
@@ -443,6 +449,41 @@
           </div>
 
           <div id="lista-auditoria-eventos" style="display: flex; flex-direction: column; gap: 8px;">
+            <!-- Renderizado dinamicamente -->
+          </div>
+        </div>
+
+        <!-- SUB-SEÇÃO 2.5: CURVA ABC -->
+        <div id="subsecao-gerencia-abc" style="display: none; flex-direction: column; gap: 12px;">
+          <div class="section-title-mobile" style="margin-top: 2px;">
+            <span>📈 Curva ABC (Faturamento)</span>
+            <span class="badge-pill-count" id="badge-curva-abc-itens">0</span>
+          </div>
+
+          <div class="mobile-list-card" style="padding: 12px 14px;">
+            <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+              <span class="badge-tag-sm ok">A (até 80%)</span>
+              <span class="badge-tag-sm low">B (até 95%)</span>
+              <span class="badge-tag-sm blue">C (restante)</span>
+            </div>
+            <div style="margin-top: 8px; color: var(--text-dim); font-size: 11.5px; font-weight: 700;">
+              Classificação por participação acumulada no faturamento.
+            </div>
+          </div>
+
+          <div id="lista-gerencia-abc" style="display: flex; flex-direction: column; gap: 8px;">
+            <!-- Renderizado dinamicamente -->
+          </div>
+        </div>
+
+        <!-- SUB-SEÇÃO 2.6: HISTÓRICO DE CAIXAS -->
+        <div id="subsecao-gerencia-historico-caixas" style="display: none; flex-direction: column; gap: 12px;">
+          <div class="section-title-mobile" style="margin-top: 2px;">
+            <span>🕒 Histórico de Turnos Fechados</span>
+            <span class="badge-pill-count" id="badge-total-historico-caixas">0</span>
+          </div>
+
+          <div id="lista-gerencia-historico-caixas" style="display: flex; flex-direction: column; gap: 8px;">
             <!-- Renderizado dinamicamente -->
           </div>
         </div>

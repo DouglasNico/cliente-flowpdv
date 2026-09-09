@@ -1606,12 +1606,16 @@ window.MobileApp = {
 
     const secEquipe = document.getElementById('subsecao-gerencia-equipe');
     const secAudit = document.getElementById('subsecao-gerencia-auditoria');
+    const secABC = document.getElementById('subsecao-gerencia-abc');
+    const secHistorico = document.getElementById('subsecao-gerencia-historico-caixas');
     const secMesas = document.getElementById('subsecao-gerencia-mesas');
     const secAjustes = document.getElementById('subsecao-gerencia-ajustes');
     const secDre = document.getElementById('subsecao-gerencia-dre');
 
     if (secEquipe) secEquipe.style.display = subAba === 'equipe' ? 'flex' : 'none';
     if (secAudit) secAudit.style.display = subAba === 'auditoria' ? 'flex' : 'none';
+    if (secABC) secABC.style.display = subAba === 'abc' ? 'flex' : 'none';
+    if (secHistorico) secHistorico.style.display = subAba === 'historico' ? 'flex' : 'none';
     if (secMesas) secMesas.style.display = subAba === 'mesas' ? 'flex' : 'none';
     if (secAjustes) secAjustes.style.display = subAba === 'ajustes' ? 'flex' : 'none';
     if (secDre) secDre.style.display = subAba === 'dre' ? 'flex' : 'none';
@@ -1622,9 +1626,281 @@ window.MobileApp = {
   renderGerencia() {
     if (this.subAbaGerenciaAtual === 'equipe') this.renderGerenciaFuncionarios();
     else if (this.subAbaGerenciaAtual === 'auditoria') this.renderAuditoria();
+    else if (this.subAbaGerenciaAtual === 'abc') this.renderGerenciaCurvaABC();
+    else if (this.subAbaGerenciaAtual === 'historico') this.renderHistoricoCaixas();
     else if (this.subAbaGerenciaAtual === 'mesas') this.renderGerenciaMesas();
     else if (this.subAbaGerenciaAtual === 'ajustes') this.renderGerenciaAjustes();
     else if (this.subAbaGerenciaAtual === 'dre') this.renderGerenciaDRE();
+  },
+
+  formatarNumeroTurnoMobile(id) {
+    if (!id) return '000000';
+    const texto = String(id);
+    const trn = texto.match(/TRN-(\d+)/i);
+    const digits = trn ? trn[1] : texto.replace(/\D/g, '');
+    if (!digits) return texto.slice(-6);
+    if (digits.length >= 6) return digits.slice(-6);
+    if (digits.length > 0) return digits.padStart(6, '0');
+    return texto.slice(-6);
+  },
+
+  renderGerenciaCurvaABC() {
+    const backup = this.dadosBackup || {};
+    const vendas = backup.vendas || [];
+    const produtos = backup.produtos || [];
+
+    const container = document.getElementById('lista-gerencia-abc');
+    const badgeTotal = document.getElementById('badge-curva-abc-itens');
+    if (!container) return;
+
+    const prodById = new Map();
+    const prodByCodigo = new Map();
+    (produtos || []).forEach(p => {
+      if (!p) return;
+      if (p.id !== undefined && p.id !== null) prodById.set(String(p.id), p);
+      if (p.codigoBarras) prodByCodigo.set(String(p.codigoBarras), p);
+    });
+
+    const mapa = new Map(); // key -> { nome, categoria, qtd, total }
+    let totalGeral = 0;
+
+    (vendas || []).forEach(v => {
+      (v.itens || []).forEach(it => {
+        if (!it) return;
+        const qty = parseFloat(it.quantidade) || 1;
+        const totalItem = parseFloat(it.total) || (parseFloat(it.precoUnitario) || 0) * qty;
+        if (!totalItem) return;
+
+        const candidatoId = String(it.produtoId || it.id || it.codigoBarras || '').trim();
+        const pRef =
+          (candidatoId && prodById.get(candidatoId)) ||
+          (candidatoId && prodByCodigo.get(candidatoId)) ||
+          null;
+
+        const nome = it.nome || pRef?.nome || 'Produto';
+        const categoria = (pRef?.categoria || it.categoria || 'Geral').toString();
+        const key = (pRef?.id || it.produtoId || it.id || it.codigoBarras || nome).toString();
+
+        if (!mapa.has(key)) {
+          mapa.set(key, { nome, categoria, qtd: 0, total: 0 });
+        }
+        const alvo = mapa.get(key);
+        alvo.qtd += qty;
+        alvo.total += totalItem;
+        mapa.set(key, alvo);
+        totalGeral += totalItem;
+      });
+    });
+
+    const lista = Array.from(mapa.entries())
+      .map(([key, v]) => ({ key, ...v }))
+      .sort((a, b) => (b.total || 0) - (a.total || 0));
+
+    if (badgeTotal) badgeTotal.textContent = lista.length;
+
+    if (lista.length === 0 || totalGeral <= 0) {
+      container.innerHTML = `
+        <div class="empty-state-mobile">
+          <span class="empty-state-icon">📈</span>
+          <span style="font-size: 13px;">Sem dados de vendas para calcular Curva ABC.</span>
+        </div>
+      `;
+      return;
+    }
+
+    let acumulado = 0;
+    const topN = 30;
+    const fat = (x) => (totalGeral > 0 ? (x / totalGeral) * 100 : 0);
+
+    const renderBadgeClasse = (classe) => {
+      if (classe === 'A') return `<span class="badge-tag-sm ok">A</span>`;
+      if (classe === 'B') return `<span class="badge-tag-sm low">B</span>`;
+      return `<span class="badge-tag-sm blue">C</span>`;
+    };
+
+    container.innerHTML = lista.slice(0, topN).map((p, idx) => {
+      const perc = fat(p.total);
+      acumulado += perc;
+      let classe = 'C';
+      if (acumulado <= 80) classe = 'A';
+      else if (acumulado <= 95) classe = 'B';
+
+      return `
+        <div class="mobile-list-card" style="padding: 12px 14px;">
+          <div class="card-top-row">
+            <strong class="card-item-title" style="font-size: 13px;">
+              ${idx + 1}. ${p.nome}
+            </strong>
+            ${renderBadgeClasse(classe)}
+          </div>
+          <div style="margin-top: 8px; display: flex; justify-content: space-between; gap: 10px; align-items: center; flex-wrap: wrap;">
+            <span class="badge-tag-sm cyan" style="font-size: 10.5px; padding: 3px 8px;">🏷️ ${p.categoria}</span>
+            <span style="font-family: 'JetBrains Mono'; font-weight: 800; color: var(--text-main); font-size: 12.5px;">
+              ${this.formatarMoeda(p.total)} <span style="color: var(--text-dim); font-size: 11px;">(${perc.toFixed(1)}%)</span>
+            </span>
+          </div>
+          <div style="margin-top: 6px; color: var(--text-muted); font-size: 11.5px; font-weight: 700;">
+            Quantidade vendida: ${p.qtd} un
+          </div>
+        </div>
+      `;
+    }).join('');
+  },
+
+  renderHistoricoCaixas() {
+    const backup = this.dadosBackup || {};
+    const turnos = (backup.turnosHistorico || []).filter(t => t && (t.dataFechamento || t.status === 'fechado'));
+    const container = document.getElementById('lista-gerencia-historico-caixas');
+    const badgeTotal = document.getElementById('badge-total-historico-caixas');
+
+    if (badgeTotal) badgeTotal.textContent = turnos.length || 0;
+    if (!container) return;
+
+    if (turnos.length === 0) {
+      container.innerHTML = `
+        <div class="empty-state-mobile">
+          <span class="empty-state-icon">🕒</span>
+          <span style="font-size: 13px;">Nenhum turno fechado ainda.</span>
+        </div>
+      `;
+      return;
+    }
+
+    turnos.sort((a, b) => {
+      const tA = a.dataFechamento ? new Date(a.dataFechamento).getTime() : 0;
+      const tB = b.dataFechamento ? new Date(b.dataFechamento).getTime() : 0;
+      return tB - tA;
+    });
+
+    const topN = 30;
+    container.innerHTML = turnos.slice(0, topN).map(t => {
+      const idFmt = this.formatarNumeroTurnoMobile(t.id);
+      const dataAbertura = t.dataAbertura ? new Date(t.dataAbertura).toLocaleString('pt-BR') : '--';
+      const dataFechamento = t.dataFechamento ? new Date(t.dataFechamento).toLocaleString('pt-BR') : '--';
+
+      const totalVendas = parseFloat(t.totalVendasGeral || t.totalVendas || 0) || 0;
+      const trocoInicial = parseFloat(t.trocoInicial || t.valorAbertura || 0) || 0;
+
+      const esp = t.saldoEsperado !== undefined ? parseFloat(t.saldoEsperado)
+        : (t.valorEsperado !== undefined ? parseFloat(t.valorEsperado) : null);
+      const inf = t.saldoInformado !== undefined ? parseFloat(t.saldoInformado)
+        : (t.valorInformado !== undefined ? parseFloat(t.valorInformado) : null);
+
+      const diferenca = t.diferenca !== undefined
+        ? parseFloat(t.diferenca)
+        : (esp !== null && inf !== null ? (inf - esp) : 0);
+
+      let badgeDif = `<span class="badge-tag-sm ok">✅</span>`;
+      if (Math.abs(diferenca) <= 0.01) badgeDif = `<span class="badge-tag-sm ok">✅ Bateu</span>`;
+      else if (diferenca > 0) badgeDif = `<span class="badge-tag-sm low">🟢 Sobra +${this.formatarMoeda(diferenca).replace('R$ ', '')}</span>`;
+      else badgeDif = `<span class="badge-tag-sm zero">🔴 Quebra -${this.formatarMoeda(Math.abs(diferenca)).replace('R$ ', '')}</span>`;
+
+      return `
+        <div class="mobile-list-card clickable" onclick="MobileApp.verDetalhesTurnoMobile('${String(t.id).replace(/'/g, "\\'")}')">
+          <div class="card-top-row">
+            <strong class="card-item-title" style="font-size: 13px;">Turno #${idFmt}</strong>
+            <span style="color: var(--text-dim); font-size: 11px; font-weight: 800; font-family: 'JetBrains Mono';">${t.operador || 'Operador'}</span>
+          </div>
+
+          <div style="margin-top: 8px; color: var(--text-muted); font-size: 12px; font-weight: 800;">
+            <div>🟢 Abertura: <span style="color: var(--text-main); font-weight: 900;">${dataAbertura}</span></div>
+            <div>🔴 Fechamento: <span style="color: var(--text-main); font-weight: 900;">${dataFechamento}</span></div>
+          </div>
+
+          <div style="margin-top: 10px; display: flex; justify-content: space-between; gap: 10px; align-items: center; flex-wrap: wrap;">
+            <span style="font-family: 'JetBrains Mono'; font-weight: 900; color: var(--accent-green); font-size: 14px;">
+              ${this.formatarMoeda(totalVendas)}
+              <span style="color: var(--text-dim); font-size: 11px; font-weight: 800;"> total</span>
+            </span>
+            <span style="display: flex; align-items: center; gap: 8px;">
+              ${badgeDif}
+            </span>
+          </div>
+
+          <div style="margin-top: 6px; color: var(--text-muted); font-size: 11.5px; font-weight: 700;">
+            Troco inicial: ${this.formatarMoeda(trocoInicial)}
+          </div>
+        </div>
+      `;
+    }).join('');
+  },
+
+  verDetalhesTurnoMobile(turnoId) {
+    const backup = this.dadosBackup || {};
+    const turnos = backup.turnosHistorico || [];
+    const turno = turnos.find(t => String(t.id) === String(turnoId));
+    if (!turno) return;
+
+    const idFmt = this.formatarNumeroTurnoMobile(turno.id);
+    const dataAbertura = turno.dataAbertura ? new Date(turno.dataAbertura).toLocaleString('pt-BR') : '--';
+    const dataFechamento = turno.dataFechamento ? new Date(turno.dataFechamento).toLocaleString('pt-BR') : '--';
+
+    const totalVendas = parseFloat(turno.totalVendasGeral || turno.totalVendas || 0) || 0;
+    const trocoInicial = parseFloat(turno.trocoInicial || turno.valorAbertura || 0) || 0;
+
+    const esp = turno.saldoEsperado !== undefined ? parseFloat(turno.saldoEsperado)
+      : (turno.valorEsperado !== undefined ? parseFloat(turno.valorEsperado) : null);
+    const inf = turno.saldoInformado !== undefined ? parseFloat(turno.saldoInformado)
+      : (turno.valorInformado !== undefined ? parseFloat(turno.valorInformado) : null);
+    const diferenca = turno.diferenca !== undefined
+      ? parseFloat(turno.diferenca)
+      : (esp !== null && inf !== null ? (inf - esp) : 0);
+
+    let badgeDif = `<span class="badge-tag-sm ok">✅ Bateu</span>`;
+    if (Math.abs(diferenca) > 0.01) {
+      if (diferenca > 0) badgeDif = `<span class="badge-tag-sm low">🟢 Sobra ${this.formatarMoeda(diferenca)}</span>`;
+      else badgeDif = `<span class="badge-tag-sm zero">🔴 Quebra ${this.formatarMoeda(Math.abs(diferenca))}</span>`;
+    }
+
+    const sangrias = Array.isArray(turno.sangrias) ? turno.sangrias : [];
+    const sangriasHtml = sangrias.length > 0
+      ? sangrias.map(s => `
+          <div style="display:flex; justify-content:space-between; gap:10px; padding: 8px 0; border-bottom: 1px dashed var(--border-card);">
+            <span style="color: var(--text-main); font-size: 12.5px; font-weight: 800;">${s.motivo || 'Sangria'}</span>
+            <strong style="font-family:'JetBrains Mono'; color: var(--accent-cyan); white-space:nowrap;">${this.formatarMoeda(parseFloat(s.valor) || 0)}</strong>
+          </div>
+        `).join('')
+      : `<div style="color: var(--text-dim); font-size: 12.5px; font-weight: 800; padding: 12px 0;">Sem sangrias registradas.</div>`;
+
+    const html = `
+      <div style="display:flex; flex-direction:column; gap: 12px;">
+        <div style="background: var(--bg-surface-2); padding: 12px; border-radius: 12px; border: 1px solid var(--border-card);">
+          <div style="display:flex; justify-content:space-between; align-items:flex-start; gap: 10px;">
+            <div>
+              <span style="font-size: 11px; color: var(--text-dim); font-weight: 800; text-transform: uppercase;">ID do Turno</span>
+              <strong style="display:block; font-size: 16px; color: var(--text-main);">${idFmt}</strong>
+            </div>
+            ${badgeDif}
+          </div>
+          <div style="margin-top: 10px; color: var(--text-muted); font-weight: 800; font-size: 12px;">
+            <div>🟢 Abertura: <span style="color: var(--text-main); font-weight: 900;">${dataAbertura}</span></div>
+            <div>🔴 Fechamento: <span style="color: var(--text-main); font-weight: 900;">${dataFechamento}</span></div>
+          </div>
+        </div>
+
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+          <div style="background: var(--bg-surface-2); border: 1px solid var(--border-card); border-radius: 12px; padding: 12px;">
+            <span style="font-size: 11px; color: var(--text-dim); font-weight: 800; text-transform: uppercase; display:block;">Troco inicial</span>
+            <strong style="display:block; font-family:'JetBrains Mono'; color: var(--accent-green); font-size: 14px; white-space:nowrap;">${this.formatarMoeda(trocoInicial)}</strong>
+          </div>
+          <div style="background: var(--bg-surface-2); border: 1px solid var(--border-card); border-radius: 12px; padding: 12px;">
+            <span style="font-size: 11px; color: var(--text-dim); font-weight: 800; text-transform: uppercase; display:block;">Total faturado</span>
+            <strong style="display:block; font-family:'JetBrains Mono'; color: var(--accent-cyan); font-size: 14px; white-space:nowrap;">${this.formatarMoeda(totalVendas)}</strong>
+          </div>
+        </div>
+
+        ${turno.observacoesFechamento ? `<div style="background: var(--bg-surface-2); border: 1px solid var(--border-card); border-radius: 12px; padding: 12px; color: var(--text-muted); font-weight: 800; font-size: 12.5px;">Obs: ${turno.observacoesFechamento}</div>` : ''}
+
+        <div style="background: var(--bg-surface-2); border: 1px solid var(--border-card); border-radius: 12px; padding: 12px;">
+          <span style="font-size: 11px; color: var(--text-dim); font-weight: 900; text-transform: uppercase; display:block;">Sangrias</span>
+          <div style="margin-top: 8px;">
+            ${sangriasHtml}
+          </div>
+        </div>
+      </div>
+    `;
+
+    this.abrirModalSheet(`Fechamento de Caixa #${idFmt}`, html);
   },
 
   renderGerenciaAjustes() {
