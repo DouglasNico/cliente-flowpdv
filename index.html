@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-  <meta name="theme-color" content="#e8eef6">
+  <meta name="theme-color" content="#c9d4e3">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -17,16 +17,23 @@
   <link rel="icon" type="image/png" href="icon.png">
   <link rel="shortcut icon" href="favicon.ico">
   <link rel="apple-touch-icon" href="icon.png">
-  <link rel="stylesheet" href="style.css?v=2.2.1">
+  <link rel="stylesheet" href="style.css?v=2.2.2">
 
   <script>
-    // Intercepta e silencia erros gerados por extensões do navegador (gerenciadores de senhas, tradutores, autofill)
+    // Silencia ruído de extensões do navegador (senha, autofill, etc.)
+    function isExtNoise(err) {
+      const msg = (err && err.message) ? String(err.message) : String(err || '');
+      return msg.includes('message channel closed') ||
+        msg.includes('asynchronous response') ||
+        msg.includes('Extension context invalidated');
+    }
     window.addEventListener('unhandledrejection', function (event) {
-      if (event.reason && (
-        (event.reason.message && event.reason.message.includes('message channel closed')) ||
-        (String(event.reason).includes('message channel closed'))
-      )) {
+      if (isExtNoise(event.reason)) event.preventDefault();
+    });
+    window.addEventListener('error', function (event) {
+      if (isExtNoise(event.error) || isExtNoise(event.message)) {
         event.preventDefault();
+        return true;
       }
     });
 
@@ -827,6 +834,6 @@
   </script>
 
   <!-- Lógica Principal do Companion App -->
-  <script src="app.js?v=2.2.1"></script>
+  <script src="app.js?v=2.2.2"></script>
 </body>
 </html>
