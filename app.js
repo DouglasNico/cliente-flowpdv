@@ -14,7 +14,6 @@ window.MobileApp = {
   filtroFinanceiroAtual: 'contas',
   filtroContasAtual: 'todos',
   subAbaGerenciaAtual: 'equipe',
-  modoPrivacidadeAtivo: false,
   unsubAuditoriaRealtime: null,
 
   limparSessaoInvalida(mensagem = '🔒 Sessão inválida. Faça login novamente.') {
@@ -265,34 +264,40 @@ window.MobileApp = {
   },
 
   carregarPreferenciasLocais() {
-    // Tema único premium (dark). Limpa preferência antiga de light/dark.
+    // Tema único. Limpa preferência antiga de light/dark e privacidade.
     localStorage.removeItem('flowpdv_mob_theme');
+    localStorage.removeItem('flowpdv_mob_privacidade');
     document.documentElement.removeAttribute('data-theme');
-    document.body.classList.remove('theme-light');
-
-    const privSalvo = localStorage.getItem('flowpdv_mob_privacidade') === 'true';
-    this.aplicarModoPrivacidade(privSalvo);
+    document.body.classList.remove('theme-light', 'modo-privacidade-ativo');
   },
 
-  toggleModoPrivacidade() {
-    this.aplicarModoPrivacidade(!this.modoPrivacidadeAtivo);
-  },
-
-  aplicarModoPrivacidade(ativo) {
-    this.modoPrivacidadeAtivo = ativo;
-    localStorage.setItem('flowpdv_mob_privacidade', ativo ? 'true' : 'false');
-    const btn = document.getElementById('btn-toggle-privacidade');
-    const icon = document.getElementById('icon-privacidade');
-
-    if (ativo) {
-      document.body.classList.add('modo-privacidade-ativo');
-      if (btn) btn.classList.add('ativo');
-      if (icon) icon.textContent = '🙈';
-    } else {
-      document.body.classList.remove('modo-privacidade-ativo');
-      if (btn) btn.classList.remove('ativo');
-      if (icon) icon.textContent = '👁️';
-    }
+  getIconeCategoria(cat) {
+    const c = (cat || '').toLowerCase();
+    if (c.includes('cervej') || c.includes('chopp')) return '🍺';
+    if (c.includes('destil') || c.includes('whisky') || c.includes('vodka') || c.includes('gin') || c.includes('cachaça') || c.includes('rum') || c.includes('licor') || c.includes('tequila')) return '🥃';
+    if (c.includes('vinh') || c.includes('espumant') || c.includes('champagne')) return '🍷';
+    if (c.includes('não alc') || c.includes('nao alc') || c.includes('refrig') || c.includes('suco') || c.includes('água') || c.includes('agua') || c.includes('energet') || c.includes('energét')) return '🥤';
+    if (c.includes('bebid') || c.includes('drink')) return '🍷';
+    if (c.includes('gelo') && c.includes('carv')) return '🧊';
+    if (c.includes('gelo')) return '🧊';
+    if (c.includes('carv')) return '🔥';
+    if (c.includes('tabac') || c.includes('cigar') || c.includes('essênc') || c.includes('essenc') || c.includes('seda') || c.includes('pod') || c.includes('vape') || c.includes('narguil')) return '🚬';
+    if (c.includes('petisc') || c.includes('snack') || c.includes('salgad') || c.includes('amendo') || c.includes('batata') || c.includes('pringle') || c.includes('dorito') || c.includes('ruffle')) return '🥜';
+    if (c.includes('bomboniere') || c.includes('chocolat') || c.includes('doce') || c.includes('bala') || c.includes('chicle')) return '🍬';
+    if (c.includes('combo') || c.includes('kit') || c.includes('promo')) return '⚡';
+    if (c.includes('aliment') || c.includes('arroz') || c.includes('feijão') || c.includes('massa') || c.includes('mercear')) return '🌾';
+    if (c.includes('carn') || c.includes('açougu') || c.includes('acougu') || c.includes('frango') || c.includes('peix') || c.includes('churr')) return '🥩';
+    if (c.includes('latic') || c.includes('queij') || c.includes('leite') || c.includes('frio') || c.includes('presunt')) return '🧀';
+    if (c.includes('horti') || c.includes('frut') || c.includes('legum') || c.includes('verdur')) return '🍎';
+    if (c.includes('padar') || c.includes('pão') || c.includes('pao') || c.includes('bolo')) return '🥖';
+    if (c.includes('higien') || c.includes('sabon') || c.includes('shamp') || c.includes('cosmet')) return '🧴';
+    if (c.includes('limpez') || c.includes('deterg') || c.includes('desinf')) return '🧹';
+    if (c.includes('matina') || c.includes('café') || c.includes('cafe') || c.includes('achocolat')) return '☕';
+    if (c.includes('acessór') || c.includes('acessor') || c.includes('copo') || c.includes('taça') || c.includes('taca') || c.includes('canec')) return '🏺';
+    if (c.includes('vestu') || c.includes('roupa')) return '👕';
+    if (c.includes('eletr')) return '🔌';
+    if (c.includes('geral')) return '📦';
+    return '🏷️';
   },
 
   registrarServiceWorker() {
@@ -571,11 +576,11 @@ window.MobileApp = {
     }
 
     try {
-      const { db, collection, query, where, onSnapshot, orderBy, limit } = window.FirebaseDB;
+      // Sem orderBy: evita índice composto no Firestore. Ordenamos no cliente.
+      const { db, collection, query, where, onSnapshot, limit } = window.FirebaseDB;
       const q = query(
         collection(db, 'auditoria_lojas'),
         where('chaveLicenca', '==', this.chaveLicenca),
-        orderBy('criadoEm', 'desc'),
         limit(100)
       );
 
@@ -585,6 +590,12 @@ window.MobileApp = {
           const data = docSnap.data();
           if (!data || String(data.chaveLicenca || '').trim() !== String(this.chaveLicenca || '').trim()) return;
           logs.push({ id: docSnap.id, ...data });
+        });
+
+        logs.sort((a, b) => {
+          const tA = a.criadoEm ? new Date(a.criadoEm).getTime() : 0;
+          const tB = b.criadoEm ? new Date(b.criadoEm).getTime() : 0;
+          return tB - tA;
         });
 
         this.dadosAuditoriaRaw = logs;
@@ -1172,7 +1183,7 @@ window.MobileApp = {
           </div>
           <div class="card-bottom-row" style="flex-direction: column; align-items: stretch; gap: 6px; margin-top: auto; padding-top: 6px;">
             <div style="display: flex; justify-content: space-between; width: 100%; align-items: center; gap: 8px;">
-              <span class="card-category-tag" title="${p.categoria || 'Geral'}">🏷️ ${p.categoria || 'Geral'}</span>
+              <span class="card-category-tag" title="${p.categoria || 'Geral'}">${this.getIconeCategoria(p.categoria)} ${p.categoria || 'Geral'}</span>
               ${badgeEstoque}
             </div>
             ${validadeHtml ? `<div style="display: flex; align-items: center; justify-content: flex-start; width: 100%;">${validadeHtml}</div>` : ''}
@@ -1379,7 +1390,7 @@ window.MobileApp = {
             </div>
             <div style="display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-top: 8px; font-size: 12px; color: var(--text-muted);">
               <span style="display: flex; align-items: center; gap: 4px;">📅 Venc: <strong style="color: var(--text-main); font-family: 'JetBrains Mono';">${vencFormatado}</strong></span>
-              <span class="badge-tag-sm cyan" style="font-size: 11px; font-weight: 700; white-space: nowrap; flex-shrink: 0;">🏷️ ${categoriaNome}</span>
+              <span class="badge-tag-sm cyan" style="font-size: 11px; font-weight: 700; white-space: nowrap; flex-shrink: 0;">${this.getIconeCategoria(categoriaNome)} ${categoriaNome}</span>
             </div>
             <div class="card-bottom-row" style="margin-top: 8px; padding-top: 8px; border-top: 1px dashed var(--border-card);">
               ${badgeVenc}
@@ -1665,16 +1676,17 @@ window.MobileApp = {
 
     container.innerHTML = categorias.map(cat => {
       const qtd = produtos.filter(p => String(p.categoria || 'Geral').toLowerCase() === cat.toLowerCase()).length;
+      const icone = this.getIconeCategoria(cat);
       const enc = encodeURIComponent(cat);
       return `
         <div class="mobile-list-card">
           <div class="card-top-row">
-            <strong class="card-item-title">🏷️ ${cat}</strong>
+            <strong class="card-item-title">${icone} ${cat}</strong>
             <span class="badge-tag-sm cyan">${qtd} prod.</span>
           </div>
           <div class="card-bottom-row" style="margin-top: 8px; padding-top: 8px; border-top: 1px dashed var(--border-card); gap: 8px; flex-wrap: wrap;">
             <button type="button" class="chip-btn" style="height: 30px; font-size: 11px;" onclick="MobileApp.abrirModalRenomearCategoria('${enc}')">✏️ Renomear</button>
-            <button type="button" class="chip-btn" style="height: 30px; font-size: 11px; border-color: #f87171; color: #f87171;" onclick="MobileApp.excluirCategoriaMobile('${enc}')">🗑️ Remover</button>
+            <button type="button" class="chip-btn chip-btn-danger" style="height: 30px; font-size: 11px;" onclick="MobileApp.excluirCategoriaMobile('${enc}')">🗑️ Remover</button>
           </div>
         </div>`;
     }).join('');
@@ -1965,7 +1977,7 @@ window.MobileApp = {
             ${renderBadgeClasse(classe)}
           </div>
           <div style="margin-top: 8px; display: flex; justify-content: space-between; gap: 10px; align-items: center; flex-wrap: wrap;">
-            <span class="badge-tag-sm cyan" style="font-size: 10.5px; padding: 3px 8px;">🏷️ ${p.categoria}</span>
+            <span class="badge-tag-sm cyan" style="font-size: 10.5px; padding: 3px 8px;">${this.getIconeCategoria(p.categoria)} ${p.categoria}</span>
             <span style="font-family: 'JetBrains Mono'; font-weight: 800; color: var(--text-main); font-size: 12.5px;">
               ${this.formatarMoeda(p.total)} <span style="color: var(--text-dim); font-size: 11px;">(${perc.toFixed(1)}%)</span>
             </span>
