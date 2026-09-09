@@ -1903,6 +1903,8 @@ window.MobileApp = {
     const agora = Date.now();
     const aberturaMs = this.msDataTurno(turno && turno.dataAbertura);
     const ultimoMs = terminal && terminal.ultimoAcesso ? new Date(terminal.ultimoAcesso).getTime() : 0;
+    const maisNovo = this.msAberturaMaisNova(backup);
+    if (aberturaMs > 0 && maisNovo > 0 && Math.abs(aberturaMs - maisNovo) < 3000) return true;
     const MEIA_HORA = 30 * 60 * 1000;
     if (aberturaMs > 0 && (agora - aberturaMs) < MEIA_HORA) return true;
     if (ultimoMs > 0 && (agora - ultimoMs) < MEIA_HORA) return true;
@@ -1945,23 +1947,75 @@ window.MobileApp = {
     return true;
   },
 
-  listarTurnosCaixaAbertos(backup = this.dadosBackup || {}) {
+  msAberturaMaisNova(backup) {
+    const mapa = (backup.turnosAtivos && typeof backup.turnosAtivos === 'object') ? backup.turnosAtivos : {};
+    let max = this.msDataTurno(backup.turnoAtual && backup.turnoAtual.dataAbertura);
+    Object.keys(mapa).forEach(id => {
+      const t = mapa[id];
+      if (!this.isTurnoCaixaAberto(t, backup, id)) return;
+      max = Math.max(max, this.msDataTurno(t.dataAbertura));
+    });
+    return max;
+  },
+
+  encontrarTerminalDoSlot(deviceId, turno, terminais, bruto) {
+    const id = String(deviceId || '').toLowerCase();
+    const tid = String(turno && turno.terminalId || '').toLowerCase();
+    for (let i = 0; i < terminais.length; i++) {
+      const irmaos = this.idsIrmaosTerminal(terminais[i], bruto).map(x => String(x).toLowerCase());
+      if (irmaos.includes(id) || (tid && irmaos.includes(tid))) return terminais[i];
+    }
+    return null;
+  },
+
+  montarMapaCaixasAbertos(backup = this.dadosBackup || {}) {
     const bruto = this.dadosLoja?.terminaisAtivos;
     const terminais = this.consolidarTerminaisLicenca(bruto);
-    const abertos = [];
-    const vistos = new Set();
+    const mapa = (backup.turnosAtivos && typeof backup.turnosAtivos === 'object') ? backup.turnosAtivos : {};
+    const porId = new Map();
+    const maisNovoMs = this.msAberturaMaisNova(backup);
 
-    const orfao = this.turnoAbertoOrfao(backup, bruto);
-    terminais.forEach((t, idx) => {
-      let turno = this.resolverTurnoDoTerminal(backup, t, bruto);
-      if (!this.isCaixaAbertoNaTela(turno, t, backup) && idx === 0 && orfao) turno = orfao;
-      if (!this.isCaixaAbertoNaTela(turno, t, backup)) return;
-      const chave = String((turno && turno.id) || t.id).toLowerCase();
-      if (vistos.has(chave)) return;
-      vistos.add(chave);
-      abertos.push({ deviceId: t.id, turno });
+    const slots = Object.keys(mapa).map(id => ({ id, turno: mapa[id] }))
+      .filter(s => this.isTurnoCaixaAberto(s.turno, backup, s.id));
+
+    if (backup.turnoAtual && this.isTurnoCaixaAberto(backup.turnoAtual, backup, backup.turnoAtual.terminalId || '')) {
+      const ja = slots.some(s => String(s.turno && s.turno.id) === String(backup.turnoAtual.id));
+      if (!ja) slots.push({ id: backup.turnoAtual.terminalId || 'turnoAtual', turno: backup.turnoAtual });
+    }
+
+    const orfaos = [];
+    slots.forEach(slot => {
+      const dest = this.encontrarTerminalDoSlot(slot.id, slot.turno, terminais, bruto);
+      const ms = this.msDataTurno(slot.turno.dataAbertura);
+      const ehMaisNovo = maisNovoMs > 0 && ms >= maisNovoMs - 3000;
+      if (!dest) {
+        if (ehMaisNovo) orfaos.push(slot);
+        return;
+      }
+      const online = this.isTerminalOnline(dest);
+      if (!online && !ehMaisNovo) return;
+      const atual = porId.get(dest.id);
+      if (!atual || this.msDataTurno(atual.dataAbertura) < ms) porId.set(dest.id, slot.turno);
     });
 
+    orfaos.forEach(slot => {
+      let alvo = terminais.find(t => this.isTerminalOnline(t) && !porId.has(t.id));
+      if (!alvo) {
+        const op = String(slot.turno && slot.turno.operador || '').trim().toLowerCase();
+        if (op) alvo = terminais.find(t => !porId.has(t.id) && String(t.usuario || '').trim().toLowerCase() === op);
+      }
+      if (!alvo) alvo = terminais.find(t => this.isTerminalOnline(t));
+      if (!alvo) return;
+      porId.set(alvo.id, slot.turno);
+    });
+
+    return porId;
+  },
+
+  listarTurnosCaixaAbertos(backup = this.dadosBackup || {}) {
+    const mapa = this.montarMapaCaixasAbertos(backup);
+    const abertos = [];
+    mapa.forEach((turno, deviceId) => abertos.push({ deviceId, turno }));
     return abertos;
   },
 
@@ -2100,14 +2154,13 @@ window.MobileApp = {
       return;
     }
 
-    const orfao = this.turnoAbertoOrfao(backup, brutoTerminais);
-    const maisRecenteId = terminais[0] && terminais[0].id;
+    const mapaAbertos = this.montarMapaCaixasAbertos(backup);
 
     container.innerHTML = terminais.map(t => {
-      let turno = this.resolverTurnoDoTerminal(backup, t, brutoTerminais);
-      if (!this.isCaixaAbertoNaTela(turno, t, backup) && t.id === maisRecenteId && orfao) turno = orfao;
+      const turnoAberto = mapaAbertos.get(t.id);
+      const turno = turnoAberto || this.resolverTurnoDoTerminal(backup, t, brutoTerminais);
       const isOnline = this.isTerminalOnline(t);
-      const caixaAberto = this.isCaixaAbertoNaTela(turno, t, backup);
+      const caixaAberto = Boolean(turnoAberto);
       const ultimo = t.ultimoAcesso ? new Date(t.ultimoAcesso).toLocaleString('pt-BR') : '—';
       const operador = this.nomeOperadorTerminal(t, turno);
       const host = t.hostname || 'Computador';
