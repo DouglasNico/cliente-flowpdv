@@ -1832,3 +1832,115 @@ body {
     box-shadow: inherit !important;
   }
 }
+
+/* ==========================================================================
+   CATEGORIA CARDS v2.2.6
+   ========================================================================== */
+#lista-gerencia-categorias {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.categoria-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 12px 12px 12px 10px;
+  background: linear-gradient(135deg, #344f6c 0%, #2e4660 100%);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 14px;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.18);
+}
+
+.categoria-card-main {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  flex: 1;
+}
+
+.categoria-card-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+  background: rgba(15, 23, 42, 0.35);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  flex-shrink: 0;
+}
+
+.categoria-card-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.categoria-card-nome {
+  font-size: 14.5px;
+  font-weight: 800;
+  color: #f8fafc;
+  line-height: 1.25;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.categoria-card-meta {
+  font-size: 11.5px;
+  font-weight: 700;
+  color: #bae6fd;
+  letter-spacing: 0.2px;
+}
+
+.categoria-card-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.categoria-action-btn {
+  appearance: none;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: rgba(15, 23, 42, 0.28);
+  color: #e2e8f0;
+  height: 34px;
+  padding: 0 10px;
+  border-radius: 9px;
+  font-size: 11px;
+  font-weight: 800;
+  font-family: inherit;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.categoria-action-btn.danger {
+  border-color: rgba(248, 113, 113, 0.45);
+  color: #fecaca;
+  background: rgba(127, 29, 29, 0.28);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .categoria-action-btn:hover {
+    background: rgba(15, 23, 42, 0.45);
+    border-color: rgba(255, 255, 255, 0.28);
+  }
+  .categoria-action-btn.danger:hover {
+    background: rgba(153, 27, 27, 0.45);
+  }
+}
+
+@media (max-width: 380px) {
+  .categoria-action-btn span { display: none; }
+  .categoria-action-btn { width: 34px; padding: 0; justify-content: center; }
+}

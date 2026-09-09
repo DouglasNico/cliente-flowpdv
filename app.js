@@ -1678,15 +1678,24 @@ window.MobileApp = {
       const qtd = produtos.filter(p => String(p.categoria || 'Geral').toLowerCase() === cat.toLowerCase()).length;
       const icone = this.getIconeCategoria(cat);
       const enc = encodeURIComponent(cat);
+      const isGeral = cat.toLowerCase() === 'geral';
       return `
-        <div class="mobile-list-card">
-          <div class="card-top-row">
-            <strong class="card-item-title">${icone} ${cat}</strong>
-            <span class="badge-tag-sm cyan">${qtd} prod.</span>
+        <div class="categoria-card">
+          <div class="categoria-card-main">
+            <div class="categoria-card-icon" aria-hidden="true">${icone}</div>
+            <div class="categoria-card-info">
+              <strong class="categoria-card-nome">${cat}</strong>
+              <span class="categoria-card-meta">${qtd} ${qtd === 1 ? 'produto' : 'produtos'}</span>
+            </div>
           </div>
-          <div class="card-bottom-row" style="margin-top: 8px; padding-top: 8px; border-top: 1px dashed var(--border-card); gap: 8px; flex-wrap: wrap;">
-            <button type="button" class="chip-btn" style="height: 30px; font-size: 11px;" onclick="MobileApp.abrirModalRenomearCategoria('${enc}')">✏️ Renomear</button>
-            <button type="button" class="chip-btn chip-btn-danger" style="height: 30px; font-size: 11px;" onclick="MobileApp.excluirCategoriaMobile('${enc}')">🗑️ Remover</button>
+          <div class="categoria-card-actions">
+            <button type="button" class="categoria-action-btn" onclick="MobileApp.abrirModalRenomearCategoria('${enc}')" title="Renomear">
+              ✏️<span>Renomear</span>
+            </button>
+            ${isGeral ? '' : `
+            <button type="button" class="categoria-action-btn danger" onclick="MobileApp.excluirCategoriaMobile('${enc}')" title="Remover">
+              🗑️<span>Remover</span>
+            </button>`}
           </div>
         </div>`;
     }).join('');
