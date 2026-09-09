@@ -1878,14 +1878,18 @@ window.MobileApp = {
     return !n || ['user', 'usuario', 'usuário', 'administrator', 'administrador', 'admin', 'convidado', 'guest'].includes(n);
   },
 
-  nomeOperadorTerminal(terminal, turno, caixaAberto) {
-    const preferido = caixaAberto
-      ? (turno && turno.operador) || (terminal && terminal.usuario)
-      : (terminal && terminal.usuario) || (turno && turno.operador);
-    if (!this.usuarioGenericoWindows(preferido)) return String(preferido).trim();
-    const outro = caixaAberto ? (terminal && terminal.usuario) : (turno && turno.operador);
-    if (!this.usuarioGenericoWindows(outro)) return String(outro).trim();
+  nomeOperadorTerminal(terminal, turno) {
+    const candidatos = [turno && turno.operador, terminal && terminal.usuario];
+    for (let i = 0; i < candidatos.length; i++) {
+      if (!this.usuarioGenericoWindows(candidatos[i])) return String(candidatos[i]).trim();
+    }
     return '—';
+  },
+
+  /** Heartbeat do PDV ~2 min. Sem sinal recente, o app não está aberto. */
+  isTerminalOnline(terminal) {
+    const ultimoMs = terminal && terminal.ultimoAcesso ? new Date(terminal.ultimoAcesso).getTime() : 0;
+    return ultimoMs > 0 && (Date.now() - ultimoMs) < (1000 * 60 * 10);
   },
 
   /** Turno aberto: slot explícito do terminal da lista. Histórico/auditoria só do MESMO turno. */
@@ -1932,7 +1936,7 @@ window.MobileApp = {
 
     terminais.forEach(t => {
       const turno = this.resolverTurnoDoTerminal(backup, t, bruto);
-      if (!this.isTurnoCaixaAberto(turno, backup, t.id)) return;
+      if (!this.isTerminalOnline(t) || !this.isTurnoCaixaAberto(turno, backup, t.id)) return;
       const chave = String((turno && turno.id) || t.id).toLowerCase();
       if (vistos.has(chave)) return;
       vistos.add(chave);
@@ -2050,13 +2054,10 @@ window.MobileApp = {
 
     container.innerHTML = terminais.map(t => {
       const turno = this.resolverTurnoDoTerminal(backup, t, brutoTerminais);
-      const caixaAberto = this.isTurnoCaixaAberto(turno, backup, (turno && turno.terminalId) || t.id);
-      const ultimoMs = t.ultimoAcesso ? new Date(t.ultimoAcesso).getTime() : 0;
-      // Online = app visto nos últimos 30 min (heartbeat do PDV a cada ~2 min)
-      const ONLINE_MS = 1000 * 60 * 30;
-      const isOnline = ultimoMs > 0 && (Date.now() - ultimoMs) < ONLINE_MS;
+      const isOnline = this.isTerminalOnline(t);
+      const caixaAberto = isOnline && this.isTurnoCaixaAberto(turno, backup, (turno && turno.terminalId) || t.id);
       const ultimo = t.ultimoAcesso ? new Date(t.ultimoAcesso).toLocaleString('pt-BR') : '—';
-      const operador = this.nomeOperadorTerminal(t, turno, caixaAberto);
+      const operador = this.nomeOperadorTerminal(t, turno);
       const host = t.hostname || 'Computador';
 
       const badges = [];
