@@ -15,6 +15,7 @@ window.MobileApp = {
   filtroContasAtual: 'todos',
   subAbaGerenciaAtual: 'equipe',
   unsubAuditoriaRealtime: null,
+  unsubLicencaRealtime: null,
 
   limparSessaoInvalida(mensagem = '🔒 Sessão inválida. Faça login novamente.') {
     if (this.timerInatividadeId) clearTimeout(this.timerInatividadeId);
@@ -565,6 +566,31 @@ window.MobileApp = {
     }
 
     this.iniciarListenerAuditoriaTempoReal();
+    this.iniciarListenerLicencaTempoReal();
+  },
+
+  iniciarListenerLicencaTempoReal() {
+    if (!this.chaveLicenca || !window.FirebaseDB || !window.FirebaseDB.onSnapshot) return;
+
+    if (this.unsubLicencaRealtime) {
+      this.unsubLicencaRealtime();
+      this.unsubLicencaRealtime = null;
+    }
+
+    try {
+      const { db, doc, onSnapshot } = window.FirebaseDB;
+      this.unsubLicencaRealtime = onSnapshot(doc(db, 'licencas', this.chaveLicenca), (snap) => {
+        if (!snap || !snap.exists()) return;
+        this.dadosLoja = snap.data();
+        this.atualizarHeaderUI();
+        this.renderResumoDashboard();
+        if (this.subAbaGerenciaAtual === 'terminais') this.renderGerenciaTerminais();
+      }, (err) => {
+        console.warn('[MobileApp] Erro no listener da licença:', err);
+      });
+    } catch (e) {
+      console.warn('[MobileApp] Falha ao ligar listener da licença:', e);
+    }
   },
 
   iniciarListenerAuditoriaTempoReal() {
@@ -746,13 +772,7 @@ window.MobileApp = {
     }
 
     // 🏦 TOTAL EM CAIXA ATUAL (Suporta 1 terminal ou múltiplos PDVs simultâneos)
-    const idsTerminaisLicenca = this.consolidarTerminaisLicenca(this.dadosLoja?.terminaisAtivos)
-      .map(t => t.id)
-      .filter(Boolean);
-    const turnosAbertos = this.listarTurnosCaixaAbertos(
-      backup,
-      idsTerminaisLicenca.length ? { terminalIds: idsTerminaisLicenca } : {}
-    ).map(x => x.turno);
+    const turnosAbertos = this.listarTurnosCaixaAbertos(backup).map(x => x.turno);
 
     let gavetaCaixa = 0;
     let labelCaixa = 'Dinheiro em caixa / turno';
@@ -1848,7 +1868,12 @@ window.MobileApp = {
     return status === 'fechado' || status === 'closed' || status === 'encerrado';
   },
 
-  /** Turno conta como caixa aberto só com status explícito aberto (não basta ter dataAbertura). */
+  hostGenerico(hostname) {
+    const host = String(hostname || '').trim().toLowerCase();
+    return !host || host === 'computador' || host === 'computador local' || host === 'desktop';
+  },
+
+  /** Turno aberto: confia no slot da nuvem. Histórico só desmente o MESMO turno. */
   isTurnoCaixaAberto(turno, backup = this.dadosBackup || {}, deviceId = '') {
     if (!turno || typeof turno !== 'object') return false;
     if (this.isRegistroTurnoFechado(turno)) return false;
@@ -1858,77 +1883,48 @@ window.MobileApp = {
     if (status !== 'aberto' && status !== 'open') return false;
 
     const ids = this.idsDoTurno(turno);
+    if (!ids.length) return true;
+
     const hist = Array.isArray(backup.turnosHistorico) ? backup.turnosHistorico : [];
     const aberturaMs = this.msDataTurno(turno.dataAbertura);
-    const terminal = String(deviceId || turno.terminalId || '').trim();
-    const mapa = (backup.turnosAtivos && typeof backup.turnosAtivos === 'object') ? backup.turnosAtivos : {};
-
-    if (turno.terminalId && deviceId && String(turno.terminalId).toLowerCase() !== String(deviceId).toLowerCase()) {
-      return false;
-    }
-
-    const historicoFechaEste = hist.some(h => {
+    const mesmoTurnoJaFechado = hist.some(h => {
       if (!h || !this.isRegistroTurnoFechado(h)) return false;
       const idsHist = this.idsDoTurno(h);
-      if (ids.length && idsHist.some(id => ids.includes(id))) return true;
-
-      const mesmaAbertura = aberturaMs > 0 && Math.abs(this.msDataTurno(h.dataAbertura) - aberturaMs) < 5000;
-      if (mesmaAbertura) return true;
-
-      if (terminal && aberturaMs > 0) {
-        const termHist = String(h.terminalId || '').trim();
-        if (termHist && termHist === terminal && this.msDataTurno(h.dataFechamento) >= aberturaMs) return true;
-      }
-      return false;
+      if (!idsHist.some(id => ids.includes(id))) return false;
+      const fechaMs = this.msDataTurno(h.dataFechamento);
+      return !aberturaMs || fechaMs >= aberturaMs;
     });
-    if (historicoFechaEste) return false;
-
-    const logs = Array.isArray(this.dadosAuditoriaRaw) && this.dadosAuditoriaRaw.length
-      ? this.dadosAuditoriaRaw
-      : (this.dadosAuditoria || []);
-    if (ids.length && logs.some(l => {
-      const tipo = String(l.tipo || '').toLowerCase();
-      if (tipo !== 'fechamento_caixa' && tipo !== 'fechamento') return false;
-      const tid = String(l.detalhes?.turnoId || l.turnoId || l.detalhes?.id || '').trim();
-      return tid && ids.includes(tid);
-    })) return false;
-
-    if (ids.length) {
-      const copias = Object.entries(mapa).filter(([, t]) => t && this.idsDoTurno(t).some(id => ids.includes(id)));
-      if (copias.length > 1 && deviceId) {
-        const donoPorTerminal = copias.find(([, t]) => String(t.terminalId || '').toLowerCase() === String(deviceId).toLowerCase());
-        if (donoPorTerminal) {
-          if (String(donoPorTerminal[0]).toLowerCase() !== String(deviceId).toLowerCase()) return false;
-        } else {
-          const maisNovo = copias.slice().sort((a, b) => this.msDataTurno(b[1].dataAbertura) - this.msDataTurno(a[1].dataAbertura))[0];
-          if (String(maisNovo[0]).toLowerCase() !== String(deviceId).toLowerCase()) return false;
-        }
-      }
-    }
-
-    return true;
+    return !mesmoTurnoJaFechado;
   },
 
-  listarTurnosCaixaAbertos(backup = this.dadosBackup || {}, opts = {}) {
+  listarTurnosCaixaAbertos(backup = this.dadosBackup || {}) {
     const abertos = [];
-    const vistos = new Set();
+    const vistosTurno = new Set();
+    const vistosHost = new Set();
     const mapa = (backup.turnosAtivos && typeof backup.turnosAtivos === 'object') ? backup.turnosAtivos : {};
-    const filtrarIds = Array.isArray(opts.terminalIds) && opts.terminalIds.length
-      ? new Set(opts.terminalIds.map(id => String(id).toLowerCase()))
-      : null;
+    const bruto = Array.isArray(this.dadosLoja?.terminaisAtivos) ? this.dadosLoja.terminaisAtivos : [];
+
+    const hostDoDevice = (deviceId) => {
+      const achado = bruto.find(t => {
+        const obj = typeof t === 'string' ? { id: t } : t;
+        return obj && String(obj.id || '').toLowerCase() === String(deviceId).toLowerCase();
+      });
+      const obj = typeof achado === 'string' ? { hostname: '' } : (achado || {});
+      return String(obj.hostname || '').trim().toLowerCase();
+    };
 
     Object.entries(mapa).forEach(([deviceId, turno]) => {
-      if (filtrarIds && !filtrarIds.has(String(deviceId).toLowerCase())) return;
       if (!this.isTurnoCaixaAberto(turno, backup, deviceId)) return;
-      const chave = String(turno?.id || deviceId);
-      if (vistos.has(chave)) return;
-      vistos.add(chave);
+      const chaveTurno = String(turno?.id || deviceId).toLowerCase();
+      if (vistosTurno.has(chaveTurno)) return;
+      const host = hostDoDevice(deviceId);
+      const chaveHost = this.hostGenerico(host) ? `id:${String(deviceId).toLowerCase()}` : `host:${host}`;
+      if (vistosHost.has(chaveHost)) return;
+      vistosTurno.add(chaveTurno);
+      vistosHost.add(chaveHost);
       abertos.push({ deviceId, turno });
     });
 
-    if (abertos.length === 0 && !filtrarIds && this.isTurnoCaixaAberto(backup.turnoAtual, backup)) {
-      abertos.push({ deviceId: 'local', turno: backup.turnoAtual });
-    }
     return abertos;
   },
 
@@ -1940,6 +1936,51 @@ window.MobileApp = {
     const key = Object.keys(turnosAtivos).find(k => String(k).toLowerCase() === id.toLowerCase());
     const porChave = key ? turnosAtivos[key] : null;
     return (porChave && typeof porChave === 'object') ? porChave : null;
+  },
+
+  idsIrmaosTerminal(terminal, bruto) {
+    const ids = new Set();
+    if (terminal && terminal.id) ids.add(String(terminal.id));
+    const host = String(terminal && terminal.hostname || '').trim().toLowerCase();
+    const lista = Array.isArray(bruto) ? bruto : [];
+    lista.forEach(t => {
+      const obj = typeof t === 'string' ? { id: t, hostname: '' } : t;
+      if (!obj || !obj.id) return;
+      if (String(obj.id) === String(terminal && terminal.id)) {
+        ids.add(String(obj.id));
+        return;
+      }
+      if (!this.hostGenerico(host) && String(obj.hostname || '').trim().toLowerCase() === host) {
+        ids.add(String(obj.id));
+      }
+    });
+    return Array.from(ids);
+  },
+
+  resolverTurnoDoTerminal(backup, terminal, bruto) {
+    const mapa = (backup.turnosAtivos && typeof backup.turnosAtivos === 'object') ? backup.turnosAtivos : {};
+    const ids = this.idsIrmaosTerminal(terminal, bruto);
+    let fallback = null;
+
+    for (let i = 0; i < ids.length; i++) {
+      const id = ids[i];
+      const turno = this.obterTurnoAtivoDoTerminal(mapa, id);
+      if (!turno) continue;
+      if (this.isTurnoCaixaAberto(turno, backup, id)) return turno;
+      if (!fallback) fallback = turno;
+    }
+
+    const idsLower = new Set(ids.map(id => String(id).toLowerCase()));
+    const chaves = Object.keys(mapa);
+    for (let i = 0; i < chaves.length; i++) {
+      const id = chaves[i];
+      const turno = mapa[id];
+      if (!turno || typeof turno !== 'object') continue;
+      const tid = String(turno.terminalId || '').toLowerCase();
+      if (tid && idsLower.has(tid) && this.isTurnoCaixaAberto(turno, backup, id)) return turno;
+    }
+
+    return fallback;
   },
 
   consolidarTerminaisLicenca(lista) {
@@ -1975,11 +2016,9 @@ window.MobileApp = {
     const lic = this.dadosLoja || {};
     const backup = this.dadosBackup || {};
     const limite = parseInt(lic.limiteTerminais, 10) || 1;
-    const terminais = this.consolidarTerminaisLicenca(lic.terminaisAtivos);
-
-    const turnosAtivos = (backup.turnosAtivos && typeof backup.turnosAtivos === 'object') ? backup.turnosAtivos : {};
-    const idsTerminais = terminais.map(t => t.id).filter(Boolean);
-    const caixasAbertos = this.listarTurnosCaixaAbertos(backup, { terminalIds: idsTerminais }).length;
+    const brutoTerminais = lic.terminaisAtivos;
+    const terminais = this.consolidarTerminaisLicenca(brutoTerminais);
+    const caixasAbertos = this.listarTurnosCaixaAbertos(backup).length;
 
     const elLimite = document.getElementById('metric-limite-terminais');
     const elCaixas = document.getElementById('metric-terminais-caixa-aberto');
@@ -2000,8 +2039,8 @@ window.MobileApp = {
     }
 
     container.innerHTML = terminais.map(t => {
-      const turno = this.obterTurnoAtivoDoTerminal(turnosAtivos, t.id);
-      const caixaAberto = this.isTurnoCaixaAberto(turno, backup, t.id);
+      const turno = this.resolverTurnoDoTerminal(backup, t, brutoTerminais);
+      const caixaAberto = this.isTurnoCaixaAberto(turno, backup, (turno && turno.terminalId) || t.id);
       const ultimoMs = t.ultimoAcesso ? new Date(t.ultimoAcesso).getTime() : 0;
       // Online = app visto nos últimos 30 min (heartbeat do PDV a cada ~2 min)
       const ONLINE_MS = 1000 * 60 * 30;
