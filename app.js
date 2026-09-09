@@ -744,13 +744,7 @@ window.MobileApp = {
     }
 
     // 🏦 TOTAL EM CAIXA ATUAL (Suporta 1 terminal ou múltiplos PDVs simultâneos)
-    let turnosAbertos = [];
-    if (backup.turnosAtivos && typeof backup.turnosAtivos === 'object') {
-      turnosAbertos = Object.values(backup.turnosAtivos).filter(t => t && (t.status === 'aberto' || t.dataAbertura));
-    }
-    if (turnosAbertos.length === 0 && backup.turnoAtual && (backup.turnoAtual.status === 'aberto' || backup.turnoAtual.dataAbertura || backup.turnoAtual.trocoInicial !== undefined)) {
-      turnosAbertos = [backup.turnoAtual];
-    }
+    const turnosAbertos = this.listarTurnosCaixaAbertos(backup).map(x => x.turno);
 
     let gavetaCaixa = 0;
     let labelCaixa = 'Dinheiro em caixa / turno';
@@ -1826,6 +1820,37 @@ window.MobileApp = {
     }
   },
 
+  /** Turno conta como caixa aberto só com status explícito aberto (não basta ter dataAbertura). */
+  isTurnoCaixaAberto(turno) {
+    if (!turno || typeof turno !== 'object') return false;
+    if (turno.dataFechamento) return false;
+    const status = String(turno.status || '').toLowerCase().trim();
+    if (status === 'fechado' || status === 'closed' || status === 'encerrado') return false;
+    return status === 'aberto' || status === 'open';
+  },
+
+  listarTurnosCaixaAbertos(backup = this.dadosBackup || {}) {
+    const abertos = [];
+    const mapa = (backup.turnosAtivos && typeof backup.turnosAtivos === 'object') ? backup.turnosAtivos : {};
+    Object.entries(mapa).forEach(([deviceId, turno]) => {
+      if (this.isTurnoCaixaAberto(turno)) {
+        abertos.push({ deviceId, turno });
+      }
+    });
+    if (abertos.length === 0 && this.isTurnoCaixaAberto(backup.turnoAtual)) {
+      abertos.push({ deviceId: 'local', turno: backup.turnoAtual });
+    }
+    return abertos;
+  },
+
+  obterTurnoAtivoDoTerminal(turnosAtivos, terminalId) {
+    if (!turnosAtivos || !terminalId) return null;
+    const id = String(terminalId);
+    if (turnosAtivos[id]) return turnosAtivos[id];
+    const key = Object.keys(turnosAtivos).find(k => String(k).toLowerCase() === id.toLowerCase());
+    return key ? turnosAtivos[key] : null;
+  },
+
   renderGerenciaTerminais() {
     const lic = this.dadosLoja || {};
     const backup = this.dadosBackup || {};
@@ -1833,7 +1858,6 @@ window.MobileApp = {
     let terminais = Array.isArray(lic.terminaisAtivos) ? lic.terminaisAtivos : [];
     terminais = terminais.map(t => (typeof t === 'string' ? { id: t, hostname: 'Computador', ultimoAcesso: null } : t)).filter(Boolean);
 
-    // Dedup por id
     const mapa = new Map();
     terminais.forEach(t => {
       const id = String(t.id || '').trim();
@@ -1844,7 +1868,7 @@ window.MobileApp = {
     terminais = Array.from(mapa.values()).sort((a, b) => new Date(b.ultimoAcesso || 0) - new Date(a.ultimoAcesso || 0));
 
     const turnosAtivos = (backup.turnosAtivos && typeof backup.turnosAtivos === 'object') ? backup.turnosAtivos : {};
-    const caixasAbertos = Object.values(turnosAtivos).filter(t => t && (t.status === 'aberto' || t.dataAbertura)).length;
+    const caixasAbertos = this.listarTurnosCaixaAbertos(backup).length;
 
     const elLimite = document.getElementById('metric-limite-terminais');
     const elCaixas = document.getElementById('metric-terminais-caixa-aberto');
@@ -1865,21 +1889,32 @@ window.MobileApp = {
     }
 
     container.innerHTML = terminais.map(t => {
-      const turno = turnosAtivos[t.id];
-      const caixaAberto = !!(turno && (turno.status === 'aberto' || turno.dataAbertura));
+      const turno = this.obterTurnoAtivoDoTerminal(turnosAtivos, t.id);
+      const caixaAberto = this.isTurnoCaixaAberto(turno);
+      const ultimoMs = t.ultimoAcesso ? new Date(t.ultimoAcesso).getTime() : 0;
+      const vistoRecente = ultimoMs > 0 && (Date.now() - ultimoMs) < (1000 * 60 * 60 * 12);
       const ultimo = t.ultimoAcesso ? new Date(t.ultimoAcesso).toLocaleString('pt-BR') : '—';
-      const operador = t.usuario || (turno && turno.operador) || '—';
+      const operador = (caixaAberto && turno && turno.operador) ? turno.operador : (t.usuario || '—');
+
+      let badgeStatus = `<span class="badge-tag-sm blue">⚪ Caixa Fechado</span>`;
+      if (caixaAberto) {
+        badgeStatus = `<span class="badge-tag-sm ok">🟢 Caixa Aberto</span>`;
+      } else if (vistoRecente) {
+        badgeStatus = `<span class="badge-tag-sm cyan">💻 App recente · Caixa fechado</span>`;
+      }
+
       return `
-        <div class="mobile-list-card">
-          <div class="card-top-row">
-            <strong class="card-item-title">💻 ${t.hostname || 'Computador'}</strong>
-            <span class="badge-tag-sm ${caixaAberto ? 'ok' : 'blue'}">${caixaAberto ? '🟢 Caixa Aberto' : '⚪ Offline / Fechado'}</span>
+        <div class="flow-item-card">
+          <div class="flow-item-main">
+            <div class="flow-item-icon">💻</div>
+            <div class="flow-item-info">
+              <strong class="flow-item-title">${t.hostname || 'Computador'}</strong>
+              <span class="flow-item-meta">👤 ${operador}</span>
+              <span class="flow-item-meta">🕒 ${ultimo}</span>
+            </div>
           </div>
-          <div style="margin-top: 8px; font-size: 12px; color: var(--text-muted); display:flex; flex-direction:column; gap:3px;">
-            <span>👤 Operador: <strong style="color:var(--text-main);">${operador}</strong></span>
-            <span>🖥️ Sistema: <strong style="color:var(--text-main);">${t.sistema || 'Windows'}</strong></span>
-            <span>🕒 Último acesso: <strong style="color:var(--text-main); font-family:'JetBrains Mono'; font-size:11px;">${ultimo}</strong></span>
-            <span style="font-size:10.5px; color:var(--text-dim); font-family:'JetBrains Mono';">ID: ${t.id}</span>
+          <div class="flow-item-side">
+            ${badgeStatus}
           </div>
         </div>`;
     }).join('');
@@ -2048,29 +2083,20 @@ window.MobileApp = {
       else badgeDif = `<span class="badge-tag-sm zero">🔴 Quebra -${this.formatarMoeda(Math.abs(diferenca)).replace('R$ ', '')}</span>`;
 
       return `
-        <div class="mobile-list-card clickable" onclick="MobileApp.verDetalhesTurnoMobile('${String(t.id).replace(/'/g, "\\'")}')">
-          <div class="card-top-row">
-            <strong class="card-item-title" style="font-size: 13px;">Turno #${idFmt}</strong>
-            <span style="color: var(--text-dim); font-size: 11px; font-weight: 800; font-family: 'JetBrains Mono';">${t.operador || 'Operador'}</span>
+        <div class="flow-item-card clickable" onclick="MobileApp.verDetalhesTurnoMobile('${String(t.id).replace(/'/g, "\\'")}')">
+          <div class="flow-item-main">
+            <div class="flow-item-icon">🕒</div>
+            <div class="flow-item-info">
+              <strong class="flow-item-title">Turno #${idFmt}</strong>
+              <span class="flow-item-meta">👤 ${t.operador || 'Operador'}</span>
+              <span class="flow-item-meta">🟢 ${dataAbertura}</span>
+              <span class="flow-item-meta">🔴 ${dataFechamento}</span>
+            </div>
           </div>
-
-          <div style="margin-top: 8px; color: var(--text-muted); font-size: 12px; font-weight: 800;">
-            <div>🟢 Abertura: <span style="color: var(--text-main); font-weight: 900;">${dataAbertura}</span></div>
-            <div>🔴 Fechamento: <span style="color: var(--text-main); font-weight: 900;">${dataFechamento}</span></div>
-          </div>
-
-          <div style="margin-top: 10px; display: flex; justify-content: space-between; gap: 10px; align-items: center; flex-wrap: wrap;">
-            <span style="font-family: 'JetBrains Mono'; font-weight: 900; color: var(--accent-green); font-size: 14px;">
-              ${this.formatarMoeda(totalVendas)}
-              <span style="color: var(--text-dim); font-size: 11px; font-weight: 800;"> total</span>
-            </span>
-            <span style="display: flex; align-items: center; gap: 8px;">
-              ${badgeDif}
-            </span>
-          </div>
-
-          <div style="margin-top: 6px; color: var(--text-muted); font-size: 11.5px; font-weight: 700;">
-            Troco inicial: ${this.formatarMoeda(trocoInicial)}
+          <div class="flow-item-side">
+            <strong class="flow-item-value">${this.formatarMoeda(totalVendas)}</strong>
+            ${badgeDif}
+            <span class="flow-item-hint">Troco ${this.formatarMoeda(trocoInicial)}</span>
           </div>
         </div>
       `;
@@ -2393,18 +2419,17 @@ window.MobileApp = {
       const idFunc = func.id || func.usuario || func.login || func.nome;
 
       return `
-        <div class="mobile-list-card clickable" onclick="MobileApp.abrirModalEditarFuncionario('${idFunc}')">
-          <div class="card-top-row">
-            <strong class="card-item-title">👤 ${func.nome || 'Colaborador'}</strong>
+        <div class="flow-item-card clickable" onclick="MobileApp.abrirModalEditarFuncionario('${idFunc}')">
+          <div class="flow-item-main">
+            <div class="flow-item-icon">${isAdmin ? '👑' : '👤'}</div>
+            <div class="flow-item-info">
+              <strong class="flow-item-title">${func.nome || 'Colaborador'}</strong>
+              <span class="flow-item-meta">🔑 ${func.login || func.usuario || func.nome}</span>
+            </div>
+          </div>
+          <div class="flow-item-side">
             ${badgeCargo}
-          </div>
-          <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 6px; font-size: 12px; color: var(--text-muted);">
-            <span>🔑 Login: <strong style="color: var(--text-main); font-family: 'JetBrains Mono';">${func.login || func.usuario || func.nome}</strong></span>
-            <span>🔒 PIN: <strong style="color: var(--text-dim); font-family: 'JetBrains Mono';">••••</strong></span>
-          </div>
-          <div class="card-bottom-row" style="margin-top: 6px; padding-top: 6px; border-top: 1px dashed var(--border-card);">
-            <span class="badge-tag-sm ${isAtivo ? 'ok' : 'zero'}">${isAtivo ? '🟢 Acesso Ativo' : '🔴 Acesso Inativo'}</span>
-            <span style="color: var(--accent-cyan); font-size: 11px; font-weight: 700;">✏️ Gerenciar Acesso ➔</span>
+            <span class="badge-tag-sm ${isAtivo ? 'ok' : 'zero'}">${isAtivo ? 'Ativo' : 'Inativo'}</span>
           </div>
         </div>
       `;
@@ -2725,19 +2750,17 @@ window.MobileApp = {
       else if (!isLivre) badgeStatus = `<span class="badge-tag-sm zero">🔴 EM USO</span>`;
 
       return `
-        <div class="mobile-list-card" onclick="MobileApp.verDetalhesMesa('${c.id}')">
-          <div class="card-top-row">
-            <strong class="card-item-title">${c.tipo === 'mesa' ? '🪑' : '🏷️'} ${c.nome}</strong>
-            <span class="card-item-price ${isLivre ? '' : 'valor-sensivel'}" style="color: ${isLivre ? 'var(--text-dim)' : 'var(--accent-green)'};">
-              ${this.formatarMoeda(total)}
-            </span>
-          </div>
-          <div class="card-bottom-row" style="margin-top: 6px;">
-            <span class="card-info-meta">${c.cliente ? `👤 ${c.cliente}` : (isLivre ? 'Disponível' : `📦 ${qtdItens} itens`)}</span>
-            <div style="display: flex; align-items: center; gap: 6px;">
-              ${badgeStatus}
-              ${!isLivre ? `<span style="color: var(--accent-cyan); font-size: 11px; font-weight: 700;">Ver ➔</span>` : ''}
+        <div class="flow-item-card ${isLivre ? 'is-livre' : 'is-ocupada'} ${!isLivre ? 'clickable' : ''}" ${!isLivre ? `onclick="MobileApp.verDetalhesMesa('${c.id}')"` : ''}>
+          <div class="flow-item-main">
+            <div class="flow-item-icon">${c.tipo === 'mesa' ? '🪑' : '🏷️'}</div>
+            <div class="flow-item-info">
+              <strong class="flow-item-title">${c.nome}</strong>
+              <span class="flow-item-meta">${c.cliente ? `👤 ${c.cliente}` : (isLivre ? 'Disponível agora' : `📦 ${qtdItens} itens`)}</span>
             </div>
+          </div>
+          <div class="flow-item-side">
+            ${!isLivre ? `<strong class="flow-item-value">${this.formatarMoeda(total)}</strong>` : ''}
+            ${badgeStatus}
           </div>
         </div>
       `;
@@ -2968,17 +2991,18 @@ window.MobileApp = {
       const dataHora = log.dataHoraFormatada || (log.criadoEm ? new Date(log.criadoEm).toLocaleString('pt-BR') : '--');
 
       return `
-        <div class="mobile-list-card" onclick="MobileApp.verDetalhesAuditoria('${log.id}')">
-          <div class="card-top-row">
-            ${badgeTipo}
-            <span class="card-time-text" style="color: var(--text-dim);">${dataHora}</span>
-          </div>
-          <p style="font-size: 13px; font-weight: 700; color: var(--text-main); line-height: 1.4; margin: 4px 0;">
-            ${log.tipo === 'cortesia' ? (log.detalhes?.motivo || log.descricao) : log.descricao}
-          </p>
-          <div class="card-bottom-row">
-            <span class="card-info-meta">👤 ${log.operador || 'Caixa'}</span>
-            <span style="color: var(--accent-cyan); font-size: 11px; font-weight: 700;">Toque para ver ➔</span>
+        <div class="flow-item-card clickable" onclick="MobileApp.verDetalhesAuditoria('${log.id}')">
+          <div class="flow-item-main">
+            <div class="flow-item-info" style="min-width:0; flex:1;">
+              <div style="display:flex; justify-content:space-between; gap:8px; align-items:center; margin-bottom:4px;">
+                ${badgeTipo}
+                <span class="flow-item-hint">${dataHora}</span>
+              </div>
+              <strong class="flow-item-title" style="white-space:normal; font-size:13px; line-height:1.35;">
+                ${log.tipo === 'cortesia' ? (log.detalhes?.motivo || log.descricao) : log.descricao}
+              </strong>
+              <span class="flow-item-meta">👤 ${log.operador || 'Caixa'}</span>
+            </div>
           </div>
         </div>
       `;
