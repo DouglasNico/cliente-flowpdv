@@ -746,8 +746,8 @@ window.MobileApp = {
     }
 
     // 🏦 TOTAL EM CAIXA ATUAL (Suporta 1 terminal ou múltiplos PDVs simultâneos)
-    const idsTerminaisLicenca = (Array.isArray(this.dadosLoja?.terminaisAtivos) ? this.dadosLoja.terminaisAtivos : [])
-      .map(t => (typeof t === 'string' ? t : t?.id))
+    const idsTerminaisLicenca = this.consolidarTerminaisLicenca(this.dadosLoja?.terminaisAtivos)
+      .map(t => t.id)
       .filter(Boolean);
     const turnosAbertos = this.listarTurnosCaixaAbertos(
       backup,
@@ -1942,21 +1942,40 @@ window.MobileApp = {
     return (porChave && typeof porChave === 'object') ? porChave : null;
   },
 
+  consolidarTerminaisLicenca(lista) {
+    const bruto = Array.isArray(lista) ? lista : [];
+    const porId = new Map();
+    bruto.forEach(t => {
+      const obj = typeof t === 'string' ? { id: t, hostname: 'Computador', ultimoAcesso: null } : t;
+      if (!obj) return;
+      const id = String(obj.id || '').trim();
+      if (!id) return;
+      const atual = porId.get(id);
+      if (!atual || new Date(obj.ultimoAcesso || 0) > new Date(atual.ultimoAcesso || 0)) porId.set(id, obj);
+    });
+
+    const porHost = new Map();
+    const semHost = [];
+    porId.forEach(obj => {
+      const host = String(obj.hostname || '').trim().toLowerCase();
+      const generico = !host || host === 'computador' || host === 'computador local' || host === 'desktop';
+      if (generico) {
+        semHost.push(obj);
+        return;
+      }
+      const atual = porHost.get(host);
+      if (!atual || new Date(obj.ultimoAcesso || 0) > new Date(atual.ultimoAcesso || 0)) porHost.set(host, obj);
+    });
+
+    return [...porHost.values(), ...semHost]
+      .sort((a, b) => new Date(b.ultimoAcesso || 0) - new Date(a.ultimoAcesso || 0));
+  },
+
   renderGerenciaTerminais() {
     const lic = this.dadosLoja || {};
     const backup = this.dadosBackup || {};
     const limite = parseInt(lic.limiteTerminais, 10) || 1;
-    let terminais = Array.isArray(lic.terminaisAtivos) ? lic.terminaisAtivos : [];
-    terminais = terminais.map(t => (typeof t === 'string' ? { id: t, hostname: 'Computador', ultimoAcesso: null } : t)).filter(Boolean);
-
-    const mapa = new Map();
-    terminais.forEach(t => {
-      const id = String(t.id || '').trim();
-      if (!id) return;
-      const atual = mapa.get(id);
-      if (!atual || new Date(t.ultimoAcesso || 0) > new Date(atual.ultimoAcesso || 0)) mapa.set(id, t);
-    });
-    terminais = Array.from(mapa.values()).sort((a, b) => new Date(b.ultimoAcesso || 0) - new Date(a.ultimoAcesso || 0));
+    const terminais = this.consolidarTerminaisLicenca(lic.terminaisAtivos);
 
     const turnosAtivos = (backup.turnosAtivos && typeof backup.turnosAtivos === 'object') ? backup.turnosAtivos : {};
     const idsTerminais = terminais.map(t => t.id).filter(Boolean);
