@@ -6,9 +6,9 @@
 @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@500;700;800&display=swap');
 
 :root {
-  --bg-app: #2C3E50;
-  --bg-surface-1: #3E5771;
-  --bg-surface-2: #354a60;
+  --bg-app: #273545;
+  --bg-surface-1: #2e4660;
+  --bg-surface-2: #24384c;
   --bg-surface-3: #88919d;
   --border-subtle: rgba(255, 255, 255, 0.08);
   --border-card: rgba(44, 62, 80, 0.22);
@@ -18,12 +18,12 @@
   --text-muted: #cbd5e1;
   --text-dim: #94a3b8;
 
-  --accent-cyan: #0e7490;
-  --accent-cyan-light: rgba(14, 116, 144, 0.14);
-  --accent-cyan-glow: rgba(14, 116, 144, 0.22);
+  --accent-cyan: #7dd3fc;
+  --accent-cyan-light: rgba(125, 211, 252, 0.16);
+  --accent-cyan-glow: rgba(125, 211, 252, 0.28);
 
-  --accent-blue: #0369a1;
-  --accent-blue-light: rgba(3, 105, 161, 0.14);
+  --accent-blue: #93c5fd;
+  --accent-blue-light: rgba(147, 197, 253, 0.16);
 
   --accent-purple: #4f46e5;
   --accent-purple-hover: #4338ca;
@@ -1550,17 +1550,17 @@ body {
 
 
 /* ==========================================================================
-   THEME v2.2.3 — fundo #2C3E50 · cards #3E5771
+   THEME v2.2.3 — fundo #273545 · cards #2e4660
    ========================================================================== */
 html {
-  background: #2C3E50;
+  background: #273545;
 }
 
 body {
   background:
     radial-gradient(900px 420px at 8% -5%, rgba(56, 189, 248, 0.12), transparent 50%),
     radial-gradient(700px 380px at 100% 0%, rgba(99, 102, 241, 0.10), transparent 48%),
-    #2C3E50 !important;
+    #273545 !important;
   color: #e2e8f0;
 }
 
@@ -1596,7 +1596,7 @@ body {
   appearance: none;
   background: transparent;
   border: none;
-  color: #7dd3fc;
+  color: #bae6fd;
   font-size: 13px;
   font-weight: 800;
   font-family: inherit;
@@ -1619,14 +1619,14 @@ body {
 .small-metric-card,
 .mobile-list-card,
 .ranking-card-box {
-  background: #3E5771 !important;
+  background: #2e4660 !important;
   border: 1px solid rgba(255, 255, 255, 0.1) !important;
   box-shadow: 0 4px 14px rgba(0, 0, 0, 0.22) !important;
   color: #e8eef5 !important;
 }
 
 .hero-metric-card.glass-primary {
-  background: linear-gradient(145deg, #3E5771 0%, #364d64 100%) !important;
+  background: linear-gradient(145deg, #2e4660 0%, #273545 100%) !important;
   border-color: rgba(255, 255, 255, 0.12) !important;
 }
 
@@ -1655,7 +1655,7 @@ body {
 }
 
 .chip-btn {
-  background: #354a60 !important;
+  background: #24384c !important;
   border: 1px solid rgba(255, 255, 255, 0.12) !important;
   color: #e2e8f0 !important;
   box-shadow: none !important;
@@ -1729,11 +1729,11 @@ body {
   background:
     radial-gradient(circle at 12% 8%, rgba(56, 189, 248, 0.14), transparent 42%),
     radial-gradient(circle at 90% 0%, rgba(99, 102, 241, 0.12), transparent 40%),
-    #2C3E50 !important;
+    #273545 !important;
 }
 
 .login-box {
-  background: #3E5771 !important;
+  background: #2e4660 !important;
   border: 1px solid rgba(255, 255, 255, 0.1) !important;
   box-shadow: var(--shadow-lg) !important;
 }
@@ -1745,7 +1745,7 @@ body {
 .input-mobile,
 .mobile-search-bar,
 .mobile-search-input {
-  background: #2C3E50 !important;
+  background: #273545 !important;
   border-color: rgba(255, 255, 255, 0.14) !important;
   color: #f1f5f9 !important;
 }
@@ -1757,7 +1757,7 @@ body {
 
 .modal-bottom-content,
 .modal-sheet-card {
-  background: #3E5771 !important;
+  background: #2e4660 !important;
   border: 1px solid rgba(255, 255, 255, 0.1) !important;
   color: #f1f5f9 !important;
 }
@@ -1787,7 +1787,7 @@ body {
 .payment-progress-track { background: rgba(15, 23, 42, 0.35) !important; }
 
 .sync-loading-card {
-  background: #3E5771 !important;
+  background: #2e4660 !important;
   border: 1px solid rgba(255, 255, 255, 0.1) !important;
   color: #f1f5f9 !important;
 }
@@ -1797,16 +1797,16 @@ body {
 @media (hover: hover) and (pointer: fine) {
   .btn-header-text:hover { opacity: 0.85; }
   .chip-btn:hover {
-    background: #2f4256 !important;
-    border-color: #2C3E50 !important;
+    background: #1f3042 !important;
+    border-color: #273545 !important;
     transform: none !important;
   }
   .mobile-list-card[onclick]:hover,
   .mobile-list-card.clickable:hover {
-    border-color: #2C3E50 !important;
+    border-color: #273545 !important;
     box-shadow: var(--shadow-md) !important;
     transform: none !important;
-    background: #354a60 !important;
+    background: #24384c !important;
   }
   .btn-novo-colaborador:hover { background: #155e75 !important; transform: none !important; }
   .btn-hero-share-wa:hover { background: #115e59 !important; transform: none !important; }

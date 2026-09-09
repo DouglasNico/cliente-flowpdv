@@ -1518,7 +1518,7 @@ window.MobileApp = {
       let btnCopiarEnd = '';
       if (endCompleto) {
         btnCopiarEnd = `
-          <button type="button" class="chip-btn" style="height: 28px; padding: 0 8px; font-size: 10.5px; border-color: #38bdf8; color: #38bdf8;" onclick="event.stopPropagation(); MobileApp.copiarEnderecoMobile('${encodeURIComponent(endCompleto)}')" title="Copiar endereço para mandar ao entregador">
+          <button type="button" class="chip-btn" style="height: 28px; padding: 0 8px; font-size: 10.5px; border-color: #7dd3fc; color: #7dd3fc;" onclick="event.stopPropagation(); MobileApp.copiarEnderecoMobile('${encodeURIComponent(endCompleto)}')" title="Copiar endereço para mandar ao entregador">
             📋 Copiar End.
           </button>
         `;
@@ -1553,7 +1553,7 @@ window.MobileApp = {
           <!-- Linha de Contato & Endereço -->
           <div style="margin-top: 6px; font-size: 12px; color: var(--text-muted); display: flex; flex-direction: column; gap: 2px;">
             ${cli.telefone ? `<span>📞 <strong style="color: var(--text-main); font-family: 'JetBrains Mono';">${cli.telefone}</strong></span>` : ''}
-            ${endResumo ? `<span>🛵 <strong style="color: #0284c7;">${endResumo}</strong></span>` : ''}
+            ${endResumo ? `<span>🛵 <strong style="color: #7dd3fc;">${endResumo}</strong></span>` : ''}
           </div>
 
           <!-- Linha de Ações Rápidas -->
@@ -2166,7 +2166,7 @@ window.MobileApp = {
         </div>
         <div style="display: flex; justify-content: space-between; border-bottom: 1px dashed var(--border-card); padding: 4px 0;">
           <span>Chave PIX da Loja:</span>
-          <strong style="color: #38bdf8; font-family: 'JetBrains Mono';">${config.chavePix || 'Não informada'}</strong>
+          <strong style="color: #7dd3fc; font-family: 'JetBrains Mono';">${config.chavePix || 'Não informada'}</strong>
         </div>
         <div style="display: flex; justify-content: space-between; border-bottom: 1px dashed var(--border-card); padding: 4px 0;">
           <span>WhatsApp de Atendimento:</span>
@@ -2327,10 +2327,10 @@ window.MobileApp = {
       <div class="mobile-list-card" style="padding: 12px 14px; background: rgba(56, 189, 248, 0.08); border-color: rgba(56, 189, 248, 0.3);">
         <div style="display: flex; justify-content: space-between; align-items: center;">
           <div>
-            <strong style="font-size: 13.5px; color: #38bdf8; display: block;">(=) Lucro Bruto da Operação</strong>
+            <strong style="font-size: 13.5px; color: #7dd3fc; display: block;">(=) Lucro Bruto da Operação</strong>
             <span style="font-size: 11px; color: var(--text-dim);">Margem Bruta: ${margemBrutaPct}%</span>
           </div>
-          <strong style="font-size: 16px; color: #38bdf8; font-family: 'JetBrains Mono';">${this.formatarMoeda(lucroBruto)}</strong>
+          <strong style="font-size: 16px; color: #7dd3fc; font-family: 'JetBrains Mono';">${this.formatarMoeda(lucroBruto)}</strong>
         </div>
       </div>
 
@@ -3247,9 +3247,9 @@ window.MobileApp = {
         <!-- Endereço para Delivery -->
         <div style="background: var(--bg-surface-2); padding: 12px; border-radius: 10px;">
           <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
-            <span style="font-size: 11px; color: #38bdf8; text-transform: uppercase; font-weight: 800;">🛵 Endereço para Delivery</span>
+            <span style="font-size: 11px; color: #7dd3fc; text-transform: uppercase; font-weight: 800;">🛵 Endereço para Delivery</span>
             ${endCompleto ? `
-              <button type="button" class="chip-btn" style="height: 26px; padding: 0 8px; font-size: 10.5px; border-color: #38bdf8; color: #38bdf8;" onclick="MobileApp.copiarEnderecoMobile('${encodeURIComponent(endCompleto)}')">
+              <button type="button" class="chip-btn" style="height: 26px; padding: 0 8px; font-size: 10.5px; border-color: #7dd3fc; color: #7dd3fc;" onclick="MobileApp.copiarEnderecoMobile('${encodeURIComponent(endCompleto)}')">
                 📋 Copiar
               </button>
             ` : ''}
@@ -3261,7 +3261,7 @@ window.MobileApp = {
             ${cli.bairro ? `Bairro: <strong>${cli.bairro}</strong>` : ''} ${cli.cidade ? `• ${cli.cidade}` : ''} ${cli.cep ? `• CEP: ${cli.cep}` : ''}
           </div>
           ${cli.complemento ? `<div style="font-size: 11.5px; color: var(--text-dim); margin-top: 2px;">Comp: ${cli.complemento}</div>` : ''}
-          ${cli.pontoReferencia ? `<div style="font-size: 11.5px; color: #38bdf8; margin-top: 2px;">Ref: ${cli.pontoReferencia}</div>` : ''}
+          ${cli.pontoReferencia ? `<div style="font-size: 11.5px; color: #7dd3fc; margin-top: 2px;">Ref: ${cli.pontoReferencia}</div>` : ''}
         </div>
 
         ${cli.observacoes ? `
