@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-  <meta name="theme-color" content="#0f172a">
+  <meta name="theme-color" content="#070b14">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -15,9 +15,9 @@
 
   <link rel="manifest" href="manifest.json">
   <link rel="icon" type="image/png" href="icon.png">
-  <link rel="shortcut icon" href="icon.png">
+  <link rel="shortcut icon" href="favicon.ico">
   <link rel="apple-touch-icon" href="icon.png">
-  <link rel="stylesheet" href="style.css?v=2.1.1">
+  <link rel="stylesheet" href="style.css?v=2.2.0">
 
   <script>
     // Intercepta e silencia erros gerados por extensões do navegador (gerenciadores de senhas, tradutores, autofill)
@@ -42,10 +42,10 @@
     <div id="screen-login">
       <div class="login-box">
         <div class="login-header-logo">
-          <img src="icon.png" alt="FlowPDV" class="login-logo-img">
+          <img src="FlowPDV-Logo.png" alt="FlowPDV" class="login-logo-wordmark">
           <div>
-            <h1 class="login-title">Flow<span>PDV</span> Gestor</h1>
-            <p class="login-subtitle">Acompanhamento Móvel em Tempo Real</p>
+            <h1 class="login-title">Gestor <span>Mobile</span></h1>
+            <p class="login-subtitle">Acompanhe a loja de qualquer lugar</p>
           </div>
         </div>
 
@@ -87,7 +87,7 @@
       <!-- Topo Fixo com Nome da Loja & Ações -->
       <header class="mobile-header">
         <div class="header-brand">
-          <img src="icon.png" alt="Logo" style="width: 32px; height: 32px; border-radius: 8px;">
+          <img src="icon.png" alt="FlowPDV" class="header-brand-logo">
           <div class="header-store-info">
             <div id="header-nome-loja" class="header-store-name">Carregando Loja...</div>
             <div class="header-status-badge">
@@ -120,9 +120,6 @@
         <div class="header-actions">
           <button type="button" class="btn-header-action btn-header-privacidade" id="btn-toggle-privacidade" onclick="MobileApp.toggleModoPrivacidade()" title="Ocultar/Mostrar Valores">
             <span id="icon-privacidade">👁️</span>
-          </button>
-          <button type="button" class="btn-header-action" id="btn-toggle-tema" onclick="MobileApp.toggleTema()" title="Alternar Tema Claro/Escuro">
-            <span id="icon-tema">🌓</span>
           </button>
           <button type="button" class="btn-header-action btn-refresh-page" id="btn-refresh" onclick="MobileApp.recarregarDados()" title="Atualizar dados agora">
             <span class="refresh-icon">🔄</span>
@@ -378,6 +375,12 @@
             <button type="button" class="chip-btn" id="btn-sub-ger-auditoria" onclick="MobileApp.setSubAbaGerencia('auditoria')">
               <span>🛡️</span> <span>Auditoria</span>
             </button>
+            <button type="button" class="chip-btn" id="btn-sub-ger-categorias" onclick="MobileApp.setSubAbaGerencia('categorias')">
+              <span>🏷️</span> <span>Categorias</span>
+            </button>
+            <button type="button" class="chip-btn" id="btn-sub-ger-terminais" onclick="MobileApp.setSubAbaGerencia('terminais')">
+              <span>💻</span> <span>Terminais</span>
+            </button>
             <button type="button" class="chip-btn" id="btn-sub-ger-abc" onclick="MobileApp.setSubAbaGerencia('abc')">
               <span>📈</span> <span>Curva ABC</span>
             </button>
@@ -474,6 +477,39 @@
           <div id="lista-gerencia-abc" style="display: flex; flex-direction: column; gap: 8px;">
             <!-- Renderizado dinamicamente -->
           </div>
+        </div>
+
+        <!-- SUB-SEÇÃO CATEGORIAS -->
+        <div id="subsecao-gerencia-categorias" style="display: none; flex-direction: column; gap: 12px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; gap: 8px;">
+            <div class="section-title-mobile" style="margin: 0;">
+              <span>🏷️ Catálogo de Categorias</span>
+              <span class="badge-pill-count" id="badge-total-categorias">0</span>
+            </div>
+            <button type="button" class="btn-novo-colaborador" onclick="MobileApp.abrirModalNovaCategoria()">
+              <span>➕ Nova</span>
+            </button>
+          </div>
+          <div id="lista-gerencia-categorias" style="display: flex; flex-direction: column; gap: 8px;"></div>
+        </div>
+
+        <!-- SUB-SEÇÃO TERMINAIS -->
+        <div id="subsecao-gerencia-terminais" style="display: none; flex-direction: column; gap: 12px;">
+          <div class="section-title-mobile" style="margin-top: 2px;">
+            <span>💻 Terminais Vinculados</span>
+            <span class="badge-pill-count" id="badge-total-terminais">0</span>
+          </div>
+          <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px;">
+            <div class="small-metric-card">
+              <span class="small-metric-label">Limite da Licença</span>
+              <span class="small-metric-value" id="metric-limite-terminais" style="color: var(--accent-cyan);">1</span>
+            </div>
+            <div class="small-metric-card">
+              <span class="small-metric-label">Caixas Abertos</span>
+              <span class="small-metric-value" id="metric-terminais-caixa-aberto" style="color: var(--accent-green);">0</span>
+            </div>
+          </div>
+          <div id="lista-gerencia-terminais" style="display: flex; flex-direction: column; gap: 8px;"></div>
         </div>
 
         <!-- SUB-SEÇÃO 2.6: HISTÓRICO DE CAIXAS -->

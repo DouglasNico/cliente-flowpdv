@@ -6,477 +6,51 @@
 @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@500;700;800&display=swap');
 
 :root {
-  --bg-app: #0f172a;
-  --bg-surface-1: #1e293b;
-  --bg-surface-2: #273549;
-  --bg-surface-3: #334155;
-  --border-subtle: #1e293b;
-  --border-card: #334155;
-  --border-highlight: rgba(99, 102, 241, 0.5);
+  --bg-app: #070b14;
+  --bg-surface-1: rgba(22, 32, 51, 0.92);
+  --bg-surface-2: rgba(30, 42, 64, 0.95);
+  --bg-surface-3: #2a3a55;
+  --border-subtle: rgba(148, 163, 184, 0.08);
+  --border-card: rgba(148, 163, 184, 0.14);
+  --border-highlight: rgba(56, 189, 248, 0.45);
 
-  --text-main: #f8fafc;
+  --text-main: #f1f5f9;
   --text-muted: #94a3b8;
   --text-dim: #64748b;
 
   --accent-cyan: #38bdf8;
-  --accent-cyan-light: rgba(56, 189, 248, 0.15);
-  --accent-cyan-glow: rgba(56, 189, 248, 0.3);
+  --accent-cyan-light: rgba(56, 189, 248, 0.14);
+  --accent-cyan-glow: rgba(56, 189, 248, 0.28);
 
   --accent-blue: #38bdf8;
-  --accent-blue-light: rgba(56, 189, 248, 0.15);
+  --accent-blue-light: rgba(56, 189, 248, 0.14);
 
-  --accent-purple: #7c3aed;
-  --accent-purple-hover: #6d28d9;
-  --accent-purple-light: rgba(124, 58, 237, 0.15);
-  --accent-purple-glow: rgba(124, 58, 237, 0.35);
+  --accent-purple: #818cf8;
+  --accent-purple-hover: #6366f1;
+  --accent-purple-light: rgba(129, 140, 248, 0.14);
+  --accent-purple-glow: rgba(99, 102, 241, 0.32);
 
-  --accent-green: #10b981;
+  --accent-green: #34d399;
   --accent-emerald: #10b981;
-  --accent-green-light: rgba(16, 185, 129, 0.15);
-  --accent-green-border: rgba(16, 185, 129, 0.3);
+  --accent-green-light: rgba(52, 211, 153, 0.14);
+  --accent-green-border: rgba(52, 211, 153, 0.32);
 
-  --accent-amber: #f59e0b;
-  --accent-amber-light: rgba(245, 158, 11, 0.15);
-  --accent-orange: #f97316;
+  --accent-amber: #fbbf24;
+  --accent-amber-light: rgba(251, 191, 36, 0.14);
+  --accent-orange: #fb923c;
 
-  --accent-red: #ef4444;
-  --accent-red-light: rgba(239, 68, 68, 0.15);
+  --accent-red: #f87171;
+  --accent-red-light: rgba(248, 113, 113, 0.14);
 
-  --shadow-sm: 0 2px 6px rgba(0, 0, 0, 0.3);
-  --shadow-md: 0 6px 16px rgba(0, 0, 0, 0.4);
-  --shadow-lg: 0 12px 30px -5px rgba(0, 0, 0, 0.7);
+  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.35);
+  --shadow-md: 0 8px 24px rgba(0, 0, 0, 0.45);
+  --shadow-lg: 0 18px 48px rgba(0, 0, 0, 0.55);
 
   --radius-sm: 8px;
-  --radius-md: 10px;
-  --radius-lg: 14px;
-  --radius-xl: 20px;
-}
-
-/* ==========================================================================
-   SISTEMA DE TEMA CLARO (LIGHT MODE) - FLOWPDV DESKTOP AESTHETIC
-   ========================================================================== */
-[data-theme="light"], body.theme-light {
-  --bg-app: #e9eef5;
-  --bg-surface-1: #ffffff;
-  --bg-surface-2: #f1f5f9;
-  --bg-surface-3: #e2e8f0;
-  --border-subtle: #cbd5e1;
-  --border-card: #e2e8f0;
-  --border-highlight: rgba(99, 102, 241, 0.4);
-
-  --text-main: #0f172a;
-  --text-muted: #334155;
-  --text-dim: #64748b;
-
-  --accent-cyan: #0284c7;
-  --accent-cyan-light: #e0f2fe;
-  --accent-cyan-glow: rgba(2, 132, 199, 0.15);
-
-  --accent-blue: #2563eb;
-  --accent-blue-light: #dbeafe;
-
-  --accent-purple: #7c3aed;
-  --accent-purple-hover: #6d28d9;
-  --accent-purple-light: #f3e8ff;
-  --accent-purple-glow: rgba(124, 58, 237, 0.2);
-
-  --accent-green: #059669;
-  --accent-emerald: #059669;
-  --accent-green-light: #d1fae5;
-  --accent-green-border: #a7f3d0;
-
-  --accent-amber: #d97706;
-  --accent-amber-light: #fef3c7;
-  --accent-orange: #ea580c;
-
-  --accent-red: #dc2626;
-  --accent-red-light: #fee2e2;
-
-  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.05), 0 1px 2px rgba(0, 0, 0, 0.03);
-  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.07), 0 2px 4px -2px rgba(0, 0, 0, 0.05);
-  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.08), 0 4px 6px -4px rgba(0, 0, 0, 0.04);
-}
-
-[data-theme="light"] {
-  background-color: #e9eef5;
-  color: #0f172a;
-}
-
-[data-theme="light"] body {
-  background-color: #e9eef5;
-  color: #0f172a;
-}
-
-[data-theme="light"] .mobile-app-shell {
-  background-color: #e9eef5;
-  box-shadow: 0 0 35px rgba(0, 0, 0, 0.08);
-}
-
-[data-theme="light"] .mobile-header {
-  background: rgba(255, 255, 255, 0.96) !important;
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border-bottom: 1px solid #e2e8f0 !important;
-}
-
-[data-theme="light"] .header-store-name {
-  color: #0f172a !important;
-}
-
-[data-theme="light"] .header-status-badge {
-  color: #059669 !important;
-}
-
-[data-theme="light"] .btn-header-action {
-  background: #ffffff !important;
-  border-color: #cbd5e1 !important;
-  color: #1e293b !important;
-}
-
-[data-theme="light"] .btn-header-action:hover {
-  background: #f1f5f9 !important;
-  border-color: #94a3b8 !important;
-  color: #0f172a !important;
-}
-
-[data-theme="light"] .btn-refresh-page {
-  background: #e0f2fe !important;
-  border-color: #7dd3fc !important;
-  color: #0369a1 !important;
-}
-
-[data-theme="light"] .btn-logout-action {
-  background: #fee2e2 !important;
-  border-color: #fca5a5 !important;
-  color: #dc2626 !important;
-}
-
-/* ==========================================================================
-   HERO METRIC CARDS NO TEMA CLARO
-   ========================================================================== */
-[data-theme="light"] .hero-metric-card {
-  background: #ffffff !important;
-  border: 1px solid #e2e8f0 !important;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.04) !important;
-}
-
-[data-theme="light"] .hero-metric-card.glass-primary {
-  background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%) !important;
-  border: 1px solid #e2e8f0 !important;
-  border-top: 3px solid #0284c7 !important;
-  box-shadow: 0 4px 16px rgba(2, 132, 199, 0.08) !important;
-}
-
-[data-theme="light"] .hero-metric-card.glass-primary .hero-label {
-  color: #475569 !important;
-}
-
-[data-theme="light"] .hero-metric-card.glass-primary .hero-value {
-  color: #0f172a !important;
-}
-
-[data-theme="light"] .hero-metric-card.glass-primary .hero-stats-row {
-  color: #64748b !important;
-}
-
-[data-theme="light"] .hero-metric-card.glass-primary .hero-stats-row strong {
-  color: #0f172a !important;
-}
-
-[data-theme="light"] .hero-metric-card.glass-primary #resumo-data-hoje {
-  color: #94a3b8 !important;
-}
-
-[data-theme="light"] .hero-metric-card.glass-danger {
-  background: linear-gradient(135deg, #ffffff 0%, #fff5f5 100%) !important;
-  border: 1px solid #fecaca !important;
-  border-top: 3px solid #ef4444 !important;
-  box-shadow: 0 4px 16px rgba(239, 68, 68, 0.06) !important;
-}
-
-[data-theme="light"] .hero-metric-card.glass-danger .hero-label {
-  color: #dc2626 !important;
-}
-
-[data-theme="light"] .hero-metric-card.glass-danger .hero-value {
-  color: #dc2626 !important;
-}
-
-[data-theme="light"] .hero-metric-card.glass-danger .hero-stats-row {
-  color: #b91c1c !important;
-}
-
-[data-theme="light"] .hero-metric-card.glass-amber {
-  background: linear-gradient(135deg, #ffffff 0%, #fffbeb 100%) !important;
-  border: 1px solid #fde68a !important;
-  border-top: 3px solid #f59e0b !important;
-  box-shadow: 0 4px 16px rgba(245, 158, 11, 0.06) !important;
-}
-
-[data-theme="light"] .hero-metric-card.glass-amber .hero-label {
-  color: #b45309 !important;
-}
-
-[data-theme="light"] .hero-metric-card.glass-amber .hero-value {
-  color: #d97706 !important;
-}
-
-[data-theme="light"] .hero-metric-card.glass-amber .hero-stats-row {
-  color: #78350f !important;
-}
-
-[data-theme="light"] .hero-metric-card.glass-amber .hero-stats-row strong {
-  color: #451a03 !important;
-}
-
-/* CARDS PEQUENOS E MÉTRICAS */
-[data-theme="light"] .small-metric-card {
-  background: #ffffff !important;
-  border: 1px solid #e2e8f0 !important;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04) !important;
-}
-
-[data-theme="light"] .small-metric-label {
-  color: #64748b !important;
-}
-
-[data-theme="light"] .small-metric-value {
-  color: #0f172a !important;
-}
-
-[data-theme="light"] .small-metric-card.alert {
-  background: #fff5f5 !important;
-  border-color: #fca5a5 !important;
-}
-
-[data-theme="light"] .small-metric-card.alert strong {
-  color: #b91c1c !important;
-}
-
-/* LISTAS DE ITENS (PRODUTOS, VENDAS, CONTAS, AUDITORIA, FUNCIONARIOS, MESAS) */
-[data-theme="light"] .mobile-list-card {
-  background: #ffffff !important;
-  border-color: #e2e8f0 !important;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03) !important;
-}
-
-[data-theme="light"] .mobile-list-card[onclick]:hover,
-[data-theme="light"] .mobile-list-card.clickable:hover {
-  background: #f8fafc !important;
-  border-color: #cbd5e1 !important;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06) !important;
-}
-
-[data-theme="light"] .card-item-title {
-  color: #0f172a !important;
-}
-
-[data-theme="light"] .card-bottom-row,
-[data-theme="light"] .card-info-meta {
-  color: #475569 !important;
-}
-
-[data-theme="light"] .card-time-text {
-  color: #64748b !important;
-}
-
-[data-theme="light"] .section-title-mobile {
-  color: #0f172a !important;
-}
-
-[data-theme="light"] .badge-pill-count {
-  background: #e2e8f0 !important;
-  border-color: #cbd5e1 !important;
-  color: #334155 !important;
-}
-
-/* BUSCA E FILTROS */
-[data-theme="light"] .mobile-search-bar {
-  background: #ffffff !important;
-  border-color: #cbd5e1 !important;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.03) !important;
-}
-
-[data-theme="light"] .mobile-search-input {
-  color: #0f172a !important;
-}
-
-[data-theme="light"] .mobile-search-input::placeholder {
-  color: #94a3b8 !important;
-}
-
-[data-theme="light"] .btn-carousel-arrow {
-  background: #ffffff !important;
-  border-color: #cbd5e1 !important;
-  color: #475569 !important;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05) !important;
-}
-
-[data-theme="light"] .btn-carousel-arrow:hover {
-  background: #f1f5f9 !important;
-  border-color: #0284c7 !important;
-  color: #0284c7 !important;
-}
-
-[data-theme="light"] .chip-btn {
-  background: #ffffff !important;
-  border-color: #cbd5e1 !important;
-  color: #475569 !important;
-}
-
-[data-theme="light"] .chip-btn:hover {
-  background: #f8fafc !important;
-  border-color: #94a3b8 !important;
-  color: #0f172a !important;
-}
-
-[data-theme="light"] .chip-btn.active {
-  background: #0f172a !important;
-  border-color: #0f172a !important;
-  color: #ffffff !important;
-  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.25) !important;
-}
-
-/* GERÊNCIA SUB-NAV */
-[data-theme="light"] .gerencia-subnav-row {
-  background: #e2e8f0 !important;
-  border-color: #cbd5e1 !important;
-}
-
-[data-theme="light"] .gerencia-subnav-btn {
-  color: #475569 !important;
-}
-
-[data-theme="light"] .gerencia-subnav-btn.active {
-  background: #0f172a !important;
-  color: #ffffff !important;
-  box-shadow: 0 2px 6px rgba(15, 23, 42, 0.2) !important;
-}
-
-/* TOP 5 RANKING E BARRAS */
-[data-theme="light"] .ranking-card-box {
-  background: #ffffff !important;
-  border-color: #e2e8f0 !important;
-}
-
-[data-theme="light"] .ranking-item-row {
-  border-bottom-color: #f1f5f9 !important;
-}
-
-[data-theme="light"] .payment-progress-track {
-  background: #e2e8f0 !important;
-  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.08) !important;
-}
-
-/* BOTTOM TABBAR & DESKTOP NAV */
-[data-theme="light"] .bottom-tabbar {
-  background: rgba(255, 255, 255, 0.96) !important;
-  border-top-color: #e2e8f0 !important;
-  box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.05) !important;
-}
-
-[data-theme="light"] .tabbar-item {
-  color: #64748b !important;
-}
-
-[data-theme="light"] .tabbar-item.active,
-body.theme-light .tabbar-item.active {
-  color: #0284c7 !important;
-}
-
-[data-theme="light"] .desktop-nav-tabs,
-body.theme-light .desktop-nav-tabs {
-  background: #ffffff !important;
-  border: 1px solid #cbd5e1 !important;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05) !important;
-}
-
-[data-theme="light"] .desktop-nav-btn,
-body.theme-light .desktop-nav-btn {
-  color: #475569 !important;
-  font-weight: 700 !important;
-  border: 1px solid transparent !important;
-}
-
-[data-theme="light"] .desktop-nav-btn:hover,
-body.theme-light .desktop-nav-btn:hover {
-  background: #f1f5f9 !important;
-  color: #0f172a !important;
-}
-
-[data-theme="light"] .desktop-nav-btn.active,
-body.theme-light .desktop-nav-btn.active {
-  background: #0f172a !important;
-  color: #ffffff !important;
-  border-color: #0f172a !important;
-  box-shadow: 0 2px 6px rgba(15, 23, 42, 0.2) !important;
-}
-
-/* MODAIS */
-[data-theme="light"] .modal-bottom-sheet {
-  background: rgba(15, 23, 42, 0.45) !important;
-}
-
-[data-theme="light"] .modal-bottom-content {
-  background: #ffffff !important;
-  border-color: #e2e8f0 !important;
-  color: #0f172a !important;
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15) !important;
-}
-
-[data-theme="light"] #sheet-title {
-  color: #0f172a !important;
-}
-
-[data-theme="light"] .modal-bottom-content strong,
-[data-theme="light"] .modal-bottom-content p,
-[data-theme="light"] .modal-bottom-content span {
-  color: #0f172a;
-}
-
-[data-theme="light"] .modal-bottom-content span[style*="color: var(--text-dim)"],
-[data-theme="light"] .modal-bottom-content span[style*="color: var(--text-muted)"] {
-  color: #64748b !important;
-}
-
-/* BADGES NO TEMA CLARO */
-[data-theme="light"] .badge-tag-sm.cyan {
-  background: #e0f2fe !important;
-  color: #0369a1 !important;
-  border-color: #bae6fd !important;
-}
-
-[data-theme="light"] .badge-tag-sm.ok {
-  background: #dcfce7 !important;
-  color: #15803d !important;
-  border-color: #bbf7d0 !important;
-}
-
-[data-theme="light"] .badge-tag-sm.low {
-  background: #fef3c7 !important;
-  color: #b45309 !important;
-  border-color: #fde68a !important;
-}
-
-[data-theme="light"] .badge-tag-sm.zero {
-  background: #fee2e2 !important;
-  color: #b91c1c !important;
-  border-color: #fecaca !important;
-}
-
-[data-theme="light"] .badge-tag-sm.purple {
-  background: #f3e8ff !important;
-  color: #7e22ce !important;
-  border-color: #e9d5ff !important;
-}
-
-[data-theme="light"] .badge-tag-sm.blue {
-  background: #dbeafe !important;
-  color: #1d4ed8 !important;
-  border-color: #bfdbfe !important;
-}
-
-/* ==========================================================================
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 22px;
+}/* ==========================================================================
    MODO PRIVACIDADE (OCULTAR VALORES MONETÁRIOS)
    ========================================================================== */
 .modo-privacidade-ativo .valor-sensivel {
@@ -530,14 +104,7 @@ body.theme-light .desktop-nav-btn.active {
   color: #ffffff;
   font-weight: 800;
   box-shadow: var(--shadow-sm);
-}
-
-[data-theme="light"] .gerencia-subnav-btn.active {
-  background: #0f172a;
-  color: #ffffff;
-}
-
-/* WhatsApp Share Button in Hero Card */
+}/* WhatsApp Share Button in Hero Card */
 .btn-hero-share-wa {
   display: inline-flex;
   align-items: center;
@@ -561,21 +128,7 @@ body.theme-light .desktop-nav-btn.active {
 }
 .btn-hero-share-wa:active {
   transform: translateY(0);
-}
-
-[data-theme="light"] .btn-hero-share-wa {
-  background: #15803d !important; /* Verde mais escuro no Light */
-  color: #ffffff !important;
-  box-shadow: 0 4px 12px rgba(21, 128, 61, 0.25) !important;
-}
-
-[data-theme="light"] .btn-hero-share-wa:hover {
-  background: #22c55e !important; /* Verde claro vibrante no hover */
-  color: #ffffff !important;
-  box-shadow: 0 4px 16px rgba(34, 197, 94, 0.4) !important;
-}
-
-/* Sugestão de Reposição de Estoque */
+}/* Sugestão de Reposição de Estoque */
 .sugestao-compra-badge-row {
   background: rgba(249, 115, 22, 0.12);
   border: 1px dashed #ea580c;
@@ -590,26 +143,7 @@ body.theme-light .desktop-nav-btn.active {
 }
 .sugestao-compra-badge-row strong {
   color: #fb923c;
-}
-
-[data-theme="light"] .sugestao-compra-badge-row,
-body.theme-light .sugestao-compra-badge-row {
-  background: #fff7ed !important;
-  border: 1px dashed #ea580c !important;
-  color: #9a3412 !important;
-}
-[data-theme="light"] .sugestao-compra-badge-row span,
-body.theme-light .sugestao-compra-badge-row span {
-  color: #9a3412 !important;
-  font-weight: 800 !important;
-}
-[data-theme="light"] .sugestao-compra-badge-row strong,
-body.theme-light .sugestao-compra-badge-row strong {
-  color: #c2410c !important;
-  font-weight: 900 !important;
-}
-
-/* Botão Novo Colaborador */
+}/* Botão Novo Colaborador */
 .btn-novo-colaborador {
   background: linear-gradient(135deg, var(--accent-purple), #4f46e5);
   color: #ffffff;
@@ -631,32 +165,16 @@ body.theme-light .sugestao-compra-badge-row strong {
 }
 .btn-novo-colaborador:active {
   transform: translateY(0);
-}
-
-[data-theme="light"] .btn-novo-colaborador {
-  background: #0f172a !important;
-  color: #ffffff !important;
-  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.25) !important;
-}
-[data-theme="light"] .btn-novo-colaborador:hover {
-  background: #1e293b !important;
-}
-
-/* Ranking Card */
+}/* Ranking Card */
 .ranking-item-row {
   display: flex;
   flex-direction: column;
   gap: 4px;
   padding: 6px 0;
   border-bottom: 1px dashed rgba(255, 255, 255, 0.07);
-}
-[data-theme="light"] .ranking-item-row {
-  border-bottom: 1px dashed #e2e8f0;
-}
-.ranking-item-row:last-child {
+}.ranking-item-row:last-child {
   border-bottom: none;
 }
-
 
 * {
   box-sizing: border-box;
@@ -709,7 +227,14 @@ html, body {
   -ms-touch-action: manipulation;
 }
 
+/* ATMOSFERA PREMIUM */
+html { background: #070b14; }
 body {
+  background:
+    radial-gradient(1200px 600px at 10% -10%, rgba(56, 189, 248, 0.12), transparent 55%),
+    radial-gradient(900px 500px at 100% 0%, rgba(99, 102, 241, 0.14), transparent 50%),
+    radial-gradient(700px 400px at 50% 100%, rgba(16, 185, 129, 0.08), transparent 55%),
+    #070b14;
   font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   background-color: var(--bg-app);
   color: var(--text-main);
@@ -1905,39 +1430,7 @@ body {
 @keyframes fadeIn {
   from { opacity: 0; }
   to { opacity: 1; }
-}
-
-/* ==========================================================================
-   POLIMENTO EXTRA DO TEMA CLARO (LIGHT MODE) EM INPUTS E MODAIS
-   ========================================================================== */
-[data-theme="light"] .input-mobile,
-body.theme-light .input-mobile {
-  background: #ffffff !important;
-  color: #0f172a !important;
-  border-color: #cbd5e1 !important;
-}
-
-[data-theme="light"] .input-mobile:focus,
-body.theme-light .input-mobile:focus {
-  border-color: #0284c7 !important;
-  box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.2) !important;
-}
-
-[data-theme="light"] .modal-bottom-content,
-body.theme-light .modal-bottom-content {
-  background: #ffffff !important;
-  border-color: #cbd5e1 !important;
-  color: #0f172a !important;
-}
-
-[data-theme="light"] .mobile-search-bar,
-body.theme-light .mobile-search-bar {
-  background: #ffffff !important;
-  border-color: #cbd5e1 !important;
-  color: #0f172a !important;
-}
-
-/* ==========================================================================
+}/* ==========================================================================
    ALINHAMENTO PREMIUM DO CATÁLOGO DE PRODUTOS & MODAIS
    ========================================================================== */
 .product-catalog-card {
@@ -1996,18 +1489,61 @@ body.theme-light .mobile-search-bar {
   animation: scaleIn 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-[data-theme="light"] .modal-sheet-card,
-body.theme-light .modal-sheet-card {
-  background: #ffffff !important;
-  border-color: #cbd5e1 !important;
-  color: #0f172a !important;
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.12) !important;
+/* ==========================================================================
+   BRANDING & TEMA ÚNICO PREMIUM
+   ========================================================================== */
+.login-logo-wordmark {
+  width: min(240px, 72vw);
+  height: auto;
+  object-fit: contain;
+  filter: drop-shadow(0 10px 28px rgba(0, 0, 0, 0.45));
 }
 
-[data-theme="light"] .modal-sheet-card h3,
-body.theme-light .modal-sheet-card h3,
-[data-theme="light"] .modal-sheet-card strong,
-body.theme-light .modal-sheet-card strong {
-  color: #0f172a !important;
+.header-brand-logo {
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  object-fit: cover;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
 }
 
+.mobile-app-shell {
+  background: transparent;
+}
+
+.mobile-header {
+  background: rgba(10, 16, 28, 0.82) !important;
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  border-bottom: 1px solid rgba(148, 163, 184, 0.12);
+}
+
+.bottom-tabbar {
+  background: rgba(10, 16, 28, 0.9) !important;
+  border-top: 1px solid rgba(148, 163, 184, 0.12);
+}
+
+.hero-metric-card.glass-primary {
+  background: linear-gradient(145deg, rgba(56, 189, 248, 0.16), rgba(99, 102, 241, 0.12));
+  border: 1px solid rgba(56, 189, 248, 0.28);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+}
+
+.mobile-list-card {
+  background: linear-gradient(180deg, rgba(30, 41, 59, 0.88), rgba(22, 32, 51, 0.92));
+  border: 1px solid rgba(148, 163, 184, 0.14);
+}
+
+#screen-login {
+  background:
+    radial-gradient(circle at 15% 10%, rgba(56, 189, 248, 0.18), transparent 42%),
+    radial-gradient(circle at 90% 0%, rgba(99, 102, 241, 0.22), transparent 40%),
+    #070b14 !important;
+}
+
+.login-box {
+  background: rgba(15, 23, 42, 0.78);
+  border: 1px solid rgba(148, 163, 184, 0.16);
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.55);
+}

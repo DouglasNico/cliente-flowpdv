@@ -15,7 +15,6 @@ window.MobileApp = {
   filtroContasAtual: 'todos',
   subAbaGerenciaAtual: 'equipe',
   modoPrivacidadeAtivo: false,
-  temaAtual: 'dark',
   unsubAuditoriaRealtime: null,
 
   limparSessaoInvalida(mensagem = '🔒 Sessão inválida. Faça login novamente.') {
@@ -266,34 +265,13 @@ window.MobileApp = {
   },
 
   carregarPreferenciasLocais() {
-    // 1. Tema Claro / Escuro
-    const temaSalvo = localStorage.getItem('flowpdv_mob_theme') || 'dark';
-    this.aplicarTema(temaSalvo);
+    // Tema único premium (dark). Limpa preferência antiga de light/dark.
+    localStorage.removeItem('flowpdv_mob_theme');
+    document.documentElement.removeAttribute('data-theme');
+    document.body.classList.remove('theme-light');
 
-    // 2. Modo Privacidade
     const privSalvo = localStorage.getItem('flowpdv_mob_privacidade') === 'true';
     this.aplicarModoPrivacidade(privSalvo);
-  },
-
-  toggleTema() {
-    const novoTema = this.temaAtual === 'dark' ? 'light' : 'dark';
-    this.aplicarTema(novoTema);
-  },
-
-  aplicarTema(tema) {
-    this.temaAtual = tema;
-    localStorage.setItem('flowpdv_mob_theme', tema);
-    if (tema === 'light') {
-      document.documentElement.setAttribute('data-theme', 'light');
-      document.body.classList.add('theme-light');
-      const icon = document.getElementById('icon-tema');
-      if (icon) icon.textContent = '☀️';
-    } else {
-      document.documentElement.removeAttribute('data-theme');
-      document.body.classList.remove('theme-light');
-      const icon = document.getElementById('icon-tema');
-      if (icon) icon.textContent = '🌓';
-    }
   },
 
   toggleModoPrivacidade() {
@@ -572,6 +550,7 @@ window.MobileApp = {
           this.renderFinanceiro();
           this.processarLogsAuditoria(this.dadosAuditoriaRaw || []);
           this.renderAuditoria();
+          this.renderGerencia();
         }
       }, (err) => {
         console.warn('[MobileApp] Erro no listener realtime:', err);
@@ -680,6 +659,7 @@ window.MobileApp = {
       this.renderEstoque();
       this.renderFinanceiro();
       this.renderAuditoria();
+      this.renderGerencia();
 
     } catch (err) {
       console.error('[CarregarDados] Erro:', err);
@@ -1606,6 +1586,8 @@ window.MobileApp = {
 
     const secEquipe = document.getElementById('subsecao-gerencia-equipe');
     const secAudit = document.getElementById('subsecao-gerencia-auditoria');
+    const secCategorias = document.getElementById('subsecao-gerencia-categorias');
+    const secTerminais = document.getElementById('subsecao-gerencia-terminais');
     const secABC = document.getElementById('subsecao-gerencia-abc');
     const secHistorico = document.getElementById('subsecao-gerencia-historico-caixas');
     const secMesas = document.getElementById('subsecao-gerencia-mesas');
@@ -1614,6 +1596,8 @@ window.MobileApp = {
 
     if (secEquipe) secEquipe.style.display = subAba === 'equipe' ? 'flex' : 'none';
     if (secAudit) secAudit.style.display = subAba === 'auditoria' ? 'flex' : 'none';
+    if (secCategorias) secCategorias.style.display = subAba === 'categorias' ? 'flex' : 'none';
+    if (secTerminais) secTerminais.style.display = subAba === 'terminais' ? 'flex' : 'none';
     if (secABC) secABC.style.display = subAba === 'abc' ? 'flex' : 'none';
     if (secHistorico) secHistorico.style.display = subAba === 'historico' ? 'flex' : 'none';
     if (secMesas) secMesas.style.display = subAba === 'mesas' ? 'flex' : 'none';
@@ -1626,11 +1610,258 @@ window.MobileApp = {
   renderGerencia() {
     if (this.subAbaGerenciaAtual === 'equipe') this.renderGerenciaFuncionarios();
     else if (this.subAbaGerenciaAtual === 'auditoria') this.renderAuditoria();
+    else if (this.subAbaGerenciaAtual === 'categorias') this.renderGerenciaCategorias();
+    else if (this.subAbaGerenciaAtual === 'terminais') this.renderGerenciaTerminais();
     else if (this.subAbaGerenciaAtual === 'abc') this.renderGerenciaCurvaABC();
     else if (this.subAbaGerenciaAtual === 'historico') this.renderHistoricoCaixas();
     else if (this.subAbaGerenciaAtual === 'mesas') this.renderGerenciaMesas();
     else if (this.subAbaGerenciaAtual === 'ajustes') this.renderGerenciaAjustes();
     else if (this.subAbaGerenciaAtual === 'dre') this.renderGerenciaDRE();
+  },
+
+  obterCategoriasLoja() {
+    const backup = this.dadosBackup || {};
+    const lic = this.dadosLoja || {};
+    let lista = [];
+    if (Array.isArray(lic.categorias) && lic.categorias.length) lista = lic.categorias;
+    else if (Array.isArray(backup.categorias) && backup.categorias.length) lista = backup.categorias;
+    else lista = ['Geral', 'Alimentos', 'Bebidas', 'Higiene & Limpeza'];
+
+    const excluidas = new Set(
+      [...(lic.categoriasExcluidas || []), ...(backup.categoriasExcluidas || [])]
+        .map(c => String(c || '').toLowerCase().trim())
+        .filter(Boolean)
+    );
+
+    const unicos = [];
+    const vistos = new Set();
+    lista.forEach(c => {
+      const nome = String(c || '').trim();
+      if (!nome) return;
+      const key = nome.toLowerCase();
+      if (vistos.has(key) || excluidas.has(key)) return;
+      vistos.add(key);
+      unicos.push(nome);
+    });
+    return unicos;
+  },
+
+  renderGerenciaCategorias() {
+    const categorias = this.obterCategoriasLoja();
+    const produtos = (this.dadosBackup && this.dadosBackup.produtos) || [];
+    const container = document.getElementById('lista-gerencia-categorias');
+    const badge = document.getElementById('badge-total-categorias');
+    if (badge) badge.textContent = categorias.length;
+    if (!container) return;
+
+    if (!categorias.length) {
+      container.innerHTML = `
+        <div class="empty-state-mobile">
+          <span class="empty-state-icon">🏷️</span>
+          <span style="font-size: 13px;">Nenhuma categoria cadastrada.</span>
+        </div>`;
+      return;
+    }
+
+    container.innerHTML = categorias.map(cat => {
+      const qtd = produtos.filter(p => String(p.categoria || 'Geral').toLowerCase() === cat.toLowerCase()).length;
+      const enc = encodeURIComponent(cat);
+      return `
+        <div class="mobile-list-card">
+          <div class="card-top-row">
+            <strong class="card-item-title">🏷️ ${cat}</strong>
+            <span class="badge-tag-sm cyan">${qtd} prod.</span>
+          </div>
+          <div class="card-bottom-row" style="margin-top: 8px; padding-top: 8px; border-top: 1px dashed var(--border-card); gap: 8px; flex-wrap: wrap;">
+            <button type="button" class="chip-btn" style="height: 30px; font-size: 11px;" onclick="MobileApp.abrirModalRenomearCategoria('${enc}')">✏️ Renomear</button>
+            <button type="button" class="chip-btn" style="height: 30px; font-size: 11px; border-color: #f87171; color: #f87171;" onclick="MobileApp.excluirCategoriaMobile('${enc}')">🗑️ Remover</button>
+          </div>
+        </div>`;
+    }).join('');
+  },
+
+  abrirModalNovaCategoria() {
+    const html = `
+      <form onsubmit="MobileApp.salvarCategoriaMobile(event)" style="display:flex; flex-direction:column; gap:12px;">
+        <label style="font-size:12px; font-weight:800; color:var(--text-muted);">Nome da categoria</label>
+        <input id="input-nova-categoria" class="input-mobile" placeholder="Ex: Bebidas Geladas" required maxlength="40" style="height:46px;">
+        <button type="submit" class="btn-login-submit" style="height:46px;"><span>💾 Salvar Categoria</span></button>
+      </form>`;
+    this.abrirModalSheet('🏷️ Nova Categoria', html);
+    setTimeout(() => document.getElementById('input-nova-categoria')?.focus(), 80);
+  },
+
+  abrirModalRenomearCategoria(catEnc) {
+    const nome = decodeURIComponent(catEnc || '');
+    const html = `
+      <form onsubmit="MobileApp.salvarCategoriaMobile(event, '${catEnc}')" style="display:flex; flex-direction:column; gap:12px;">
+        <label style="font-size:12px; font-weight:800; color:var(--text-muted);">Novo nome</label>
+        <input id="input-nova-categoria" class="input-mobile" value="${nome.replace(/"/g, '&quot;')}" required maxlength="40" style="height:46px;">
+        <button type="submit" class="btn-login-submit" style="height:46px;"><span>💾 Renomear</span></button>
+      </form>`;
+    this.abrirModalSheet('✏️ Renomear Categoria', html);
+    setTimeout(() => {
+      const el = document.getElementById('input-nova-categoria');
+      if (el) { el.focus(); el.select(); }
+    }, 80);
+  },
+
+  async salvarCategoriaMobile(e, nomeAntigoEnc = null) {
+    e.preventDefault();
+    const autorizado = await this.exigirOperacaoAutorizada('⚠️ Sessão inválida para alterar categorias.');
+    if (!autorizado) return;
+
+    const input = document.getElementById('input-nova-categoria');
+    const nomeNovo = (input?.value || '').trim();
+    if (!nomeNovo) return;
+
+    let categorias = this.obterCategoriasLoja();
+    const nomeAntigo = nomeAntigoEnc ? decodeURIComponent(nomeAntigoEnc) : null;
+
+    if (nomeAntigo) {
+      if (nomeAntigo.toLowerCase() !== nomeNovo.toLowerCase() && categorias.some(c => c.toLowerCase() === nomeNovo.toLowerCase())) {
+        alert('Já existe outra categoria com este nome.');
+        return;
+      }
+      categorias = categorias.map(c => (c.toLowerCase() === nomeAntigo.toLowerCase() ? nomeNovo : c));
+      if (this.dadosBackup && Array.isArray(this.dadosBackup.produtos)) {
+        this.dadosBackup.produtos.forEach(p => {
+          if (String(p.categoria || '').toLowerCase() === nomeAntigo.toLowerCase()) p.categoria = nomeNovo;
+        });
+      }
+    } else {
+      if (categorias.some(c => c.toLowerCase() === nomeNovo.toLowerCase())) {
+        alert('Esta categoria já existe.');
+        return;
+      }
+      categorias.push(nomeNovo);
+    }
+
+    await this.persistirCategoriasNuvem(categorias, (this.dadosBackup && this.dadosBackup.categoriasExcluidas) || []);
+    this.fecharModalSheet();
+    this.renderGerenciaCategorias();
+    alert('✅ Categorias atualizadas e sincronizadas com o PDV!');
+  },
+
+  async excluirCategoriaMobile(catEnc) {
+    const nome = decodeURIComponent(catEnc || '');
+    if (!nome || nome.toLowerCase() === 'geral') {
+      alert('A categoria "Geral" não pode ser removida.');
+      return;
+    }
+    if (!confirm(`Remover a categoria "${nome}"?\nProdutos desta categoria passarão para "Geral".`)) return;
+
+    const autorizado = await this.exigirOperacaoAutorizada('⚠️ Sessão inválida para alterar categorias.');
+    if (!autorizado) return;
+
+    let categorias = this.obterCategoriasLoja().filter(c => c.toLowerCase() !== nome.toLowerCase());
+    if (!categorias.some(c => c.toLowerCase() === 'geral')) categorias.unshift('Geral');
+
+    const excluidas = [
+      ...((this.dadosBackup && this.dadosBackup.categoriasExcluidas) || []),
+      ...((this.dadosLoja && this.dadosLoja.categoriasExcluidas) || []),
+      nome
+    ];
+    const excluidasUnicas = [...new Set(excluidas.map(c => String(c).trim()).filter(Boolean))];
+
+    if (this.dadosBackup && Array.isArray(this.dadosBackup.produtos)) {
+      this.dadosBackup.produtos.forEach(p => {
+        if (String(p.categoria || '').toLowerCase() === nome.toLowerCase()) p.categoria = 'Geral';
+      });
+    }
+
+    await this.persistirCategoriasNuvem(categorias, excluidasUnicas);
+    this.renderGerenciaCategorias();
+    alert('✅ Categoria removida e sincronizada!');
+  },
+
+  async persistirCategoriasNuvem(categorias, categoriasExcluidas = []) {
+    if (!this.dadosBackup) this.dadosBackup = {};
+    this.dadosBackup.categorias = categorias;
+    this.dadosBackup.categoriasExcluidas = categoriasExcluidas;
+    if (this.dadosLoja) {
+      this.dadosLoja.categorias = categorias;
+      this.dadosLoja.categoriasExcluidas = categoriasExcluidas;
+    }
+    localStorage.setItem(`flowpdv_cache_${this.chaveLicenca}`, JSON.stringify(this.dadosBackup));
+
+    await this.salvarNoBackup({
+      categorias,
+      categoriasExcluidas,
+      produtos: this.dadosBackup.produtos || []
+    });
+
+    if (window.FirebaseDB && window.FirebaseDB.db) {
+      try {
+        const { db, doc, setDoc } = window.FirebaseDB;
+        await setDoc(doc(db, 'licencas', this.chaveLicenca), {
+          categorias,
+          categoriasExcluidas,
+          atualizadoEm: new Date().toISOString()
+        }, { merge: true });
+      } catch (e) {
+        console.warn('[Categorias] Espelho na licença falhou:', e);
+      }
+    }
+  },
+
+  renderGerenciaTerminais() {
+    const lic = this.dadosLoja || {};
+    const backup = this.dadosBackup || {};
+    const limite = parseInt(lic.limiteTerminais, 10) || 1;
+    let terminais = Array.isArray(lic.terminaisAtivos) ? lic.terminaisAtivos : [];
+    terminais = terminais.map(t => (typeof t === 'string' ? { id: t, hostname: 'Computador', ultimoAcesso: null } : t)).filter(Boolean);
+
+    // Dedup por id
+    const mapa = new Map();
+    terminais.forEach(t => {
+      const id = String(t.id || '').trim();
+      if (!id) return;
+      const atual = mapa.get(id);
+      if (!atual || new Date(t.ultimoAcesso || 0) > new Date(atual.ultimoAcesso || 0)) mapa.set(id, t);
+    });
+    terminais = Array.from(mapa.values()).sort((a, b) => new Date(b.ultimoAcesso || 0) - new Date(a.ultimoAcesso || 0));
+
+    const turnosAtivos = (backup.turnosAtivos && typeof backup.turnosAtivos === 'object') ? backup.turnosAtivos : {};
+    const caixasAbertos = Object.values(turnosAtivos).filter(t => t && (t.status === 'aberto' || t.dataAbertura)).length;
+
+    const elLimite = document.getElementById('metric-limite-terminais');
+    const elCaixas = document.getElementById('metric-terminais-caixa-aberto');
+    const badge = document.getElementById('badge-total-terminais');
+    const container = document.getElementById('lista-gerencia-terminais');
+    if (elLimite) elLimite.textContent = `${terminais.length}/${limite}`;
+    if (elCaixas) elCaixas.textContent = caixasAbertos;
+    if (badge) badge.textContent = terminais.length;
+    if (!container) return;
+
+    if (!terminais.length) {
+      container.innerHTML = `
+        <div class="empty-state-mobile">
+          <span class="empty-state-icon">💻</span>
+          <span style="font-size: 13px;">Nenhum terminal vinculado a esta licença ainda.</span>
+        </div>`;
+      return;
+    }
+
+    container.innerHTML = terminais.map(t => {
+      const turno = turnosAtivos[t.id];
+      const caixaAberto = !!(turno && (turno.status === 'aberto' || turno.dataAbertura));
+      const ultimo = t.ultimoAcesso ? new Date(t.ultimoAcesso).toLocaleString('pt-BR') : '—';
+      const operador = t.usuario || (turno && turno.operador) || '—';
+      return `
+        <div class="mobile-list-card">
+          <div class="card-top-row">
+            <strong class="card-item-title">💻 ${t.hostname || 'Computador'}</strong>
+            <span class="badge-tag-sm ${caixaAberto ? 'ok' : 'blue'}">${caixaAberto ? '🟢 Caixa Aberto' : '⚪ Offline / Fechado'}</span>
+          </div>
+          <div style="margin-top: 8px; font-size: 12px; color: var(--text-muted); display:flex; flex-direction:column; gap:3px;">
+            <span>👤 Operador: <strong style="color:var(--text-main);">${operador}</strong></span>
+            <span>🖥️ Sistema: <strong style="color:var(--text-main);">${t.sistema || 'Windows'}</strong></span>
+            <span>🕒 Último acesso: <strong style="color:var(--text-main); font-family:'JetBrains Mono'; font-size:11px;">${ultimo}</strong></span>
+            <span style="font-size:10.5px; color:var(--text-dim); font-family:'JetBrains Mono';">ID: ${t.id}</span>
+          </div>
+        </div>`;
+    }).join('');
   },
 
   formatarNumeroTurnoMobile(id) {
