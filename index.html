@@ -17,7 +17,7 @@
   <link rel="icon" type="image/png" href="icon.png">
   <link rel="shortcut icon" href="favicon.ico">
   <link rel="apple-touch-icon" href="icon.png">
-  <link rel="stylesheet" href="style.css?v=2.2.20">
+  <link rel="stylesheet" href="style.css?v=2.2.21">
 
   <script>
     // Silencia ruído de extensões do navegador (senha, autofill, etc.)
@@ -63,8 +63,9 @@
         <form id="form-login-gestor" onsubmit="MobileApp.executarLogin(event)">
           <div class="form-group-mobile">
             <label class="form-label-mobile">Chave da Licença da Loja</label>
-            <div class="input-wrapper-mobile">
-              <input type="text" id="login-chave" class="input-mobile uppercase mono" placeholder="EX: LOJA-1234-5678" required autocomplete="off">
+            <div class="input-wrapper-mobile input-chave-licenca">
+              <span class="chave-prefixo" aria-hidden="true">LIC-FLOW-</span>
+              <input type="text" id="login-chave" class="input-mobile uppercase mono" placeholder="000000" inputmode="numeric" autocomplete="off" required maxlength="16" aria-label="Número da licença">
             </div>
           </div>
 
@@ -841,6 +842,6 @@
   </script>
 
   <!-- Lógica Principal do Companion App -->
-  <script src="app.js?v=2.2.20"></script>
+  <script src="app.js?v=2.2.21"></script>
 </body>
 </html>

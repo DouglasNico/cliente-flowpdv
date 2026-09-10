@@ -260,6 +260,7 @@ window.MobileApp = {
   init() {
     this.carregarPreferenciasLocais();
     this.registrarServiceWorker();
+    this.prepararCampoChaveLogin();
     this.verificarSessaoSalva();
     this.iniciarMonitoramentoInatividade();
   },
@@ -318,9 +319,31 @@ window.MobileApp = {
   // -------------------------------------------------------------
   // AUTENTICAÇÃO
   // -------------------------------------------------------------
+  PREFIXO_CHAVE: 'LIC-FLOW-',
+
+  normalizarChaveLogin(valor) {
+    let v = String(valor || '').trim().toUpperCase().replace(/\s+/g, '');
+    v = v.replace(/^LIC-?FLOW-?/, '');
+    return this.PREFIXO_CHAVE + v;
+  },
+
+  prepararCampoChaveLogin() {
+    const input = document.getElementById('login-chave');
+    if (!input) return;
+
+    const soNumero = () => {
+      let v = String(input.value || '').toUpperCase().replace(/\s+/g, '');
+      v = v.replace(/^LIC-?FLOW-?/, '');
+      if (input.value !== v) input.value = v;
+    };
+
+    input.addEventListener('input', soNumero);
+    input.addEventListener('blur', soNumero);
+  },
+
   async executarLogin(event) {
     event.preventDefault();
-    const chaveInput = document.getElementById('login-chave').value.trim().toUpperCase();
+    const chaveInput = this.normalizarChaveLogin(document.getElementById('login-chave').value);
     const pinInput = document.getElementById('login-pin').value.trim();
     const lembrar = document.getElementById('login-lembrar').checked;
     const btnSubmit = document.getElementById('btn-submit-login');
