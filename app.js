@@ -584,7 +584,7 @@ window.MobileApp = {
         this.dadosLoja = snap.data();
         this.atualizarHeaderUI();
         this.renderResumoDashboard();
-        if (this.subAbaGerenciaAtual === 'terminais') this.renderGerenciaTerminais();
+        this.renderGerenciaTerminais();
       }, (err) => {
         console.warn('[MobileApp] Erro no listener da licença:', err);
       });
@@ -628,7 +628,7 @@ window.MobileApp = {
         this.processarLogsAuditoria(logs);
         this.renderAuditoria();
         this.renderResumoDashboard();
-        if (this.subAbaGerenciaAtual === 'terminais') this.renderGerenciaTerminais();
+        this.renderGerenciaTerminais();
       }, (err) => {
         console.warn('[MobileApp] Erro no listener de auditoria:', err);
       });
@@ -1886,10 +1886,14 @@ window.MobileApp = {
     return '—';
   },
 
-  /** Heartbeat do PDV ~2 min. Sem sinal recente, o app não está aberto. */
+  /** Online só com o sistema aberto. Fechar o PDV grava appAberto=false; senão vale o último sinal (~4 min). */
   isTerminalOnline(terminal) {
-    const ultimoMs = terminal && terminal.ultimoAcesso ? new Date(terminal.ultimoAcesso).getTime() : 0;
-    return ultimoMs > 0 && (Date.now() - ultimoMs) < (1000 * 60 * 10);
+    if (!terminal) return false;
+    if (terminal.appAberto === false) return false;
+    const offMs = terminal.offlineEm ? new Date(terminal.offlineEm).getTime() : 0;
+    const ultimoMs = terminal.ultimoAcesso ? new Date(terminal.ultimoAcesso).getTime() : 0;
+    if (offMs > 0 && (!ultimoMs || offMs >= ultimoMs)) return false;
+    return ultimoMs > 0 && (Date.now() - ultimoMs) < (1000 * 60 * 4);
   },
 
   /**
@@ -1949,7 +1953,10 @@ window.MobileApp = {
 
   msAberturaMaisNova(backup) {
     const mapa = (backup.turnosAtivos && typeof backup.turnosAtivos === 'object') ? backup.turnosAtivos : {};
-    let max = this.msDataTurno(backup.turnoAtual && backup.turnoAtual.dataAbertura);
+    let max = 0;
+    if (backup.turnoAtual && this.isTurnoCaixaAberto(backup.turnoAtual, backup, backup.turnoAtual.terminalId || '')) {
+      max = this.msDataTurno(backup.turnoAtual.dataAbertura);
+    }
     Object.keys(mapa).forEach(id => {
       const t = mapa[id];
       if (!this.isTurnoCaixaAberto(t, backup, id)) return;
@@ -1973,7 +1980,6 @@ window.MobileApp = {
     const terminais = this.consolidarTerminaisLicenca(bruto);
     const mapa = (backup.turnosAtivos && typeof backup.turnosAtivos === 'object') ? backup.turnosAtivos : {};
     const porId = new Map();
-    const maisNovoMs = this.msAberturaMaisNova(backup);
 
     const slots = Object.keys(mapa).map(id => ({ id, turno: mapa[id] }))
       .filter(s => this.isTurnoCaixaAberto(s.turno, backup, s.id));
@@ -1983,30 +1989,16 @@ window.MobileApp = {
       if (!ja) slots.push({ id: backup.turnoAtual.terminalId || 'turnoAtual', turno: backup.turnoAtual });
     }
 
-    const orfaos = [];
     slots.forEach(slot => {
       const dest = this.encontrarTerminalDoSlot(slot.id, slot.turno, terminais, bruto);
       const ms = this.msDataTurno(slot.turno.dataAbertura);
-      const ehMaisNovo = maisNovoMs > 0 && ms >= maisNovoMs - 3000;
       if (!dest) {
-        if (ehMaisNovo) orfaos.push(slot);
+        const atual = porId.get(slot.id);
+        if (!atual || this.msDataTurno(atual.dataAbertura) < ms) porId.set(slot.id, slot.turno);
         return;
       }
-      const online = this.isTerminalOnline(dest);
-      if (!online && !ehMaisNovo) return;
       const atual = porId.get(dest.id);
       if (!atual || this.msDataTurno(atual.dataAbertura) < ms) porId.set(dest.id, slot.turno);
-    });
-
-    orfaos.forEach(slot => {
-      let alvo = terminais.find(t => this.isTerminalOnline(t) && !porId.has(t.id));
-      if (!alvo) {
-        const op = String(slot.turno && slot.turno.operador || '').trim().toLowerCase();
-        if (op) alvo = terminais.find(t => !porId.has(t.id) && String(t.usuario || '').trim().toLowerCase() === op);
-      }
-      if (!alvo) alvo = terminais.find(t => this.isTerminalOnline(t));
-      if (!alvo) return;
-      porId.set(alvo.id, slot.turno);
     });
 
     return porId;
@@ -2134,7 +2126,19 @@ window.MobileApp = {
     const limite = parseInt(lic.limiteTerminais, 10) || 1;
     const brutoTerminais = lic.terminaisAtivos;
     const terminais = this.consolidarTerminaisLicenca(brutoTerminais);
-    const caixasAbertos = this.listarTurnosCaixaAbertos(backup).length;
+    const mapaAbertos = this.montarMapaCaixasAbertos(backup);
+    mapaAbertos.forEach((turno, id) => {
+      if (terminais.some(t => t.id === id)) return;
+      if (this.encontrarTerminalDoSlot(id, turno, terminais, brutoTerminais)) return;
+      terminais.push({
+        id,
+        hostname: turno.hostname || 'Computador',
+        usuario: turno.operador || 'Operador',
+        ultimoAcesso: turno.atualizadoEm || turno.dataAbertura || null,
+        appAberto: true
+      });
+    });
+    const caixasAbertos = mapaAbertos.size;
 
     const elLimite = document.getElementById('metric-limite-terminais');
     const elCaixas = document.getElementById('metric-terminais-caixa-aberto');
@@ -2153,8 +2157,6 @@ window.MobileApp = {
         </div>`;
       return;
     }
-
-    const mapaAbertos = this.montarMapaCaixasAbertos(backup);
 
     container.innerHTML = terminais.map(t => {
       const turnoAberto = mapaAbertos.get(t.id);
