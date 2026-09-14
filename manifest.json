@@ -10,16 +10,16 @@
   "lang": "pt-BR",
   "icons": [
     {
-      "src": "icon.png",
+      "src": "logos/FlowPDV-icone-claro.png",
       "sizes": "192x192",
       "type": "image/png",
-      "purpose": "any maskable"
+      "purpose": "any"
     },
     {
-      "src": "icon.png",
+      "src": "logos/FlowPDV-icone-claro.png",
       "sizes": "512x512",
       "type": "image/png",
-      "purpose": "any maskable"
+      "purpose": "any"
     }
   ]
 }

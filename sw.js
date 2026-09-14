@@ -1,15 +1,15 @@
-// FlowPDV Mobile Service Worker v2.2.21 - Ultra-Fast PWA
-const CACHE_NAME = 'flowpdv-mobile-v2.2.21';
+// FlowPDV Mobile Service Worker v2.2.22 - Ultra-Fast PWA
+const CACHE_NAME = 'flowpdv-mobile-v2.2.22';
 const ASSETS_TO_CACHE = [
   './',
   './index.html',
   './style.css',
   './app.js',
   './manifest.json',
-  './icon.png',
-  './FlowPDV-Logo.png',
-  './logoflow.png',
-  './favicon.ico'
+  './logos/FlowPDV-icone-claro.png',
+  './logos/FlowPDV-icone-escuro.png',
+  './logos/FlowPDV-vertical-escuro.png',
+  './logos/FlowPDV-horizontal-escuro.png'
 ];
 
 self.addEventListener('install', (event) => {
