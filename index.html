@@ -17,7 +17,7 @@
   <link rel="icon" type="image/png" href="logos/FlowPDV-icone-claro.png">
   <link rel="shortcut icon" href="favicon.ico">
   <link rel="apple-touch-icon" href="logos/FlowPDV-icone-claro.png">
-  <link rel="stylesheet" href="style.css?v=20260915">
+  <link rel="stylesheet" href="style.css?v=20260915c">
 
   <script>
     // Silencia ruído de extensões do navegador (senha, autofill, etc.)
@@ -37,8 +37,10 @@
       }
     });
 
-    // 🚫 Desativa gestos de pinça no Safari iOS
-    document.addEventListener('gesturestart', function (e) { e.preventDefault(); }, { passive: true });
+    // Complementa touch-action no iOS sem bloquear a rolagem ou a pinça.
+    document.addEventListener('dblclick', function (event) {
+      if (!event.target.closest('input, textarea, [contenteditable="true"]')) event.preventDefault();
+    }, { passive: false });
   </script>
 </head>
 <body>
