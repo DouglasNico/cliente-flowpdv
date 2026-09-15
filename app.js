@@ -1916,7 +1916,7 @@ window.MobileApp = {
 
   usuarioGenericoWindows(nome) {
     const n = String(nome || '').trim().toLowerCase();
-    return !n || ['user', 'usuario', 'usuário', 'administrator', 'administrador', 'admin', 'convidado', 'guest'].includes(n);
+    return !n || ['user', 'usuario', 'usuário', 'convidado', 'guest', 'operador', 'operador caixa'].includes(n);
   },
 
   nomeOperadorTerminal(terminal, turno) {
