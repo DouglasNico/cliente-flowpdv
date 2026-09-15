@@ -4,6 +4,18 @@
  */
 
 window.MobileApp = {
+  syncSequence: 0,
+  pararSincronizacao() {
+    this.syncSequence++;
+    for (const name of ['unsubRealtime', 'unsubLicencaRealtime', 'unsubAuditoriaRealtime']) {
+      if (typeof this[name] === 'function') this[name]();
+      this[name] = null;
+    }
+  },
+  statusSincronizacao(texto) {
+    const el = document.getElementById('header-status-text');
+    if (el) { el.textContent = texto; el.setAttribute('aria-live', 'polite'); }
+  },
   chaveLicenca: '',
   pinGerente: '',
   dadosLoja: null,
@@ -28,6 +40,7 @@ window.MobileApp = {
     localStorage.removeItem('flowpdv_mob_sessao');
     localStorage.removeItem('flowpdv_mob_cache_expiracao');
 
+    this.pararSincronizacao();
     this.chaveLicenca = '';
     this.pinGerente = '';
     this.dadosLoja = null;
@@ -59,21 +72,26 @@ window.MobileApp = {
   async montarBackupCompleto(dados, chave = this.chaveLicenca) {
     const segura = this.prepararBackupSegura(dados, chave);
     if (!segura) return null;
-    if (!window.FlowNuvem || typeof window.FlowNuvem.completarPartes !== 'function') return segura;
+    if (!window.FlowNuvem || typeof window.FlowNuvem.completarPartes !== 'function') {
+      if (segura.partes) throw new Error('Leitura das partes indisponível.');
+      return segura;
+    }
     try {
       return await window.FlowNuvem.completarPartes(chave, segura);
     } catch (e) {
       console.warn('[Backup] Falha ao carregar as partes do backup:', e);
-      return segura;
+      this.statusSincronizacao('Falha na atualização • dados anteriores');
+      throw e;
     }
   },
 
   /** Grava um patch no backup da loja respeitando as partes. */
   async salvarNoBackup(patch) {
-    if (!this.chaveLicenca || !window.FlowNuvem || typeof window.FlowNuvem.salvarBackup !== 'function') return;
+    if (!this.chaveLicenca || !window.FlowNuvem || typeof window.FlowNuvem.salvarBackup !== 'function') throw new Error('Sincronização indisponível');
+    const chave = this.chaveLicenca;
     const manifesto = (this.dadosBackup && this.dadosBackup.partes) || {};
-    const novoManifesto = await window.FlowNuvem.salvarBackup(this.chaveLicenca, patch, manifesto);
-    if (this.dadosBackup) {
+    const novoManifesto = await window.FlowNuvem.salvarBackup(chave, patch, manifesto);
+    if (this.dadosBackup && chave === this.chaveLicenca) {
       this.dadosBackup.partes = { ...manifesto, ...(novoManifesto || {}) };
     }
   },
@@ -212,8 +230,8 @@ window.MobileApp = {
       return false;
     }
 
-    const chaveLocal = localStorage.getItem('flowpdv_mob_chave');
-    const pinLocal = localStorage.getItem('flowpdv_mob_pin');
+    const chaveLocal = this.chaveLicenca;
+    const pinLocal = this.pinGerente;
     if (!chaveLocal || !pinLocal || String(chaveLocal).trim() !== String(this.chaveLicenca).trim()) {
       this.limparSessaoInvalida('🔒 Sessão expirada ou não autorizada para esta licença.');
       return false;
@@ -478,12 +496,14 @@ window.MobileApp = {
   deslogarPorInatividade() {
     if (localStorage.getItem('flowpdv_mob_manter_conectado') === 'true') return;
     if (!this.chaveLicenca) return;
+    if (window.FlowNuvem?.sairDaLoja) window.FlowNuvem.sairDaLoja();
     console.warn('[Segurança] Sessão expirada após 15 minutos sem atividade.');
     
     if (this.timerInatividadeId) clearTimeout(this.timerInatividadeId);
     localStorage.removeItem('flowpdv_mob_chave');
     localStorage.removeItem('flowpdv_mob_pin');
     localStorage.removeItem('flowpdv_mob_sessao');
+    this.pararSincronizacao();
     this.chaveLicenca = '';
     this.pinGerente = '';
     this.dadosLoja = null;
@@ -510,6 +530,7 @@ window.MobileApp = {
     localStorage.removeItem('flowpdv_mob_pin');
     localStorage.removeItem('flowpdv_mob_manter_conectado');
     localStorage.removeItem('flowpdv_mob_sessao');
+    this.pararSincronizacao();
     this.chaveLicenca = '';
     this.pinGerente = '';
     this.dadosLoja = null;
@@ -566,10 +587,14 @@ window.MobileApp = {
 
     try {
       const { db, doc, onSnapshot } = window.FirebaseDB;
-      this.unsubRealtime = onSnapshot(doc(db, 'backups_lojas', this.chaveLicenca), async (snap) => {
+      const chave = this.chaveLicenca;
+      this.unsubRealtime = onSnapshot(doc(db, 'backups_lojas', chave), async (snap) => {
+        const sequence = ++this.syncSequence;
+        try {
         if (snap && snap.exists()) {
-          const backupSegura = await this.montarBackupCompleto(snap.data(), this.chaveLicenca);
-          if (!backupSegura) return;
+          const backupSegura = await this.montarBackupCompleto(snap.data(), chave);
+          if (!backupSegura || chave !== this.chaveLicenca || sequence !== this.syncSequence) return;
+          this.statusSincronizacao('Atualizado às ' + new Date().toLocaleTimeString('pt-BR'));
 
           this.dadosBackup = backupSegura;
           localStorage.setItem(`flowpdv_cache_${this.chaveLicenca}`, JSON.stringify(this.dadosBackup));
@@ -581,7 +606,9 @@ window.MobileApp = {
           this.renderAuditoria();
           this.renderGerencia();
         }
+        } catch (error) { if (chave === this.chaveLicenca && sequence === this.syncSequence) this.statusSincronizacao('Falha na atualização • dados anteriores'); }
       }, (err) => {
+        this.statusSincronizacao('Sem conexão com a sincronização');
         console.warn('[MobileApp] Erro no listener realtime:', err);
       });
     } catch(e) {
@@ -602,9 +629,17 @@ window.MobileApp = {
 
     try {
       const { db, doc, onSnapshot } = window.FirebaseDB;
-      this.unsubLicencaRealtime = onSnapshot(doc(db, 'licencas', this.chaveLicenca), (snap) => {
-        if (!snap || !snap.exists()) return;
-        this.dadosLoja = snap.data();
+      const chave = this.chaveLicenca;
+      this.unsubLicencaRealtime = onSnapshot(doc(db, 'licencas', chave), (snap) => {
+        if (chave !== this.chaveLicenca) return;
+        if (!snap || !snap.exists()) { this.limparSessaoInvalida('Licença indisponível. Faça login novamente.'); return; }
+        const licenca = snap.data();
+        const status = String(licenca.status || '').trim().toLowerCase();
+        const pin = String(licenca.pinGerente || licenca.pinMestre || '').trim();
+        if (['bloqueado', 'bloqueada'].includes(status) || !pin || pin !== String(this.pinGerente).trim()) {
+          this.limparSessaoInvalida('O acesso da loja foi atualizado. Faça login novamente.'); return;
+        }
+        this.dadosLoja = licenca;
         this.atualizarHeaderUI();
         this.renderResumoDashboard();
         this.renderGerenciaTerminais();
@@ -662,6 +697,9 @@ window.MobileApp = {
 
   async carregarDadosLoja() {
     if (!this.chaveLicenca) return;
+    const chaveCarga = this.chaveLicenca;
+    const sequenceCarga = ++this.syncSequence;
+    this.statusSincronizacao('Atualizando…');
 
     try {
       if (!window.FirebaseDB || !window.FirebaseDB.db) return;
@@ -678,6 +716,7 @@ window.MobileApp = {
 
       const [resLic, resBackup, resAudit] = await Promise.allSettled([promLicenca, promBackup, promAudit]);
 
+      if (chaveCarga !== this.chaveLicenca || sequenceCarga !== this.syncSequence) return;
       // 1. Processa Licença
       if (resLic.status === 'fulfilled' && resLic.value.exists()) {
         this.dadosLoja = resLic.value.data();
@@ -685,7 +724,8 @@ window.MobileApp = {
 
       // 2. Processa Backup da Loja (Produtos, Vendas, Turnos, Contas, etc)
       if (resBackup.status === 'fulfilled' && resBackup.value.exists()) {
-        const backupSegura = await this.montarBackupCompleto(resBackup.value.data(), this.chaveLicenca);
+        const backupSegura = await this.montarBackupCompleto(resBackup.value.data(), chaveCarga);
+        if (chaveCarga !== this.chaveLicenca || sequenceCarga !== this.syncSequence) return;
         if (backupSegura) {
           this.dadosBackup = backupSegura;
           localStorage.setItem(`flowpdv_cache_${this.chaveLicenca}`, JSON.stringify(this.dadosBackup));
@@ -694,6 +734,7 @@ window.MobileApp = {
         // Tenta buscar no backup legado apenas se necessário
         try {
           const snapLeg = await getDoc(doc(db, 'backups_adegas', this.chaveLicenca));
+          if (chaveCarga !== this.chaveLicenca || sequenceCarga !== this.syncSequence) return;
           if (snapLeg.exists()) {
             const backupLegado = this.prepararBackupSegura(snapLeg.data(), this.chaveLicenca);
             if (backupLegado) {
@@ -724,6 +765,7 @@ window.MobileApp = {
       this.renderGerencia();
 
     } catch (err) {
+      this.statusSincronizacao('Falha na atualização • dados anteriores');
       console.error('[CarregarDados] Erro:', err);
     }
   },
@@ -759,14 +801,14 @@ window.MobileApp = {
     const ano = hoje.getFullYear();
     const mes = String(hoje.getMonth() + 1).padStart(2, '0');
     const dia = String(hoje.getDate()).padStart(2, '0');
-    const hojeStr = `${ano}-${mes}-${dia}`;
-    const mesAtualStr = `${ano}-${mes}`;
+    const hojeStr = FlowReportRules.dateKey(hoje);
+    const mesAtualStr = hojeStr.slice(0, 7);
 
     // Vendas de Hoje (compatível com v.data, v.dataHora, v.criadoEm e ISO strings)
     const vendasHoje = vendas.filter(v => {
       const rawDate = v.data || v.dataHora || v.criadoEm || (v.timestamp ? new Date(v.timestamp).toISOString() : '');
       if (!rawDate) return false;
-      const dataStr = String(rawDate).split('T')[0];
+      const dataStr = FlowReportRules.dateKey(rawDate);
       return dataStr === hojeStr;
     });
 
@@ -778,7 +820,7 @@ window.MobileApp = {
     const vendasMes = vendas.filter(v => {
       const rawDate = v.data || v.dataHora || v.criadoEm || (v.timestamp ? new Date(v.timestamp).toISOString() : '');
       if (!rawDate) return false;
-      const dataStr = String(rawDate).split('T')[0];
+      const dataStr = FlowReportRules.dateKey(rawDate);
       return dataStr.startsWith(mesAtualStr);
     });
 
@@ -802,21 +844,10 @@ window.MobileApp = {
 
     if (turnosAbertos.length > 0) {
       turnosAbertos.forEach(t => {
-        const trocoInicial = parseFloat(t.trocoInicial || t.saldoDinheiroGaveta || 0);
-        const dataAberturaTurno = t.dataAbertura ? new Date(t.dataAbertura).getTime() : 0;
-
-        let vendasDinheiroTurno = 0;
-        vendas.forEach(v => {
-          const tVenda = new Date(v.data || v.dataHora || 0).getTime();
-          if (dataAberturaTurno === 0 || tVenda >= dataAberturaTurno) {
-            if (v.pagamentoDividido && v.parcela1 && v.parcela2) {
-              if ((v.parcela1.forma || '').toLowerCase().includes('dinheiro')) vendasDinheiroTurno += parseFloat(v.parcela1.valor) || 0;
-              if ((v.parcela2.forma || '').toLowerCase().includes('dinheiro')) vendasDinheiroTurno += parseFloat(v.parcela2.valor) || 0;
-            } else if ((v.formaPagamento || '').toLowerCase().includes('dinheiro')) {
-              vendasDinheiroTurno += parseFloat(v.total) || 0;
-            }
-          }
-        });
+        const trocoInicial = parseFloat(t.trocoInicial ?? t.saldoDinheiroGaveta ?? 0) || 0;
+        const vendasDinheiroTurno = vendas.reduce((total, venda) =>
+          total + (FlowCaixaRules.vendaPertenceAoTurno(venda, t)
+            ? FlowCaixaRules.dinheiroLiquidoVenda(venda) : 0), 0);
 
         const totalSangrias = Array.isArray(t.sangrias)
           ? t.sangrias.reduce((acc, s) => acc + (parseFloat(s.valor) || 0), 0)
@@ -954,15 +985,7 @@ window.MobileApp = {
       'Outros': 0
     };
 
-    vendasHoje.forEach(v => {
-      const f = v.formaPagamento || 'Outros';
-      if (f.includes('PIX')) formas['PIX'] += parseFloat(v.total) || 0;
-      else if (f.includes('Dinheiro')) formas['Dinheiro'] += parseFloat(v.total) || 0;
-      else if (f.includes('Crédito')) formas['Cartão Crédito'] += parseFloat(v.total) || 0;
-      else if (f.includes('Débito')) formas['Cartão Débito'] += parseFloat(v.total) || 0;
-      else if (f.includes('Fiado')) formas['Fiado'] += parseFloat(v.total) || 0;
-      else formas['Outros'] += parseFloat(v.total) || 0;
-    });
+    Object.assign(formas, FlowReportRules.pagamentos(vendasHoje));
 
     const containerFormas = document.getElementById('resumo-formas-pagamento');
     const formasComValor = Object.entries(formas).filter(([_, val]) => val > 0);
@@ -1038,10 +1061,10 @@ window.MobileApp = {
     const ano = hoje.getFullYear();
     const mes = String(hoje.getMonth() + 1).padStart(2, '0');
     const dia = String(hoje.getDate()).padStart(2, '0');
-    const hojeStr = `${ano}-${mes}-${dia}`;
+    const hojeStr = FlowReportRules.dateKey(hoje);
     const dataBr = hoje.toLocaleDateString('pt-BR');
 
-    const vendasHoje = vendas.filter(v => (v.data || v.dataHora || v.criadoEm || '').startsWith(hojeStr));
+    const vendasHoje = vendas.filter(v => FlowReportRules.dateKey(v.data || v.dataHora || v.criadoEm || v.timestamp) === hojeStr);
     const totalHoje = vendasHoje.reduce((acc, v) => acc + (parseFloat(v.total) || 0), 0);
     const qtdVendas = vendasHoje.length;
     const ticketMedio = qtdVendas > 0 ? (totalHoje / qtdVendas) : 0;
@@ -1050,14 +1073,7 @@ window.MobileApp = {
                      (backup.config && backup.config.nomeEmpresa) || 'FlowPDV Gestão';
 
     const formas = { 'PIX': 0, 'Dinheiro': 0, 'Cartão Crédito': 0, 'Cartão Débito': 0, 'Fiado': 0 };
-    vendasHoje.forEach(v => {
-      const f = v.formaPagamento || 'Outros';
-      if (f.includes('PIX')) formas['PIX'] += parseFloat(v.total) || 0;
-      else if (f.includes('Dinheiro')) formas['Dinheiro'] += parseFloat(v.total) || 0;
-      else if (f.includes('Crédito')) formas['Cartão Crédito'] += parseFloat(v.total) || 0;
-      else if (f.includes('Débito')) formas['Cartão Débito'] += parseFloat(v.total) || 0;
-      else if (f.includes('Fiado')) formas['Fiado'] += parseFloat(v.total) || 0;
-    });
+    Object.assign(formas, FlowReportRules.pagamentos(vendasHoje));
 
     let texto = `📊 *FLOWPDV — FECHAMENTO DIÁRIO (${dataBr})*\n`;
     texto += `🏪 *Loja:* ${nomeLoja}\n\n`;
@@ -1302,21 +1318,23 @@ window.MobileApp = {
     const novaData = inputVal?.value || '';
 
     const backup = this.dadosBackup || {};
-    const produtos = backup.produtos || [];
+    const produtos = (backup.produtos || []).map(p => ({ ...p }));
     const idx = produtos.findIndex(p => p.id === this.produtoValidadeMobileId);
 
     if (idx >= 0) {
       produtos[idx].dataValidade = novaData;
-      this.dadosBackup.produtos = produtos;
-      localStorage.setItem(`flowpdv_cache_${this.chaveLicenca}`, JSON.stringify(this.dadosBackup));
-      this.renderEstoque();
-      this.fecharModalValidade();
-
-      // Sincronizar na Nuvem Firebase (só a lista de produtos, nunca o backup inteiro)
+      produtos[idx].atualizadoEm = new Date().toISOString();
+      const chave = this.chaveLicenca;
       try {
         await this.salvarNoBackup({ produtos });
+        if (chave !== this.chaveLicenca || !this.dadosBackup) return;
+        this.dadosBackup.produtos = produtos;
+        localStorage.setItem('flowpdv_cache_' + chave, JSON.stringify(this.dadosBackup));
+        this.renderEstoque();
+        this.fecharModalValidade();
       } catch(e) {
         console.warn('[MobileApp] Erro ao sincronizar validade na nuvem:', e);
+        alert('Não foi possível salvar a validade na nuvem. Confira a conexão e tente novamente.');
       }
     }
   },

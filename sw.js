@@ -1,10 +1,12 @@
 // FlowPDV Mobile Service Worker v2.2.22 - Ultra-Fast PWA
-const CACHE_NAME = 'flowpdv-mobile-v2.2.22';
+const CACHE_NAME = 'flowpdv-mobile-v20260915';
 const ASSETS_TO_CACHE = [
   './',
   './index.html',
   './style.css',
   './app.js',
+  './caixa-rules.js',
+  './report-rules.js',
   './manifest.json',
   './logos/FlowPDV-icone-claro.png',
   './logos/FlowPDV-icone-escuro.png',
@@ -24,7 +26,7 @@ self.addEventListener('activate', (event) => {
     caches.keys().then((keys) => {
       return Promise.all(
         keys.map((key) => {
-          if (key !== CACHE_NAME) {
+          if (key.startsWith('flowpdv-mobile-') && key !== CACHE_NAME) {
             return caches.delete(key);
           }
         })
@@ -46,7 +48,7 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // Resposta instantânea do Cache com atualização em segundo plano (Stale-While-Revalidate)
+  // Prioriza versão atual; usa cache apenas quando a rede falhar.
   event.respondWith(
     caches.match(event.request).then((cachedResponse) => {
       const fetchPromise = fetch(event.request).then((networkResponse) => {
@@ -57,7 +59,7 @@ self.addEventListener('fetch', (event) => {
         return networkResponse;
       }).catch(() => cachedResponse);
 
-      return cachedResponse || fetchPromise;
+      return fetchPromise;
     })
   );
 });

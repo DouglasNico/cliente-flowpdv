@@ -2357,3 +2357,12 @@ body {
   align-items: center;
   justify-content: center;
 }
+
+/* Navegação somente durante uma sessão; controles confortáveis ao toque. */
+body:has(#screen-login:not([style*="display: none"])) .bottom-tabbar { display:none; }
+@media(max-width:767px){
+ input,select,textarea{font-size:16px!important}
+ .tabbar-item{min-height:48px}
+ .modal-bottom-content{max-width:100%;overflow-x:hidden}
+ .ranking-item-row>div:first-child{gap:8px}
+}

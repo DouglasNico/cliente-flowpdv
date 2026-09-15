@@ -2,7 +2,7 @@
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta name="theme-color" content="#273545">
   <meta name="mobile-web-app-capable" content="yes">
@@ -17,7 +17,7 @@
   <link rel="icon" type="image/png" href="logos/FlowPDV-icone-claro.png">
   <link rel="shortcut icon" href="favicon.ico">
   <link rel="apple-touch-icon" href="logos/FlowPDV-icone-claro.png">
-  <link rel="stylesheet" href="style.css?v=2.2.21">
+  <link rel="stylesheet" href="style.css?v=20260915">
 
   <script>
     // Silencia ruído de extensões do navegador (senha, autofill, etc.)
@@ -768,17 +768,19 @@
     }
 
     async function lerParte(chave, nome, total) {
-      const qtd = parseInt(total, 10) || 0;
-      if (qtd <= 0) return [];
+      const qtd = Number(total);
+      if (!Number.isSafeInteger(qtd) || qtd < 0) throw new Error('Manifesto do backup inválido: ' + nome);
+      if (qtd === 0) return [];
       const snaps = await Promise.all(
         Array.from({ length: qtd }, (_, i) =>
-          getDoc(doc(db, "backups_lojas", chave, "partes", `${nome}_${i}`)).catch(() => null))
+          getDoc(doc(db, "backups_lojas", chave, "partes", `${nome}_${i}`)))
       );
       const itens = [];
       snaps.forEach(snap => {
-        if (!snap || !snap.exists()) return;
+        if (!snap || !snap.exists()) throw new Error('Parte do backup indisponível: ' + nome);
         const dados = snap.data() || {};
-        if (Array.isArray(dados.itens)) itens.push(...dados.itens);
+        if (!Array.isArray(dados.itens)) throw new Error('Parte do backup inválida: ' + nome);
+        itens.push(...dados.itens);
       });
       return (PARTES[nome] && PARTES[nome].inverter) ? itens.reverse() : itens;
     }
@@ -842,6 +844,8 @@
   </script>
 
   <!-- Lógica Principal do Companion App -->
-  <script src="app.js?v=2.2.21"></script>
+  <script src="report-rules.js?v=20260915"></script>
+  <script src="caixa-rules.js?v=20260915"></script>
+  <script src="app.js?v=20260915"></script>
 </body>
 </html>
