@@ -172,7 +172,7 @@ window.MobileApp = {
       const pinCorreto = String(licData.pinGerente || licData.pinMestre || '').trim();
       const pinDigitado = String(pin).trim();
       if (!pinCorreto || pinDigitado !== pinCorreto) {
-        this.limparSessaoInvalida('🔒 PIN salvo da sessão é inválido. Faça login novamente.');
+        this.limparSessaoInvalida('🔒 Senha salva da sessão é inválida. Faça login novamente.');
         return;
       }
 
@@ -260,7 +260,7 @@ window.MobileApp = {
 
       const pinCorreto = String(licData.pinGerente || licData.pinMestre || '').trim();
       if (!pinCorreto || String(pinLocal).trim() !== pinCorreto) {
-        this.limparSessaoInvalida('🔒 PIN da sessão inválido para esta licença.');
+        this.limparSessaoInvalida('🔒 Senha da sessão inválida para esta licença.');
         return false;
       }
 
@@ -369,7 +369,7 @@ window.MobileApp = {
 
     toastErro.style.display = 'none';
     btnSubmit.disabled = true;
-    btnSubmit.innerHTML = '<span>⏳ Conectando na nuvem...</span>';
+    btnSubmit.innerHTML = '<span>Entrando...</span>';
 
     try {
       if (!window.FirebaseDB || !window.FirebaseDB.db) {
@@ -397,10 +397,10 @@ window.MobileApp = {
       const pinCorreto = String(licData.pinGerente || licData.pinMestre || '').trim();
       const pinDigitado = String(pinInput).trim();
       if (!pinCorreto) {
-        throw new Error('PIN do Gerente não configurado para esta licença.');
+        throw new Error('Senha do gestor não configurada para esta licença.');
       }
       if (pinDigitado !== pinCorreto) {
-        throw new Error('PIN do Gerente incorreto.');
+        throw new Error('Senha do gestor incorreta.');
       }
 
       // Sucesso no Login
@@ -430,7 +430,7 @@ window.MobileApp = {
       toastErro.style.display = 'block';
     } finally {
       btnSubmit.disabled = false;
-      btnSubmit.innerHTML = '<span>🔐 Entrar no Gestor</span>';
+      btnSubmit.innerHTML = '<span>Entrar</span>';
     }
   },
 
@@ -2543,7 +2543,7 @@ window.MobileApp = {
       { key: 'validadeLotes', nome: '📅 Controle de Validade & Lotes', desc: 'Alertas de produtos vencendo em 15/30 dias e queima de estoque.' },
       { key: 'fiadoWhatsApp', nome: '📖 Módulo Fiado & CRM de Clientes', desc: 'Controle de limite de crédito, histórico e cobrança via WhatsApp.' },
       { key: 'comandasMesas', nome: '🍽️ Mesas & Comandas (Salão)', desc: 'Gerenciamento de consumos e atendimento de salão.' },
-      { key: 'descontoMaximo', nome: '🏷️ Limite de Desconto no Caixa', desc: 'Exige liberação de gerente para descontos acima do limite.' }
+      { key: 'descontoMaximo', nome: '🏷️ Limite de Desconto no Caixa', desc: 'Exige liberação do gestor para descontos acima do limite.' }
     ];
 
     containerModulos.innerHTML = modulosDef.map(m => {
@@ -2733,7 +2733,7 @@ window.MobileApp = {
       const cargo = (func.cargo || func.funcao || 'operador').toLowerCase();
       const isAdmin = cargo.includes('admin') || cargo.includes('gerente') || cargo.includes('superadmin') || cargo.includes('dono');
       const cargoLabel = isAdmin
-        ? (func.cargo === 'gerente' || !func.cargo ? 'Gerente' : (func.cargo || 'Gerente'))
+        ? 'Gestor'
         : (func.cargo || 'Operador');
       const badgeCargo = isAdmin
         ? `<span class="badge-tag-sm purple">👑 ${cargoLabel}</span>`
@@ -2777,7 +2777,7 @@ window.MobileApp = {
             <input type="text" id="edit-func-login" class="input-mobile" placeholder="Ex: carlos" required>
           </div>
           <div class="form-group-mobile" style="margin-bottom: 0;">
-            <label class="form-label-mobile">PIN / Senha *</label>
+            <label class="form-label-mobile">Senha *</label>
             <input type="password" id="edit-func-pin" class="input-mobile mono" placeholder="1234" required>
           </div>
         </div>
@@ -2786,7 +2786,7 @@ window.MobileApp = {
           <label class="form-label-mobile">Cargo / Função *</label>
           <select id="edit-func-cargo" class="input-mobile" style="cursor: pointer;">
             <option value="operador">👤 Operador</option>
-            <option value="gerente">👑 Gerente</option>
+            <option value="gerente">👑 Gestor</option>
           </select>
         </div>
 
@@ -2831,7 +2831,7 @@ window.MobileApp = {
 
     const cargo = (func.cargo || func.funcao || 'operador').toLowerCase();
     const isGerente = cargo === 'gerente' || cargo === 'administrador' || cargo === 'superadmin' || cargo.includes('admin') || cargo.includes('dono');
-    const cargoLabel = isGerente ? 'Gerente' : 'Operador';
+    const cargoLabel = isGerente ? 'Gestor' : 'Operador';
     const isAtivo = func.ativo !== false;
     const perms = func.permissoes || {};
     const login = func.login || func.usuario || func.nome || '—';
@@ -2852,7 +2852,7 @@ window.MobileApp = {
             <input type="text" id="edit-func-login" class="input-mobile" value="${login}" required>
           </div>
           <div class="form-group-mobile" style="margin-bottom: 0;">
-            <label class="form-label-mobile">PIN / Senha de Acesso</label>
+            <label class="form-label-mobile">Senha de acesso</label>
             <input type="text" id="edit-func-pin" class="input-mobile mono" value="${func.pin || func.senha || ''}" placeholder="Alterar senha" required>
           </div>
         </div>
@@ -2861,7 +2861,7 @@ window.MobileApp = {
           <label class="form-label-mobile">Cargo / Função *</label>
           <select id="edit-func-cargo" class="input-mobile" style="cursor: pointer;">
             <option value="operador" ${!isGerente ? 'selected' : ''}>👤 Operador</option>
-            <option value="gerente" ${isGerente ? 'selected' : ''}>👑 Gerente</option>
+            <option value="gerente" ${isGerente ? 'selected' : ''}>👑 Gestor</option>
           </select>
         </div>
 
@@ -2930,7 +2930,7 @@ window.MobileApp = {
       };
 
       if (!nome || !pin) {
-        alert('Por favor informe o nome e o PIN/Senha.');
+        alert('Por favor informe o nome e a senha.');
         return;
       }
 

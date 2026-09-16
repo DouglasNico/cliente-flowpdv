@@ -17,7 +17,7 @@
   <link rel="icon" type="image/png" href="logos/FlowPDV-icone-claro.png">
   <link rel="shortcut icon" href="favicon.ico">
   <link rel="apple-touch-icon" href="logos/FlowPDV-icone-claro.png">
-  <link rel="stylesheet" href="style.css?v=20260915c">
+  <link rel="stylesheet" href="style.css?v=20260916a">
 
   <script>
     // Silencia ruído de extensões do navegador (senha, autofill, etc.)
@@ -47,7 +47,7 @@
 
   <div class="mobile-app-shell">
 
-    <!-- 1. TELA DE LOGIN DO DONO / GESTOR -->
+    <!-- 1. TELA DE LOGIN DO GESTOR -->
     <div id="screen-login">
       <div class="login-box">
         <div class="login-header-logo">
@@ -59,7 +59,7 @@
         </div>
 
         <div id="login-error-toast" class="login-error-toast">
-          ⚠️ Chave de licença ou PIN incorretos.
+          ⚠️ Chave de licença ou senha incorretas.
         </div>
 
         <form id="form-login-gestor" onsubmit="MobileApp.executarLogin(event)">
@@ -72,7 +72,7 @@
           </div>
 
           <div class="form-group-mobile">
-            <label class="form-label-mobile">PIN do Gerente / Dono</label>
+            <label class="form-label-mobile">Senha do gestor</label>
             <div class="input-wrapper-mobile">
               <input type="password" id="login-pin" class="input-mobile mono" placeholder="••••" required maxlength="8" autocomplete="current-password">
               <button type="button" class="btn-toggle-pass" onclick="MobileApp.toggleVisualizarPin()" title="Mostrar senha">👁️</button>
@@ -85,7 +85,7 @@
           </label>
 
           <button type="submit" id="btn-submit-login" class="btn-login-submit">
-            <span>🔐 Entrar no Gestor</span>
+            <span>Entrar</span>
           </button>
         </form>
       </div>
@@ -848,6 +848,6 @@
   <!-- Lógica Principal do Companion App -->
   <script src="report-rules.js?v=20260915b"></script>
   <script src="caixa-rules.js?v=20260915b"></script>
-  <script src="app.js?v=20260915b"></script>
+  <script src="app.js?v=20260916a"></script>
 </body>
 </html>

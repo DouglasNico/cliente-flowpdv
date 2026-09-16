@@ -2397,3 +2397,30 @@ body:has(#screen-login:not([style*="display: none"])) .bottom-tabbar { display:n
   .header-store-name { font-size: 13px; }
   .btn-header-text { font-size: 12px; }
 }
+
+/* Login com o laranja da identidade FlowPDV. */
+#screen-login {
+  background: radial-gradient(ellipse at 50% 12%, rgba(249,129,54,.12), transparent 60%), #19232f !important;
+}
+#screen-login .login-box {
+  background: #243242 !important;
+  border-color: rgba(249,129,54,.24) !important;
+}
+#screen-login .login-title span { color: #f98136; }
+#screen-login .btn-login-submit {
+  background: #f98136;
+  color: #19232f;
+  box-shadow: 0 4px 16px rgba(249,129,54,.18);
+}
+#screen-login .btn-login-submit:active { background: #e96d23; }
+#screen-login .input-chave-licenca:focus-within,
+#screen-login .input-mobile:focus {
+  border-color: #f98136 !important;
+  box-shadow: 0 0 0 3px rgba(249,129,54,.2) !important;
+}
+#screen-login .input-chave-licenca .input-mobile:focus { border: none !important; box-shadow: none !important; }
+#screen-login .remember-row input { accent-color: #f98136; }
+#screen-login button:focus-visible { outline: 2px solid #f98136; outline-offset: 4px; }
+@media(hover:hover) {
+  #screen-login .btn-login-submit:hover { background: #ff974f; }
+}
