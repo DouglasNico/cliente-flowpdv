@@ -549,6 +549,11 @@ window.MobileApp = {
     const input = document.getElementById('login-pin');
     if (!input) return;
     input.type = input.type === 'password' ? 'text' : 'password';
+    const button = document.querySelector('.btn-toggle-pass');
+    const visible = input.type === 'text';
+    button?.setAttribute('aria-pressed', String(visible));
+    button?.setAttribute('aria-label', visible ? 'Ocultar senha' : 'Mostrar senha');
+    if (button) button.title = visible ? 'Ocultar senha' : 'Mostrar senha';
   },
 
   // -------------------------------------------------------------
@@ -2285,94 +2290,54 @@ window.MobileApp = {
     const badgeTotal = document.getElementById('badge-curva-abc-itens');
     if (!container) return;
 
-    const prodById = new Map();
-    const prodByCodigo = new Map();
-    (produtos || []).forEach(p => {
-      if (!p) return;
-      if (p.id !== undefined && p.id !== null) prodById.set(String(p.id), p);
-      if (p.codigoBarras) prodByCodigo.set(String(p.codigoBarras), p);
-    });
-
-    const mapa = new Map(); // key -> { nome, categoria, qtd, total }
-    let totalGeral = 0;
-
-    (vendas || []).forEach(v => {
-      (v.itens || []).forEach(it => {
-        if (!it) return;
-        const qty = parseFloat(it.quantidade) || 1;
-        const totalItem = parseFloat(it.total) || (parseFloat(it.precoUnitario) || 0) * qty;
-        if (!totalItem) return;
-
-        const candidatoId = String(it.produtoId || it.id || it.codigoBarras || '').trim();
-        const pRef =
-          (candidatoId && prodById.get(candidatoId)) ||
-          (candidatoId && prodByCodigo.get(candidatoId)) ||
-          null;
-
-        const nome = it.nome || pRef?.nome || 'Produto';
-        const categoria = (pRef?.categoria || it.categoria || 'Geral').toString();
-        const key = (pRef?.id || it.produtoId || it.id || it.codigoBarras || nome).toString();
-
-        if (!mapa.has(key)) {
-          mapa.set(key, { nome, categoria, qtd: 0, total: 0 });
-        }
-        const alvo = mapa.get(key);
-        alvo.qtd += qty;
-        alvo.total += totalItem;
-        mapa.set(key, alvo);
-        totalGeral += totalItem;
-      });
-    });
-
-    const lista = Array.from(mapa.entries())
-      .map(([key, v]) => ({ key, ...v }))
-      .sort((a, b) => (b.total || 0) - (a.total || 0));
-
-    if (badgeTotal) badgeTotal.textContent = lista.length;
-
-    if (lista.length === 0 || totalGeral <= 0) {
-      container.innerHTML = `
-        <div class="empty-state-mobile">
-          <span class="empty-state-icon">📈</span>
-          <span style="font-size: 13px;">Sem dados de vendas para calcular Curva ABC.</span>
-        </div>
-      `;
+    const categorySelect = document.getElementById('abc-categoria');
+    const selected = categorySelect?.value || '';
+    const categories = [...new Set([...produtos.map(p => p.categoria || 'Geral'), ...vendas.flatMap(v => (v.itens || []).map(i => i.categoria || 'Geral'))])].sort();
+    if (categorySelect) {
+      categorySelect.replaceChildren(new Option('Todas', ''), ...categories.map(c => new Option(c, c)));
+      categorySelect.value = categories.includes(selected) ? selected : '';
+    }
+    const filters = Object.fromEntries(['inicio','fim','categoria','classe','busca'].map(key => [key, document.getElementById('abc-' + key)?.value || '']));
+    const summary = document.getElementById('abc-resumo');
+    if (filters.inicio && filters.fim && filters.inicio > filters.fim) {
+      if (summary) summary.textContent = 'A data inicial precisa ser anterior ou igual à data final.';
+      container.replaceChildren();
+      if (badgeTotal) badgeTotal.textContent = '0';
       return;
     }
-
-    let acumulado = 0;
-    const topN = 30;
-    const fat = (x) => (totalGeral > 0 ? (x / totalGeral) * 100 : 0);
-
+    const result = FlowManagerRules.curvaABC(vendas, produtos, filters);
+    if (badgeTotal) badgeTotal.textContent = result.rows.length;
+    if (summary) summary.textContent = `${result.rows.length} de ${result.totalItens} produtos · Base do cálculo: ${this.formatarMoeda(result.total)}`;
+    if (!result.rows.length) {
+      container.innerHTML = '<div class="empty-state-mobile">Nenhum produto encontrado com estes filtros.</div>';
+      return;
+    }
+    const escape = value => String(value).replace(/[&<>"']/g, char => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
     const renderBadgeClasse = (classe) => {
       if (classe === 'A') return `<span class="badge-tag-sm ok">A</span>`;
       if (classe === 'B') return `<span class="badge-tag-sm low">B</span>`;
       return `<span class="badge-tag-sm blue">C</span>`;
     };
 
-    container.innerHTML = lista.slice(0, topN).map((p, idx) => {
-      const perc = fat(p.total);
-      acumulado += perc;
-      let classe = 'C';
-      if (acumulado <= 80) classe = 'A';
-      else if (acumulado <= 95) classe = 'B';
-
+    container.innerHTML = result.rows.map(p => {
+      const perc = p.percentual;
+      const classe = p.classe;
       return `
         <div class="mobile-list-card" style="padding: 12px 14px;">
           <div class="card-top-row">
             <strong class="card-item-title" style="font-size: 13px;">
-              ${idx + 1}. ${p.nome}
+              ${p.posicao}. ${escape(p.nome)}
             </strong>
             ${renderBadgeClasse(classe)}
           </div>
           <div style="margin-top: 8px; display: flex; justify-content: space-between; gap: 10px; align-items: center; flex-wrap: wrap;">
-            <span class="badge-tag-sm cyan" style="font-size: 10.5px; padding: 3px 8px;">${this.getIconeCategoria(p.categoria)} ${p.categoria}</span>
+            <span class="badge-tag-sm cyan" style="font-size: 10.5px; padding: 3px 8px;">${this.getIconeCategoria(p.categoria)} ${escape(p.categoria)}</span>
             <span style="font-family: 'JetBrains Mono'; font-weight: 800; color: var(--text-main); font-size: 12.5px;">
-              ${this.formatarMoeda(p.total)} <span style="color: var(--text-dim); font-size: 11px;">(${perc.toFixed(1)}%)</span>
+              ${this.formatarMoeda(p.total)} <span style="color: var(--text-dim); font-size: 11px;">(${perc.toLocaleString('pt-BR', {maximumFractionDigits: 1})}%)</span>
             </span>
           </div>
           <div style="margin-top: 6px; color: var(--text-muted); font-size: 11.5px; font-weight: 700;">
-            Quantidade vendida: ${p.qtd} un
+            Quantidade vendida: ${p.qtd.toLocaleString('pt-BR', {maximumFractionDigits: 3})} un
           </div>
         </div>
       `;
@@ -2755,7 +2720,7 @@ window.MobileApp = {
 
     container.innerHTML = funcionarios.map(func => {
       const cargo = (func.cargo || func.funcao || 'operador').toLowerCase();
-      const isAdmin = cargo.includes('admin') || cargo.includes('gerente') || cargo.includes('superadmin') || cargo.includes('dono');
+      const isAdmin = FlowManagerRules.isManager(cargo);
       const cargoLabel = isAdmin
         ? 'Gestor'
         : (func.cargo || 'Operador');
@@ -2808,14 +2773,15 @@ window.MobileApp = {
 
         <div class="form-group-mobile" style="margin-bottom: 0;">
           <label class="form-label-mobile">Cargo / Função *</label>
-          <select id="edit-func-cargo" class="input-mobile" style="cursor: pointer;">
+          <select id="edit-func-cargo" onchange="MobileApp.atualizarPermissoesCargo()" class="input-mobile" style="cursor: pointer;">
             <option value="operador">👤 Operador</option>
-            <option value="gerente">👑 Gestor</option>
+            <option value="gerente">Gerente (administrador)</option>
           </select>
         </div>
 
         <div class="modal-perms-box">
           <span class="form-label-mobile" style="margin-bottom: 8px;">Permissões no PDV</span>
+          <p id="permissoes-cargo-info" class="permissions-note" hidden>Gerente tem acesso total às permissões do PDV.</p>
           <div class="modal-perms-grid">
             <label class="modal-perm-item"><input type="checkbox" id="perm-cancelar-item" checked> Cancelar Itens</label>
             <label class="modal-perm-item"><input type="checkbox" id="perm-cancelar-venda"> Cancelar Vendas</label>
@@ -2854,10 +2820,10 @@ window.MobileApp = {
     if (!func) return;
 
     const cargo = (func.cargo || func.funcao || 'operador').toLowerCase();
-    const isGerente = cargo === 'gerente' || cargo === 'administrador' || cargo === 'superadmin' || cargo.includes('admin') || cargo.includes('dono');
+    const isGerente = FlowManagerRules.isManager(cargo);
     const cargoLabel = isGerente ? 'Gestor' : 'Operador';
     const isAtivo = func.ativo !== false;
-    const perms = func.permissoes || {};
+    const perms = FlowManagerRules.permissions(cargo, func.permissoes);
     const login = func.login || func.usuario || func.nome || '—';
     const nome = func.nome || 'Colaborador';
 
@@ -2883,14 +2849,15 @@ window.MobileApp = {
 
         <div class="form-group-mobile" style="margin-bottom: 0;">
           <label class="form-label-mobile">Cargo / Função *</label>
-          <select id="edit-func-cargo" class="input-mobile" style="cursor: pointer;">
+          <select id="edit-func-cargo" onchange="MobileApp.atualizarPermissoesCargo()" class="input-mobile" style="cursor: pointer;">
             <option value="operador" ${!isGerente ? 'selected' : ''}>👤 Operador</option>
-            <option value="gerente" ${isGerente ? 'selected' : ''}>👑 Gestor</option>
+            <option value="gerente" ${isGerente ? 'selected' : ''}>Gerente (administrador)</option>
           </select>
         </div>
 
         <div class="modal-perms-box">
           <span class="form-label-mobile" style="margin-bottom: 8px;">Permissões no PDV</span>
+          <p id="permissoes-cargo-info" class="permissions-note" hidden>Gerente tem acesso total às permissões do PDV.</p>
           <div class="modal-perms-grid">
             <label class="modal-perm-item"><input type="checkbox" id="perm-cancelar-item" ${perms.cancelarItem !== false ? 'checked' : ''}> Cancelar Itens</label>
             <label class="modal-perm-item"><input type="checkbox" id="perm-cancelar-venda" ${perms.cancelarVenda ? 'checked' : ''}> Cancelar Vendas</label>
@@ -2925,6 +2892,25 @@ window.MobileApp = {
     });
   },
 
+  atualizarPermissoesCargo() {
+    const role = document.getElementById('edit-func-cargo');
+    if (!role) return;
+    const manager = FlowManagerRules.isManager(role.value);
+    for (const id of Object.values(FlowManagerRules.permissionFields)) {
+      const input = document.getElementById(id);
+      if (!input) continue;
+      if (manager && !input.disabled) {
+        input.dataset.operatorChecked = String(input.checked);
+        input.checked = true;
+      } else if (!manager && input.disabled) {
+        input.checked = input.dataset.operatorChecked === 'true';
+      }
+      input.disabled = manager;
+    }
+    const note = document.getElementById('permissoes-cargo-info');
+    if (note) note.hidden = !manager;
+  },
+
   async salvarFuncionarioNuvem(e) {
     e.preventDefault();
     const autorizado = await this.exigirOperacaoAutorizada('⚠️ Não foi possível salvar o colaborador: sessão inválida.');
@@ -2944,14 +2930,14 @@ window.MobileApp = {
       const cargo = document.getElementById('edit-func-cargo').value;
       const ativo = document.getElementById('edit-func-ativo').checked;
 
-      const permissoes = {
+      const permissoes = FlowManagerRules.permissions(cargo, {
         cancelarItem: document.getElementById('perm-cancelar-item')?.checked ?? true,
         cancelarVenda: document.getElementById('perm-cancelar-venda')?.checked ?? false,
         darDesconto: document.getElementById('perm-dar-desconto')?.checked ?? true,
         realizarSangria: document.getElementById('perm-realizar-sangria')?.checked ?? true,
         verCustoEstoque: document.getElementById('perm-ver-custo')?.checked ?? false,
         reimprimirCupons: document.getElementById('perm-reimprimir-cupons')?.checked ?? true
-      };
+      });
 
       if (!nome || !pin) {
         alert('Por favor informe o nome e a senha.');
@@ -4103,7 +4089,8 @@ window.MobileApp = {
       subtitleEl.hidden = !subtitle;
     }
 
-    if (bodyEl) bodyEl.innerHTML = html;
+    if (bodyEl) { bodyEl.innerHTML = html; bodyEl.scrollTop = 0; }
+    this.atualizarPermissoesCargo();
     if (modal) modal.style.display = 'flex';
     document.body.style.overflow = 'hidden';
   },

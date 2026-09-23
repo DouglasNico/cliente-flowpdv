@@ -42,7 +42,7 @@
       if (!event.target.closest('input, textarea, [contenteditable="true"]')) event.preventDefault();
     }, { passive: false });
   </script>
-  <link rel="stylesheet" href="reconstruction.css?v=20260923">
+  <link rel="stylesheet" href="reconstruction.css?v=20260923-pwa">
 </head>
 <body>
 
@@ -76,7 +76,7 @@
             <label class="form-label-mobile">Senha do gestor</label>
             <div class="input-wrapper-mobile">
               <input type="password" id="login-pin" class="input-mobile mono" placeholder="••••" required maxlength="8" autocomplete="current-password">
-              <button type="button" class="btn-toggle-pass" onclick="MobileApp.toggleVisualizarPin()" title="Mostrar senha">👁️</button>
+              <button type="button" class="btn-toggle-pass" onclick="MobileApp.toggleVisualizarPin()" title="Mostrar senha" aria-label="Mostrar senha" aria-pressed="false" aria-controls="login-pin"><svg class="flow-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/><path class="eye-slash" d="m3 3 18 18"/></svg></button>
             </div>
           </div>
 
@@ -435,7 +435,7 @@
             <div style="display: flex; align-items: center; gap: 10px;">
               <span style="font-size: 24px;">🛡️</span>
               <div>
-                <strong style="font-size: 13.5px; color: #c084fc; display: block;">Auditoria da Loja</strong>
+                <strong style="font-size: 13.5px; color: var(--accent-purple); display: block;">Auditoria da Loja</strong>
                 <span style="font-size: 11.5px; color: var(--text-muted);">Cortesias, sangrias, cancelamentos, produtos e fechamentos em tempo real.</span>
               </div>
             </div>
@@ -477,6 +477,18 @@
             <span class="badge-pill-count" id="badge-curva-abc-itens">0</span>
           </div>
 
+          <form class="abc-filters" onsubmit="event.preventDefault(); MobileApp.renderGerenciaCurvaABC()" aria-label="Filtros da Curva ABC">
+            <div class="abc-filter-grid">
+              <label>De<input id="abc-inicio" class="input-mobile" type="date" onchange="MobileApp.renderGerenciaCurvaABC()"></label>
+              <label>Até<input id="abc-fim" class="input-mobile" type="date" onchange="MobileApp.renderGerenciaCurvaABC()"></label>
+              <label>Categoria<select id="abc-categoria" class="input-mobile" onchange="MobileApp.renderGerenciaCurvaABC()"><option value="">Todas</option></select></label>
+              <label>Classe<select id="abc-classe" class="input-mobile" onchange="MobileApp.renderGerenciaCurvaABC()"><option value="">Todas</option><option value="A">A</option><option value="B">B</option><option value="C">C</option></select></label>
+            </div>
+            <label>Produto<input id="abc-busca" class="input-mobile" type="search" placeholder="Buscar por nome" oninput="MobileApp.renderGerenciaCurvaABC()"></label>
+            <button type="button" class="btn-secondary-mobile" onclick="this.form.reset(); MobileApp.renderGerenciaCurvaABC()">Limpar filtros</button>
+            <p id="abc-resumo" role="status"></p>
+          </form>
+
           <div class="mobile-list-card" style="padding: 12px 14px;">
             <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
               <span class="badge-tag-sm ok">A (até 80%)</span>
@@ -484,7 +496,7 @@
               <span class="badge-tag-sm blue">C (restante)</span>
             </div>
             <div style="margin-top: 8px; color: var(--text-dim); font-size: 11.5px; font-weight: 700;">
-              Classificação por participação acumulada no faturamento.
+              Classificação pelo período e categoria selecionados. Classe e busca apenas filtram a lista. Dados disponíveis na sincronização da loja.
             </div>
           </div>
 
@@ -635,7 +647,7 @@
 
     <!-- MODAL BOTTOM SHEET DE DETALHES -->
     <div id="modal-bottom-sheet" class="modal-bottom-sheet" onclick="MobileApp.fecharModalSheet(event)">
-      <div class="modal-bottom-content" onclick="event.stopPropagation()">
+      <div class="modal-bottom-content" role="dialog" aria-modal="true" aria-labelledby="sheet-title" onclick="event.stopPropagation()">
         <div class="modal-sheet-header">
           <div class="modal-sheet-header-main">
             <div id="sheet-icon" class="modal-sheet-icon" aria-hidden="true">📋</div>
@@ -853,6 +865,7 @@
   <!-- Lógica Principal do Companion App -->
   <script src="report-rules.js?v=20260915b"></script>
   <script src="caixa-rules.js?v=20260915b"></script>
-  <script src="app.js?v=20260916a"></script>
+  <script src="manager-rules.js?v=20260923-pwa"></script>
+  <script src="app.js?v=20260923-pwa"></script>
 </body>
 </html>

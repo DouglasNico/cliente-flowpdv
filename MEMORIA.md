@@ -114,3 +114,7 @@ app.js reutiliza listeners de backup/licenca/auditoria na mesma loja; troca de l
 
 ## 23/09/2026 — Reconstrucao visual e publicacao autorizada
 Nova camada reconstruction.css (Master em css/) com identidade clara, navegacao, superficies, formularios e responsividade. IDs e integracoes preservados. PRODUCT.md, DESIGN.md e .impeccable/design.json registram sistema. Usuario autorizou publicar todos os sites nesta noite, testes completos/otimizacao ficam para amanha. Previews locais sinteticas nao sao dados reais nem homologacao funcional. Publicacao e URLs devem ser confirmadas no registro final.
+
+## 23/09/2026 — Correções do Gestor PWA solicitadas nos prints
+Login sem glow e olho SVG; safe-area; modais sem preenchimento duplicado e com rolagem; data responsiva; contraste de permissões/status/categorias/exclusão; cartões de estoque sem corte; navegação de 320px corrigida. Gerente tem seis permissões automáticas no formulário e no payload de salvar. Curva ABC com período/categoria/classe/busca, classificação corrigida e quantidade pt-BR; filtra backup sincronizado sem novas leituras Firebase. Cache PWA versionado.
+Arquivos, comportamento, testes e limites: PWA-REVISAO-20260923.md. Seis testes aprovados e revisão Chromium em cinco viewports (50 registros), dados sintéticos sem Firebase. PWA físico iOS ainda depende de conferência no aparelho. Documentação de design previamente modificada foi preservada fora do commit desta rodada.
