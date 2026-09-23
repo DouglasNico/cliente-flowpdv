@@ -106,3 +106,11 @@ Sub-dividida em 3 abas essenciais:
 - Implementação inicial da auditoria em tempo real conectada ao Firestore.
 - Carregamento 0ms via Cache-First e consultas paralelas.
 - Bloqueio definitivo do zoom por duplo clique em navegadores mobile.
+
+
+## 23/09/2026 — Reducao de consultas duplicadas
+app.js reutiliza listeners de backup/licenca/auditoria na mesma loja; troca de loja/logout encerra, erro permite reabrir. sw.js atualiza versao de cache. Ensaio local em flowpdv-sistema/adega-pdv-gestao/test/consumo-sync.test.cjs: dez inicializacoes criavam30 inscricoes, agora3. Nao e medicao de fatura; sem publicacao.
+
+
+## 23/09/2026 — Reconstrucao visual e publicacao autorizada
+Nova camada reconstruction.css (Master em css/) com identidade clara, navegacao, superficies, formularios e responsividade. IDs e integracoes preservados. PRODUCT.md, DESIGN.md e .impeccable/design.json registram sistema. Usuario autorizou publicar todos os sites nesta noite, testes completos/otimizacao ficam para amanha. Previews locais sinteticas nao sao dados reais nem homologacao funcional. Publicacao e URLs devem ser confirmadas no registro final.

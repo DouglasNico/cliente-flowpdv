@@ -1,0 +1,254 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-09-23T06:56:43.353Z",
+  "title": "Design System: Flow Gestor",
+  "extensions": {
+    "colorMeta": {
+      "primary": {
+        "role": "primary",
+        "displayName": "primary",
+        "tonalRamp": [
+          "oklch(15% 0.1538 41.1)",
+          "oklch(26% 0.1538 41.1)",
+          "oklch(38% 0.1538 41.1)",
+          "oklch(49% 0.1538 41.1)",
+          "oklch(61% 0.1538 41.1)",
+          "oklch(72% 0.1538 41.1)",
+          "oklch(84% 0.1538 41.1)",
+          "oklch(95% 0.1538 41.1)"
+        ]
+      },
+      "primary-hover": {
+        "role": "primary",
+        "displayName": "primary-hover",
+        "tonalRamp": [
+          "oklch(15% 0.1320 40.8)",
+          "oklch(26% 0.1320 40.8)",
+          "oklch(38% 0.1320 40.8)",
+          "oklch(49% 0.1320 40.8)",
+          "oklch(61% 0.1320 40.8)",
+          "oklch(72% 0.1320 40.8)",
+          "oklch(84% 0.1320 40.8)",
+          "oklch(95% 0.1320 40.8)"
+        ]
+      },
+      "paper": {
+        "role": "neutral",
+        "displayName": "paper",
+        "tonalRamp": [
+          "oklch(15% 0.0067 97.4)",
+          "oklch(26% 0.0067 97.4)",
+          "oklch(38% 0.0067 97.4)",
+          "oklch(49% 0.0067 97.4)",
+          "oklch(61% 0.0067 97.4)",
+          "oklch(72% 0.0067 97.4)",
+          "oklch(84% 0.0067 97.4)",
+          "oklch(95% 0.0067 97.4)"
+        ]
+      },
+      "surface": {
+        "role": "neutral",
+        "displayName": "surface",
+        "tonalRamp": [
+          "oklch(15% 0.0000 89.9)",
+          "oklch(26% 0.0000 89.9)",
+          "oklch(38% 0.0000 89.9)",
+          "oklch(49% 0.0000 89.9)",
+          "oklch(61% 0.0000 89.9)",
+          "oklch(72% 0.0000 89.9)",
+          "oklch(84% 0.0000 89.9)",
+          "oklch(95% 0.0000 89.9)"
+        ]
+      },
+      "ink": {
+        "role": "neutral",
+        "displayName": "ink",
+        "tonalRamp": [
+          "oklch(15% 0.0148 149.3)",
+          "oklch(26% 0.0148 149.3)",
+          "oklch(38% 0.0148 149.3)",
+          "oklch(49% 0.0148 149.3)",
+          "oklch(61% 0.0148 149.3)",
+          "oklch(72% 0.0148 149.3)",
+          "oklch(84% 0.0148 149.3)",
+          "oklch(95% 0.0148 149.3)"
+        ]
+      },
+      "muted": {
+        "role": "neutral",
+        "displayName": "muted",
+        "tonalRamp": [
+          "oklch(15% 0.0132 141.2)",
+          "oklch(26% 0.0132 141.2)",
+          "oklch(38% 0.0132 141.2)",
+          "oklch(49% 0.0132 141.2)",
+          "oklch(61% 0.0132 141.2)",
+          "oklch(72% 0.0132 141.2)",
+          "oklch(84% 0.0132 141.2)",
+          "oklch(95% 0.0132 141.2)"
+        ]
+      },
+      "line": {
+        "role": "neutral",
+        "displayName": "line",
+        "tonalRamp": [
+          "oklch(15% 0.0121 111.8)",
+          "oklch(26% 0.0121 111.8)",
+          "oklch(38% 0.0121 111.8)",
+          "oklch(49% 0.0121 111.8)",
+          "oklch(61% 0.0121 111.8)",
+          "oklch(72% 0.0121 111.8)",
+          "oklch(84% 0.0121 111.8)",
+          "oklch(95% 0.0121 111.8)"
+        ]
+      },
+      "tint": {
+        "role": "neutral",
+        "displayName": "tint",
+        "tonalRamp": [
+          "oklch(15% 0.0177 59.5)",
+          "oklch(26% 0.0177 59.5)",
+          "oklch(38% 0.0177 59.5)",
+          "oklch(49% 0.0177 59.5)",
+          "oklch(61% 0.0177 59.5)",
+          "oklch(72% 0.0177 59.5)",
+          "oklch(84% 0.0177 59.5)",
+          "oklch(95% 0.0177 59.5)"
+        ]
+      },
+      "positive": {
+        "role": "semantic",
+        "displayName": "positive",
+        "tonalRamp": [
+          "oklch(15% 0.0805 162.8)",
+          "oklch(26% 0.0805 162.8)",
+          "oklch(38% 0.0805 162.8)",
+          "oklch(49% 0.0805 162.8)",
+          "oklch(61% 0.0805 162.8)",
+          "oklch(72% 0.0805 162.8)",
+          "oklch(84% 0.0805 162.8)",
+          "oklch(95% 0.0805 162.8)"
+        ]
+      },
+      "danger": {
+        "role": "semantic",
+        "displayName": "danger",
+        "tonalRamp": [
+          "oklch(15% 0.1683 23.8)",
+          "oklch(26% 0.1683 23.8)",
+          "oklch(38% 0.1683 23.8)",
+          "oklch(49% 0.1683 23.8)",
+          "oklch(61% 0.1683 23.8)",
+          "oklch(72% 0.1683 23.8)",
+          "oklch(84% 0.1683 23.8)",
+          "oklch(95% 0.1683 23.8)"
+        ]
+      }
+    },
+    "shadows": [
+      {
+        "name": "overlay",
+        "value": "0 24px 64px #26332326",
+        "purpose": "Sobreposição e separação de planos."
+      },
+      {
+        "name": "login",
+        "value": "0 20px 55px #2530230c",
+        "purpose": "Sobreposição e separação de planos."
+      }
+    ],
+    "motion": [
+      {
+        "name": "state-transition",
+        "value": ".18s",
+        "purpose": "Mudança discreta de estado; desativada com prefers-reduced-motion."
+      }
+    ],
+    "breakpoints": [
+      {
+        "name": "phone-max",
+        "value": "767px"
+      },
+      {
+        "name": "desktop-min",
+        "value": "768px"
+      },
+      {
+        "name": "compact-desktop-max",
+        "value": "1050px"
+      }
+    ]
+  },
+  "components": [
+    {
+      "name": "Ação principal",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "Ação central de uma etapa.",
+      "html": "<button class=\"ds-primary\">Continuar</button>",
+      "css": ".ds-primary{background:var(--accent-purple, #b94b1b);color:#fff;border:1px solid transparent;border-radius:8px;padding:12px 18px;min-height:44px;font:600 14px Plus Jakarta Sans, -apple-system, BlinkMacSystemFont, Segoe UI, sans-serif;transition:filter .18s}.ds-primary:hover{filter:brightness(.9)}.ds-primary:active{filter:brightness(.83)}.ds-primary:focus-visible{outline:3px solid var(--accent-purple, #b94b1b);outline-offset:3px}"
+    },
+    {
+      "name": "Ação secundária",
+      "kind": "button",
+      "description": "Ação de apoio.",
+      "html": "<button class=\"ds-secondary\">Voltar</button>",
+      "css": ".ds-secondary{background:#f0f1ea;color:var(--text-main, #222923);border:1px solid var(--border-card, #dedfd6);border-radius:8px;padding:12px 18px;min-height:44px;font:600 14px Plus Jakarta Sans, -apple-system, BlinkMacSystemFont, Segoe UI, sans-serif}.ds-secondary:hover{background:#e2e5dc}.ds-secondary:focus-visible{outline:3px solid var(--accent-purple, #b94b1b);outline-offset:3px}"
+    },
+    {
+      "name": "Campo",
+      "kind": "input",
+      "refersTo": "input",
+      "description": "Campo de texto representativo.",
+      "html": "<label class=\"ds-field\">Busca<input class=\"ds-input\" placeholder=\"Pesquisar\"></label>",
+      "css": ".ds-field{display:grid;gap:8px;color:var(--text-main, #222923);font:600 13px Plus Jakarta Sans, -apple-system, BlinkMacSystemFont, Segoe UI, sans-serif}.ds-input{min-height:44px;padding:0 12px;background:#fff;color:var(--text-main, #222923);border:1px solid var(--border-card, #dedfd6);border-radius:8px;font:400 16px Plus Jakarta Sans, -apple-system, BlinkMacSystemFont, Segoe UI, sans-serif}.ds-input:hover{border-color:#a8aca2}.ds-input:focus-visible{outline:3px solid var(--accent-purple, #b94b1b);outline-offset:3px}"
+    },
+    {
+      "name": "Seleção de navegação",
+      "kind": "nav",
+      "description": "Estado selecionado claramente distinto.",
+      "html": "<nav class=\"ds-nav\"><button class=\"ds-tab\" aria-current=\"page\">Visão geral</button><button class=\"ds-tab\">Detalhes</button></nav>",
+      "css": ".ds-nav{display:flex;gap:4px}.ds-tab{min-height:44px;padding:10px 16px;border:0;border-radius:8px;background:transparent;color:var(--text-main, #222923);font:600 13px Plus Jakarta Sans, -apple-system, BlinkMacSystemFont, Segoe UI, sans-serif}.ds-tab[aria-current]{background:#faeee5;color:var(--accent-purple, #b94b1b)}.ds-tab:hover{background:#f0f1ea}.ds-tab:focus-visible{outline:3px solid var(--accent-purple, #b94b1b);outline-offset:3px}"
+    },
+    {
+      "name": "Estado positivo",
+      "kind": "chip",
+      "description": "Rótulo semântico para um estado operacional.",
+      "html": "<span class=\"ds-status\">Ativo</span>",
+      "css": ".ds-status{display:inline-block;padding:5px 9px;border-radius:5px;background:#e7f1e9;color:var(--accent-green,#216348);font:600 12px Plus Jakarta Sans, -apple-system, BlinkMacSystemFont, Segoe UI, sans-serif}"
+    },
+    {
+      "name": "Superfície",
+      "kind": "card",
+      "description": "Agrupamento de conteúdo sem elevação decorativa.",
+      "html": "<article class=\"ds-surface\"><strong>Resumo</strong><p>Informação organizada por contexto.</p></article>",
+      "css": ".ds-surface{padding:24px;border:1px solid var(--border-card, #dedfd6);border-radius:12px;background:#fff;color:var(--text-main, #222923);font:400 14px Plus Jakarta Sans, -apple-system, BlinkMacSystemFont, Segoe UI, sans-serif}.ds-surface p{margin:8px 0 0;color:#60665f;line-height:1.6}"
+    }
+  ],
+  "narrative": {
+    "northStar": "Livro de movimento",
+    "overview": "Uma bancada de gestão clara, organizada como um livro de movimento. Superfícies brancas sobre papel marfim, divisórias finas e números alinhados tornam a leitura diária direta. O laranja da marca orienta ações e seleção; estados operacionais conservam suas cores sem dominar a composição.",
+    "keyCharacteristics": [
+      "Listas e divisórias em vez de mosaicos decorativos.",
+      "Valores numéricos com algarismos tabulares.",
+      "Navegação selecionada evidente."
+    ],
+    "rules": [
+      {
+        "name": "The Signal Rule",
+        "body": "A cor deve comunicar ação, seleção ou estado; não transformar cada dado em um bloco colorido.",
+        "section": "colors"
+      }
+    ],
+    "dos": [
+      "Do preservar as marcas existentes e seus arquivos.",
+      "Do tornar seleção, foco e ações primárias identificáveis.",
+      "Do manter nomes, valores e estados vinculados aos dados reais."
+    ],
+    "donts": [
+      "Don't alterar IDs, autenticação ou regras de negócio para obter um efeito visual.",
+      "Don't usar verde como identidade dominante ou adicionar brilho decorativo.",
+      "Don't considerar esta documentação evidência de validação renderizada."
+    ]
+  }
+}

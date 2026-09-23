@@ -302,9 +302,14 @@ window.MobileApp = {
     if (c.includes('gelo')) return '🧊';
     if (c.includes('carv')) return '🔥';
     if (c.includes('tabac') || c.includes('cigar') || c.includes('essênc') || c.includes('essenc') || c.includes('seda') || c.includes('pod') || c.includes('vape') || c.includes('narguil')) return '🚬';
-    if (c.includes('petisc') || c.includes('snack') || c.includes('salgad') || c.includes('amendo') || c.includes('batata') || c.includes('pringle') || c.includes('dorito') || c.includes('ruffle')) return '🥜';
+    if (c.includes('lanche') || c.includes('sandu') || c.includes('burger') || c.includes('hambur')) return '🍔';
+    if (c.includes('pizza')) return '🍕';
+    if (c.includes('porç') || c.includes('porc') || c.includes('petisc')) return '🍟';
+    if (c.includes('sobremes') || c.includes('sorvete') || c.includes('açaí') || c.includes('acai')) return '🍰';
+    if (c.includes('adicion') || c.includes('extra') || c.includes('complem')) return '🥓';
+    if (c.includes('snack') || c.includes('salgad') || c.includes('amendo') || c.includes('batata') || c.includes('pringle') || c.includes('dorito') || c.includes('ruffle')) return '🥜';
     if (c.includes('bomboniere') || c.includes('chocolat') || c.includes('doce') || c.includes('bala') || c.includes('chicle')) return '🍬';
-    if (c.includes('combo') || c.includes('kit') || c.includes('promo')) return '⚡';
+    if (c.includes('combo') || c.includes('kit') || c.includes('promo')) return '🍱';
     if (c.includes('aliment') || c.includes('arroz') || c.includes('feijão') || c.includes('massa') || c.includes('mercear')) return '🌾';
     if (c.includes('carn') || c.includes('açougu') || c.includes('acougu') || c.includes('frango') || c.includes('peix') || c.includes('churr')) return '🥩';
     if (c.includes('latic') || c.includes('queij') || c.includes('leite') || c.includes('frio') || c.includes('presunt')) return '🧀';
@@ -580,6 +585,12 @@ window.MobileApp = {
   iniciarListenerTempoReal() {
     if (!this.chaveLicenca || !window.FirebaseDB || !window.FirebaseDB.onSnapshot) return;
     
+    if (this.unsubRealtime && this.unsubRealtimeChave === this.chaveLicenca) {
+      this.iniciarListenerAuditoriaTempoReal();
+      this.iniciarListenerLicencaTempoReal();
+      return;
+    }
+
     if (this.unsubRealtime) {
       this.unsubRealtime();
       this.unsubRealtime = null;
@@ -588,7 +599,9 @@ window.MobileApp = {
     try {
       const { db, doc, onSnapshot } = window.FirebaseDB;
       const chave = this.chaveLicenca;
+      this.unsubRealtimeChave = this.chaveLicenca;
       this.unsubRealtime = onSnapshot(doc(db, 'backups_lojas', chave), async (snap) => {
+        if (chave !== this.chaveLicenca) return;
         const sequence = ++this.syncSequence;
         try {
         if (snap && snap.exists()) {
@@ -608,6 +621,7 @@ window.MobileApp = {
         }
         } catch (error) { if (chave === this.chaveLicenca && sequence === this.syncSequence) this.statusSincronizacao('Falha na atualização • dados anteriores'); }
       }, (err) => {
+        if (this.unsubRealtimeChave === chave) this.unsubRealtime = null;
         this.statusSincronizacao('Sem conexão com a sincronização');
         console.warn('[MobileApp] Erro no listener realtime:', err);
       });
@@ -622,6 +636,8 @@ window.MobileApp = {
   iniciarListenerLicencaTempoReal() {
     if (!this.chaveLicenca || !window.FirebaseDB || !window.FirebaseDB.onSnapshot) return;
 
+    if (this.unsubLicencaRealtime && this.unsubLicencaRealtimeChave === this.chaveLicenca) return;
+
     if (this.unsubLicencaRealtime) {
       this.unsubLicencaRealtime();
       this.unsubLicencaRealtime = null;
@@ -630,6 +646,7 @@ window.MobileApp = {
     try {
       const { db, doc, onSnapshot } = window.FirebaseDB;
       const chave = this.chaveLicenca;
+      this.unsubLicencaRealtimeChave = this.chaveLicenca;
       this.unsubLicencaRealtime = onSnapshot(doc(db, 'licencas', chave), (snap) => {
         if (chave !== this.chaveLicenca) return;
         if (!snap || !snap.exists()) { this.limparSessaoInvalida('Licença indisponível. Faça login novamente.'); return; }
@@ -644,6 +661,7 @@ window.MobileApp = {
         this.renderResumoDashboard();
         this.renderGerenciaTerminais();
       }, (err) => {
+        if (this.unsubLicencaRealtimeChave === chave) this.unsubLicencaRealtime = null;
         console.warn('[MobileApp] Erro no listener da licença:', err);
       });
     } catch (e) {
@@ -654,12 +672,15 @@ window.MobileApp = {
   iniciarListenerAuditoriaTempoReal() {
     if (!this.chaveLicenca || !window.FirebaseDB || !window.FirebaseDB.onSnapshot) return;
 
+    if (this.unsubAuditoriaRealtime && this.unsubAuditoriaRealtimeChave === this.chaveLicenca) return;
+
     if (this.unsubAuditoriaRealtime) {
       this.unsubAuditoriaRealtime();
       this.unsubAuditoriaRealtime = null;
     }
 
     try {
+      const chave = this.chaveLicenca;
       // Sem orderBy: evita índice composto no Firestore. Ordenamos no cliente.
       const { db, collection, query, where, onSnapshot, limit } = window.FirebaseDB;
       const q = query(
@@ -668,7 +689,9 @@ window.MobileApp = {
         limit(100)
       );
 
+      this.unsubAuditoriaRealtimeChave = this.chaveLicenca;
       this.unsubAuditoriaRealtime = onSnapshot(q, (snap) => {
+        if (chave !== this.chaveLicenca) return;
         const logs = [];
         snap.forEach((docSnap) => {
           const data = docSnap.data();
@@ -688,6 +711,7 @@ window.MobileApp = {
         this.renderResumoDashboard();
         this.renderGerenciaTerminais();
       }, (err) => {
+        if (this.unsubAuditoriaRealtimeChave === chave) this.unsubAuditoriaRealtime = null;
         console.warn('[MobileApp] Erro no listener de auditoria:', err);
       });
     } catch (e) {
@@ -947,11 +971,11 @@ window.MobileApp = {
       } else {
         const maxQtd = top5[0].qtd || 1;
         const cores = [
-          'linear-gradient(90deg, #f59e0b, #fbbf24)',
-          'linear-gradient(90deg, #6366f1, #818cf8)',
-          'linear-gradient(90deg, #06b6d4, #38bdf8)',
-          'linear-gradient(90deg, #10b981, #34d399)',
-          'linear-gradient(90deg, #ec4899, #f472b6)'
+          'linear-gradient(90deg, #f59e0b, #8a570d)',
+          'linear-gradient(90deg, #6366f1, #65519c)',
+          'linear-gradient(90deg, #06b6d4, #285e66)',
+          'linear-gradient(90deg, #10b981, #216348)',
+          'linear-gradient(90deg, #ec4899, #a63b71)'
         ];
 
         containerTopProds.innerHTML = top5.map((p, idx) => {
@@ -1284,7 +1308,7 @@ window.MobileApp = {
             <span style="font-size: 11px; color: var(--text-muted);">${p.estoque || 0} un em estoque</span>
           </div>
         </div>
-        ${p.dataValidade ? `<div style="margin-top: 8px; font-size: 12px; color: #fbbf24; font-weight: 700;">Validade Atual: ${new Date(p.dataValidade + 'T00:00:00').toLocaleDateString('pt-BR')}</div>` : '<div style="margin-top: 8px; font-size: 12px; color: var(--text-dim);">Sem data de validade cadastrada</div>'}
+        ${p.dataValidade ? `<div style="margin-top: 8px; font-size: 12px; color: #8a570d; font-weight: 700;">Validade Atual: ${new Date(p.dataValidade + 'T00:00:00').toLocaleDateString('pt-BR')}</div>` : '<div style="margin-top: 8px; font-size: 12px; color: var(--text-dim);">Sem data de validade cadastrada</div>'}
       `;
     }
 
@@ -1449,7 +1473,7 @@ window.MobileApp = {
           <div class="mobile-list-card" onclick="MobileApp.verDetalhesContaPagar('${c.id}')">
             <div class="card-top-row">
               <strong class="card-item-title" style="flex: 1; min-width: 0; line-height: 1.35; font-size: 14px;">${c.descricao || 'Despesa'}</strong>
-              <span class="card-item-price valor-sensivel" style="color: ${isPago ? 'var(--accent-green)' : '#f87171'}; white-space: nowrap; flex-shrink: 0; margin-left: 10px; font-size: 15px;">${this.formatarMoeda(c.valor)}</span>
+              <span class="card-item-price valor-sensivel" style="color: ${isPago ? 'var(--accent-green)' : '#b12d32'}; white-space: nowrap; flex-shrink: 0; margin-left: 10px; font-size: 15px;">${this.formatarMoeda(c.valor)}</span>
             </div>
             <div style="display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-top: 8px; font-size: 12px; color: var(--text-muted);">
               <span style="display: flex; align-items: center; gap: 4px;">📅 Venc: <strong style="color: var(--text-main); font-family: 'JetBrains Mono';">${vencFormatado}</strong></span>
@@ -1581,7 +1605,7 @@ window.MobileApp = {
       let btnCopiarEnd = '';
       if (endCompleto) {
         btnCopiarEnd = `
-          <button type="button" class="chip-btn" style="height: 28px; padding: 0 8px; font-size: 10.5px; border-color: #7dd3fc; color: #7dd3fc;" onclick="event.stopPropagation(); MobileApp.copiarEnderecoMobile('${encodeURIComponent(endCompleto)}')" title="Copiar endereço para mandar ao entregador">
+          <button type="button" class="chip-btn" style="height: 28px; padding: 0 8px; font-size: 10.5px; border-color: #285e66; color: #285e66;" onclick="event.stopPropagation(); MobileApp.copiarEnderecoMobile('${encodeURIComponent(endCompleto)}')" title="Copiar endereço para mandar ao entregador">
             📋 Copiar End.
           </button>
         `;
@@ -1604,7 +1628,7 @@ window.MobileApp = {
               ${cli.cpfCnpj || cli.cpf ? `<span style="font-size: 10.5px; color: var(--text-dim); font-family: 'JetBrains Mono'; display: block;">Doc: ${cli.cpfCnpj || cli.cpf}</span>` : ''}
             </div>
             <div style="text-align: right; flex-shrink: 0; margin-left: 8px;">
-              <span class="card-item-price ${hasDebt ? 'valor-sensivel' : ''}" style="color: ${hasDebt ? '#fbbf24' : 'var(--accent-green)'}; font-size: 14.5px;">
+              <span class="card-item-price ${hasDebt ? 'valor-sensivel' : ''}" style="color: ${hasDebt ? '#8a570d' : 'var(--accent-green)'}; font-size: 14.5px;">
                 ${hasDebt ? this.formatarMoeda(saldo) : 'Quitado'}
               </span>
               <span class="badge-tag-sm ${hasDebt ? 'low' : 'ok'}" style="font-size: 9.5px; padding: 1px 5px; margin-top: 2px; display: inline-block;">
@@ -1616,7 +1640,7 @@ window.MobileApp = {
           <!-- Linha de Contato & Endereço -->
           <div style="margin-top: 6px; font-size: 12px; color: var(--text-muted); display: flex; flex-direction: column; gap: 2px;">
             ${cli.telefone ? `<span>📞 <strong style="color: var(--text-main); font-family: 'JetBrains Mono';">${cli.telefone}</strong></span>` : ''}
-            ${endResumo ? `<span>🛵 <strong style="color: #7dd3fc;">${endResumo}</strong></span>` : ''}
+            ${endResumo ? `<span>🛵 <strong style="color: #285e66;">${endResumo}</strong></span>` : ''}
           </div>
 
           <!-- Linha de Ações Rápidas -->
@@ -2522,7 +2546,7 @@ window.MobileApp = {
         </div>
         <div style="display: flex; justify-content: space-between; border-bottom: 1px dashed var(--border-card); padding: 4px 0;">
           <span>Chave PIX da Loja:</span>
-          <strong style="color: #7dd3fc; font-family: 'JetBrains Mono';">${config.chavePix || 'Não informada'}</strong>
+          <strong style="color: #285e66; font-family: 'JetBrains Mono';">${config.chavePix || 'Não informada'}</strong>
         </div>
         <div style="display: flex; justify-content: space-between; border-bottom: 1px dashed var(--border-card); padding: 4px 0;">
           <span>WhatsApp de Atendimento:</span>
@@ -2659,7 +2683,7 @@ window.MobileApp = {
     const elMargemLiq = document.getElementById('metric-dre-margem-liq');
     if (elLucroLiq) {
       elLucroLiq.textContent = this.formatarMoeda(lucroLiquido);
-      elLucroLiq.style.color = lucroLiquido >= 0 ? 'var(--accent-green)' : '#f87171';
+      elLucroLiq.style.color = lucroLiquido >= 0 ? 'var(--accent-green)' : '#b12d32';
     }
     if (elMargemLiq) elMargemLiq.textContent = `${margemLiqPct}%`;
 
@@ -2676,34 +2700,34 @@ window.MobileApp = {
       <div class="mobile-list-card" style="padding: 12px 14px;">
         <div style="display: flex; justify-content: space-between; align-items: center;">
           <span style="font-size: 13px; color: var(--text-muted);">(-) Custo das Mercadorias (CPV)</span>
-          <strong style="font-size: 15px; color: #f87171; font-family: 'JetBrains Mono';">${this.formatarMoeda(custoTotalVendido)}</strong>
+          <strong style="font-size: 15px; color: #b12d32; font-family: 'JetBrains Mono';">${this.formatarMoeda(custoTotalVendido)}</strong>
         </div>
       </div>
 
       <div class="mobile-list-card" style="padding: 12px 14px; background: rgba(56, 189, 248, 0.08); border-color: rgba(56, 189, 248, 0.3);">
         <div style="display: flex; justify-content: space-between; align-items: center;">
           <div>
-            <strong style="font-size: 13.5px; color: #7dd3fc; display: block;">(=) Lucro Bruto da Operação</strong>
+            <strong style="font-size: 13.5px; color: #285e66; display: block;">(=) Lucro Bruto da Operação</strong>
             <span style="font-size: 11px; color: var(--text-dim);">Margem Bruta: ${margemBrutaPct}%</span>
           </div>
-          <strong style="font-size: 16px; color: #7dd3fc; font-family: 'JetBrains Mono';">${this.formatarMoeda(lucroBruto)}</strong>
+          <strong style="font-size: 16px; color: #285e66; font-family: 'JetBrains Mono';">${this.formatarMoeda(lucroBruto)}</strong>
         </div>
       </div>
 
       <div class="mobile-list-card" style="padding: 12px 14px;">
         <div style="display: flex; justify-content: space-between; align-items: center;">
           <span style="font-size: 13px; color: var(--text-muted);">(-) Despesas Operacionais Pagas</span>
-          <strong style="font-size: 15px; color: #fbbf24; font-family: 'JetBrains Mono';">${this.formatarMoeda(despesasPagasMes)}</strong>
+          <strong style="font-size: 15px; color: #8a570d; font-family: 'JetBrains Mono';">${this.formatarMoeda(despesasPagasMes)}</strong>
         </div>
       </div>
 
       <div class="mobile-list-card" style="padding: 14px; background: ${lucroLiquido >= 0 ? 'rgba(16, 185, 129, 0.12)' : 'rgba(239, 68, 68, 0.12)'}; border-color: ${lucroLiquido >= 0 ? 'rgba(16, 185, 129, 0.4)' : 'rgba(239, 68, 68, 0.4)'};">
         <div style="display: flex; justify-content: space-between; align-items: center;">
           <div>
-            <strong style="font-size: 14.5px; color: ${lucroLiquido >= 0 ? '#34d399' : '#f87171'}; display: block;">(=) Resultado Líquido Final</strong>
+            <strong style="font-size: 14.5px; color: ${lucroLiquido >= 0 ? '#216348' : '#b12d32'}; display: block;">(=) Resultado Líquido Final</strong>
             <span style="font-size: 11.5px; color: var(--text-muted);">Lucro Real no Bolso</span>
           </div>
-          <strong style="font-size: 19px; color: ${lucroLiquido >= 0 ? '#34d399' : '#f87171'}; font-family: 'JetBrains Mono';">${this.formatarMoeda(lucroLiquido)}</strong>
+          <strong style="font-size: 19px; color: ${lucroLiquido >= 0 ? '#216348' : '#b12d32'}; font-family: 'JetBrains Mono';">${this.formatarMoeda(lucroLiquido)}</strong>
         </div>
       </div>
     `;
@@ -3452,7 +3476,7 @@ window.MobileApp = {
     const isPago = c.status === 'pago' || c.status === 'paga';
 
     let badgeStatus = '<span class="badge-tag-sm ok">📅 A Vencer</span>';
-    if (isPago) badgeStatus = '<span class="badge-tag-sm ok" style="background: rgba(16,185,129,0.2); color: #34d399;">✅ Conta Paga</span>';
+    if (isPago) badgeStatus = '<span class="badge-tag-sm ok" style="background: rgba(16,185,129,0.2); color: #216348;">✅ Conta Paga</span>';
     else if (isVencida) badgeStatus = '<span class="badge-tag-sm zero">🚨 Vencida</span>';
     else if (isHoje) badgeStatus = '<span class="badge-tag-sm low">⏳ Vence Hoje</span>';
 
@@ -3473,7 +3497,7 @@ window.MobileApp = {
         <div style="background: var(--bg-surface-2); padding: 14px; border-radius: 12px; display: flex; justify-content: space-between; align-items: center;">
           <div>
             <span style="font-size: 11px; color: var(--text-dim); text-transform: uppercase; font-weight: 800;">Valor a Pagar</span>
-            <strong style="display: block; font-size: 22px; font-family: 'JetBrains Mono'; color: ${isPago ? 'var(--accent-green)' : '#f87171'}; margin-top: 2px;">
+            <strong style="display: block; font-size: 22px; font-family: 'JetBrains Mono'; color: ${isPago ? 'var(--accent-green)' : '#b12d32'}; margin-top: 2px;">
               ${this.formatarMoeda(c.valor)}
             </strong>
           </div>
@@ -3506,7 +3530,7 @@ window.MobileApp = {
 
         ${isPago && c.dataPagamento ? `
           <div style="background: rgba(16, 185, 129, 0.12); border: 1px solid rgba(16, 185, 129, 0.35); padding: 10px 12px; border-radius: 8px; display: flex; justify-content: space-between; align-items: center;">
-            <span style="font-size: 12px; color: #34d399; font-weight: 700;">✅ Pago em: ${c.dataPagamento}</span>
+            <span style="font-size: 12px; color: #216348; font-weight: 700;">✅ Pago em: ${c.dataPagamento}</span>
             <span style="font-size: 12px; color: var(--text-muted);">${c.formaPagamento || ''}</span>
           </div>
         ` : ''}
@@ -3560,7 +3584,7 @@ window.MobileApp = {
         <div style="background: var(--bg-surface-2); padding: 14px; border-radius: 12px; display: flex; justify-content: space-between; align-items: center;">
           <div>
             <span style="font-size: 11px; color: var(--text-dim); text-transform: uppercase; font-weight: 800;">Saldo Devedor (Fiado)</span>
-            <strong style="display: block; font-size: 22px; font-family: 'JetBrains Mono'; color: ${hasDebt ? '#fbbf24' : 'var(--accent-green)'}; margin-top: 2px;">
+            <strong style="display: block; font-size: 22px; font-family: 'JetBrains Mono'; color: ${hasDebt ? '#8a570d' : 'var(--accent-green)'}; margin-top: 2px;">
               ${hasDebt ? this.formatarMoeda(saldo) : 'R$ 0,00 (Quitado)'}
             </strong>
           </div>
@@ -3591,9 +3615,9 @@ window.MobileApp = {
         <!-- Endereço para Delivery -->
         <div style="background: var(--bg-surface-2); padding: 12px; border-radius: 10px;">
           <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
-            <span style="font-size: 11px; color: #7dd3fc; text-transform: uppercase; font-weight: 800;">🛵 Endereço para Delivery</span>
+            <span style="font-size: 11px; color: #285e66; text-transform: uppercase; font-weight: 800;">🛵 Endereço para Delivery</span>
             ${endCompleto ? `
-              <button type="button" class="chip-btn" style="height: 26px; padding: 0 8px; font-size: 10.5px; border-color: #7dd3fc; color: #7dd3fc;" onclick="MobileApp.copiarEnderecoMobile('${encodeURIComponent(endCompleto)}')">
+              <button type="button" class="chip-btn" style="height: 26px; padding: 0 8px; font-size: 10.5px; border-color: #285e66; color: #285e66;" onclick="MobileApp.copiarEnderecoMobile('${encodeURIComponent(endCompleto)}')">
                 📋 Copiar
               </button>
             ` : ''}
@@ -3605,12 +3629,12 @@ window.MobileApp = {
             ${cli.bairro ? `Bairro: <strong>${cli.bairro}</strong>` : ''} ${cli.cidade ? `• ${cli.cidade}` : ''} ${cli.cep ? `• CEP: ${cli.cep}` : ''}
           </div>
           ${cli.complemento ? `<div style="font-size: 11.5px; color: var(--text-dim); margin-top: 2px;">Comp: ${cli.complemento}</div>` : ''}
-          ${cli.pontoReferencia ? `<div style="font-size: 11.5px; color: #7dd3fc; margin-top: 2px;">Ref: ${cli.pontoReferencia}</div>` : ''}
+          ${cli.pontoReferencia ? `<div style="font-size: 11.5px; color: #285e66; margin-top: 2px;">Ref: ${cli.pontoReferencia}</div>` : ''}
         </div>
 
         ${cli.observacoes ? `
           <div style="background: rgba(245, 158, 11, 0.08); border: 1px solid rgba(245, 158, 11, 0.25); border-radius: 8px; padding: 10px 12px;">
-            <span style="font-size: 11px; color: #fbbf24; font-weight: 800; display: block; margin-bottom: 2px;">📝 Observações:</span>
+            <span style="font-size: 11px; color: #8a570d; font-weight: 800; display: block; margin-bottom: 2px;">📝 Observações:</span>
             <span style="font-size: 12.5px; color: var(--text-main);">${cli.observacoes}</span>
           </div>
         ` : ''}
@@ -3954,7 +3978,7 @@ window.MobileApp = {
           </div>
           <div style="text-align: right;">
             <span style="font-size: 11px; color: var(--text-dim); text-transform: uppercase; font-weight: 800;">Dívida Total</span>
-            <strong style="display: block; font-size: 18px; font-family: 'JetBrains Mono'; color: #fbbf24;">${this.formatarMoeda(saldo)}</strong>
+            <strong style="display: block; font-size: 18px; font-family: 'JetBrains Mono'; color: #8a570d;">${this.formatarMoeda(saldo)}</strong>
           </div>
         </div>
 
@@ -4148,11 +4172,11 @@ window.MobileApp = {
   },
 
   getGradienteFormaPag(forma) {
-    if (forma.includes('PIX')) return 'linear-gradient(90deg, #06b6d4, #38bdf8)';
+    if (forma.includes('PIX')) return 'linear-gradient(90deg, #06b6d4, #285e66)';
     if (forma.includes('Dinheiro')) return 'linear-gradient(90deg, #059669, #10b981)';
     if (forma.includes('Crédito')) return 'linear-gradient(90deg, #6366f1, #a855f7)';
-    if (forma.includes('Débito')) return 'linear-gradient(90deg, #2563eb, #60a5fa)';
-    if (forma.includes('Fiado')) return 'linear-gradient(90deg, #d97706, #fbbf24)';
+    if (forma.includes('Débito')) return 'linear-gradient(90deg, #2563eb, #285a77)';
+    if (forma.includes('Fiado')) return 'linear-gradient(90deg, #d97706, #8a570d)';
     return 'linear-gradient(90deg, #ec4899, #f43f5e)';
   },
 

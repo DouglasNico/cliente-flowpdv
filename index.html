@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-  <meta name="theme-color" content="#273545">
+  <meta name="theme-color" content="#f5f4ef">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -42,6 +42,7 @@
       if (!event.target.closest('input, textarea, [contenteditable="true"]')) event.preventDefault();
     }, { passive: false });
   </script>
+  <link rel="stylesheet" href="reconstruction.css?v=20260923">
 </head>
 <body>
 
@@ -51,9 +52,9 @@
     <div id="screen-login">
       <div class="login-box">
         <div class="login-header-logo">
-          <img src="logos/FlowPDV-vertical-escuro.png" alt="FlowPDV" class="login-logo-wordmark">
+          <img src="logos/FlowPDV-vertical-claro.png" alt="FlowPDV" class="login-logo-wordmark">
           <div>
-            <h1 class="login-title">Gestor <span>Mobile</span></h1>
+            <h1 class="login-title">Sua loja.<br><span>Onde você estiver.</span></h1>
             <p class="login-subtitle">Acompanhe a loja de qualquer lugar</p>
           </div>
         </div>
@@ -99,10 +100,10 @@
         <div class="header-brand">
           <img src="logos/FlowPDV-icone-escuro.png" alt="FlowPDV" class="header-brand-logo">
           <div class="header-store-info">
-            <div id="header-nome-loja" class="header-store-name">Carregando Loja...</div>
+            <div id="header-nome-loja" class="header-store-name">Carregando loja…</div>
             <div class="header-status-badge">
               <span class="status-pulse-dot"></span>
-              <span id="header-status-text">Sincronizado</span>
+              <span id="header-status-text">Aguardando atualização</span>
             </div>
           </div>
         </div>
@@ -110,26 +111,26 @@
         <!-- Abas de Navegação em Modo Computador / Desktop -->
         <nav class="desktop-nav-tabs" aria-label="Navegação Principal">
           <button type="button" class="desktop-nav-btn active" id="btn-desk-tab-resumo" onclick="MobileApp.navegarPara('resumo')">
-            <span>📊</span>
+            <svg class="flow-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 17h4V9H3zM10 17h4V4h-4zM17 17h4v-6h-4z"/></svg>
             <span>Resumo</span>
           </button>
           <button type="button" class="desktop-nav-btn" id="btn-desk-tab-estoque" onclick="MobileApp.navegarPara('estoque')">
-            <span>📦</span>
+            <svg class="flow-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m3 7 9-4 9 4-9 4-9-4Zm0 0v10l9 4 9-4V7M12 11v10"/></svg>
             <span>Estoque</span>
           </button>
           <button type="button" class="desktop-nav-btn" id="btn-desk-tab-financeiro" onclick="MobileApp.navegarPara('financeiro')">
-            <span>💸</span>
+            <svg class="flow-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18v14H3zM3 10h18M15 15h3"/></svg>
             <span>Financeiro</span>
           </button>
           <button type="button" class="desktop-nav-btn" id="btn-desk-tab-gerencia" onclick="MobileApp.navegarPara('gerencia')">
-            <span>🏢</span>
+            <svg class="flow-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 21V7l8-4 8 4v14M8 10h2m4 0h2M8 14h2m4 0h2M10 21v-4h4v4"/></svg>
             <span>Gerência</span>
           </button>
         </nav>
 
         <div class="header-actions">
           <button type="button" class="btn-header-text" id="btn-refresh" onclick="MobileApp.recarregarDados()" title="Atualizar dados agora">
-            <span class="refresh-icon">🔄</span>
+            <span class="refresh-icon"><svg class="flow-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 7v5h-5M4 17v-5h5M5 8a8 8 0 0 1 13-3l2 3M4 16l2 3a8 8 0 0 0 13-3"/></svg></span>
             <span>Atualizar</span>
           </button>
           <span class="header-actions-sep" aria-hidden="true">|</span>
@@ -143,6 +144,7 @@
            ABA 1: RESUMO DO DIA & FATURAMENTO
            ======================================================== -->
       <div class="mobile-tab-view active" id="tab-resumo">
+        <div class="flow-page-intro"><h1>Sua loja, em perspectiva.</h1><p>Vendas, caixa e movimento do dia em um só lugar.</p></div>
         
         <!-- Grid Superior de Métricas (Responsivo Desktop: 3 Colunas) -->
         <div class="dashboard-top-metrics-grid">
@@ -187,7 +189,7 @@
                 <div style="display: flex; align-items: center; gap: 8px;">
                   <span style="font-size: 20px;">⚠️</span>
                   <div>
-                    <strong style="font-size: 13px; color: #fca5a5; display: block;">Itens com Estoque Baixo</strong>
+                    <strong style="font-size: 13px; color: #b12d32; display: block;">Itens com Estoque Baixo</strong>
                     <span id="alerta-estoque-texto" style="font-size: 11.5px; color: var(--text-muted);">Existem produtos precisando de reposição</span>
                   </div>
                 </div>
@@ -246,6 +248,7 @@
            ABA 2: ESTOQUE & REPOSIÇÃO
            ======================================================== -->
       <div class="mobile-tab-view" id="tab-estoque">
+        <div class="flow-page-intro"><h1>Estoque sob controle.</h1><p>Encontre produtos e acompanhe o que precisa de reposição.</p></div>
         
         <!-- Busca Rápida -->
         <div class="mobile-search-bar">
@@ -259,9 +262,9 @@
           <div class="filter-chips-row" id="chips-estoque-container">
             <button type="button" class="chip-btn active" id="chip-est-todos" onclick="MobileApp.setFiltroEstoque('todos', this)">Todos</button>
             <button type="button" class="chip-btn" id="chip-est-baixo" onclick="MobileApp.setFiltroEstoque('baixo', this)">⚠️ Baixo / Zerado</button>
-            <button type="button" class="chip-btn" id="chip-est-vencidos" onclick="MobileApp.setFiltroEstoque('vencidos', this)" style="color: #f87171;">🚨 Vencidos</button>
-            <button type="button" class="chip-btn" id="chip-est-vence15d" onclick="MobileApp.setFiltroEstoque('vence15d', this)" style="color: #fbbf24;">⏳ Vence em 15d</button>
-            <button type="button" class="chip-btn" id="chip-est-vence30d" onclick="MobileApp.setFiltroEstoque('vence30d', this)" style="color: #fbbf24;">⏳ Vence em 30d</button>
+            <button type="button" class="chip-btn" id="chip-est-vencidos" onclick="MobileApp.setFiltroEstoque('vencidos', this)" style="color: #b12d32;">🚨 Vencidos</button>
+            <button type="button" class="chip-btn" id="chip-est-vence15d" onclick="MobileApp.setFiltroEstoque('vence15d', this)" style="color: #8a570d;">⏳ Vence em 15d</button>
+            <button type="button" class="chip-btn" id="chip-est-vence30d" onclick="MobileApp.setFiltroEstoque('vence30d', this)" style="color: #8a570d;">⏳ Vence em 30d</button>
             <button type="button" class="chip-btn" id="chip-est-compras" onclick="MobileApp.setFiltroEstoque('compras', this)">🛒 Sugestão de Compra</button>
           </div>
           <button type="button" class="btn-carousel-arrow right" onclick="MobileApp.scrollChips('direita')" title="Rolar para a direita">›</button>
@@ -283,6 +286,7 @@
            ABA 3: FINANCEIRO & CADERNETA (FIADO)
            ======================================================== -->
       <div class="mobile-tab-view" id="tab-financeiro">
+        <div class="flow-page-intro"><h1>Clareza para decidir.</h1><p>Acompanhe os valores e compromissos da sua operação.</p></div>
         
         <!-- Toggle Sub-Aba: Contas a Pagar vs Fiado -->
         <div class="filter-chips-row" style="margin-bottom: 4px;">
@@ -296,9 +300,9 @@
             <div class="hero-label">
               <span>💸 Total de Contas Pendentes</span>
             </div>
-            <span class="hero-value valor-sensivel" id="metric-total-contas-pendentes" style="color: #f87171;">R$ 0,00</span>
+            <span class="hero-value valor-sensivel" id="metric-total-contas-pendentes" style="color: #b12d32;">R$ 0,00</span>
             <div class="hero-stats-row">
-              <span id="metric-contas-vencidas-alerta" style="color: #fca5a5;">🚨 0 contas vencidas</span>
+              <span id="metric-contas-vencidas-alerta" style="color: #b12d32;">🚨 0 contas vencidas</span>
             </div>
           </div>
 
@@ -333,7 +337,7 @@
             <div class="hero-label">
               <span>📖 Total a Receber de Clientes</span>
             </div>
-            <span class="hero-value valor-sensivel" id="metric-total-fiado-receber" style="color: #fbbf24;">R$ 0,00</span>
+            <span class="hero-value valor-sensivel" id="metric-total-fiado-receber" style="color: #8a570d;">R$ 0,00</span>
             <div class="hero-stats-row">
               <span>👥 <strong id="metric-qtd-clientes-devedores">0</strong> clientes com saldo em aberto</span>
             </div>
@@ -374,6 +378,7 @@
            ABA 4: CENTRAL DE GERÊNCIA (EQUIPE, AUDITORIA, MESAS, MÓDULOS & DRE)
            ======================================================== -->
       <div class="mobile-tab-view" id="tab-gerencia">
+        <div class="flow-page-intro"><h1>A operação nas suas mãos.</h1><p>Organize os acessos e acompanhe a rotina da loja.</p></div>
         
         <!-- Sub-Navegação da Gerência com Carrossel Suave -->
         <div class="filter-carousel-wrapper" style="margin-bottom: 8px;">
@@ -543,7 +548,7 @@
             </div>
             <div class="small-metric-card">
               <span class="small-metric-label">🔴 Em Consumo</span>
-              <span class="small-metric-value" id="gerencia-mesas-ocupadas-count" style="color: #f87171;">0</span>
+              <span class="small-metric-value" id="gerencia-mesas-ocupadas-count" style="color: #b12d32;">0</span>
             </div>
           </div>
 
@@ -609,19 +614,19 @@
            ======================================================== -->
       <nav class="bottom-tabbar">
         <button type="button" class="tabbar-item active" id="btn-tab-resumo" onclick="MobileApp.navegarPara('resumo')">
-          <span class="tabbar-icon">📊</span>
+          <svg class="flow-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 17h4V9H3zM10 17h4V4h-4zM17 17h4v-6h-4z"/></svg>
           <span>Resumo</span>
         </button>
         <button type="button" class="tabbar-item" id="btn-tab-estoque" onclick="MobileApp.navegarPara('estoque')">
-          <span class="tabbar-icon">📦</span>
+          <svg class="flow-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m3 7 9-4 9 4-9 4-9-4Zm0 0v10l9 4 9-4V7M12 11v10"/></svg>
           <span>Estoque</span>
         </button>
         <button type="button" class="tabbar-item" id="btn-tab-financeiro" onclick="MobileApp.navegarPara('financeiro')">
-          <span class="tabbar-icon">💸</span>
+          <svg class="flow-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18v14H3zM3 10h18M15 15h3"/></svg>
           <span>Financeiro</span>
         </button>
         <button type="button" class="tabbar-item" id="btn-tab-gerencia" onclick="MobileApp.navegarPara('gerencia')">
-          <span class="tabbar-icon">🏢</span>
+          <svg class="flow-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 21V7l8-4 8 4v14M8 10h2m4 0h2M8 14h2m4 0h2M10 21v-4h4v4"/></svg>
           <span>Gerência</span>
         </button>
       </nav>
@@ -665,7 +670,7 @@
 
         <div style="margin-bottom: 12px;">
           <label style="font-size: 12px; font-weight: 700; color: var(--text-muted); display: block; margin-bottom: 6px;">Nova Data de Validade:</label>
-          <input type="date" id="input-mobile-data-validade" class="mobile-search-input" style="height: 44px; font-size: 15px; font-family: 'JetBrains Mono'; font-weight: 700; width: 100%; box-sizing: border-box; background: var(--bg-surface-2, rgba(0,0,0,0.2)); border: 1px solid var(--accent-cyan, #38bdf8); border-radius: 8px; color: var(--text-main, #ffffff); padding: 0 12px;">
+          <input type="date" id="input-mobile-data-validade" class="mobile-search-input" style="height: 44px; font-size: 15px; font-family: 'JetBrains Mono'; font-weight: 700; width: 100%; box-sizing: border-box; background: var(--bg-surface-2, rgba(0,0,0,0.2)); border: 1px solid var(--accent-cyan, #285e66); border-radius: 8px; color: var(--text-main, #ffffff); padding: 0 12px;">
         </div>
 
         <!-- Atalhos Rápidos -->
