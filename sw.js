@@ -1,5 +1,5 @@
 // FlowPDV Mobile Service Worker v2.2.22 - Ultra-Fast PWA
-const CACHE_NAME = 'flowpdv-mobile-v20260923-pwa-fixes';
+const CACHE_NAME = 'flowpdv-mobile-v20260923-svg-desktop';
 const ASSETS_TO_CACHE = [
   './',
   './index.html',
@@ -9,6 +9,7 @@ const ASSETS_TO_CACHE = [
   './caixa-rules.js',
   './report-rules.js',
   './manager-rules.js',
+  './flow-icons.js',
   './logos/FlowPDV-vertical-claro.png',
   './manifest.json',
   './logos/FlowPDV-icone-claro.png',

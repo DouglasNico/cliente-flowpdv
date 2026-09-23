@@ -42,7 +42,8 @@
       if (!event.target.closest('input, textarea, [contenteditable="true"]')) event.preventDefault();
     }, { passive: false });
   </script>
-  <link rel="stylesheet" href="reconstruction.css?v=20260923-pwa">
+  <link rel="stylesheet" href="reconstruction.css?v=20260923-svg">
+  <script src="flow-icons.js?v=20260923-svg"></script>
 </head>
 <body>
 
@@ -60,7 +61,7 @@
         </div>
 
         <div id="login-error-toast" class="login-error-toast">
-          ⚠️ Chave de licença ou senha incorretas.
+          <svg class="flow-glyph" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false" style="vertical-align:-.15em;flex-shrink:0;pointer-events:none"><path d="m12 3 10 18H2L12 3ZM12 9v5M12 17v.1"/></svg> Chave de licença ou senha incorretas.
         </div>
 
         <form id="form-login-gestor" onsubmit="MobileApp.executarLogin(event)">
@@ -73,7 +74,7 @@
           </div>
 
           <div class="form-group-mobile">
-            <label class="form-label-mobile">Senha do gestor</label>
+            <label class="form-label-mobile">Senha do administrador</label>
             <div class="input-wrapper-mobile">
               <input type="password" id="login-pin" class="input-mobile mono" placeholder="••••" required maxlength="8" autocomplete="current-password">
               <button type="button" class="btn-toggle-pass" onclick="MobileApp.toggleVisualizarPin()" title="Mostrar senha" aria-label="Mostrar senha" aria-pressed="false" aria-controls="login-pin"><svg class="flow-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/><path class="eye-slash" d="m3 3 18 18"/></svg></button>
@@ -151,28 +152,28 @@
           <!-- Hero: Faturamento Hoje -->
           <div class="hero-metric-card glass-primary">
             <div class="hero-label">
-              <span>💰 Faturamento Hoje</span>
+              <span><svg class="flow-glyph" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false" style="vertical-align:-.15em;flex-shrink:0;pointer-events:none"><rect x="2" y="5" width="20" height="14" rx="2"/><circle cx="12" cy="12" r="3"/><path d="M6 12h.1M18 12h.1"/></svg> Faturamento Hoje</span>
               <span id="resumo-data-hoje" style="font-size: 11px; color: var(--text-dim);">Hoje</span>
             </div>
             <span class="hero-value valor-sensivel" id="metric-faturamento-hoje">R$ 0,00</span>
             <div class="hero-stats-row">
-              <span>🧾 <strong id="metric-qtd-vendas">0</strong> vendas</span>
+              <span><svg class="flow-glyph" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false" style="vertical-align:-.15em;flex-shrink:0;pointer-events:none"><path d="M5 3h10l4 4v14H5V3ZM14 3v5h5M8 12h8M8 16h8"/></svg> <strong id="metric-qtd-vendas">0</strong> vendas</span>
               <span>•</span>
-              <span>🎯 Ticket Médio: <strong id="metric-ticket-medio" class="valor-sensivel">R$ 0,00</strong></span>
+              <span><svg class="flow-glyph" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false" style="vertical-align:-.15em;flex-shrink:0;pointer-events:none"><path d="m12 2 3 7 7 1-5 5 1 7-6-4-6 4 1-7-5-5 7-1 3-7Z"/></svg> Ticket Médio: <strong id="metric-ticket-medio" class="valor-sensivel">R$ 0,00</strong></span>
             </div>
             <!-- Botão de Envio de Resumo no WhatsApp -->
             <button type="button" class="btn-hero-share-wa" onclick="MobileApp.compartilharResumoWhatsApp()">
-              <span>📲 Compartilhar Resumo</span>
+              <span><svg class="flow-glyph" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false" style="vertical-align:-.15em;flex-shrink:0;pointer-events:none"><path d="m5 3 4 1 1 5-3 2a14 14 0 0 0 6 6l2-3 5 1 1 4c-6 6-24-12-16-16Z"/></svg> Compartilhar Resumo</span>
             </button>
           </div>
 
           <div class="small-metric-card">
-            <span class="small-metric-label">💵 Total no Caixa Atual</span>
+            <span class="small-metric-label"><svg class="flow-glyph" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false" style="vertical-align:-.15em;flex-shrink:0;pointer-events:none"><rect x="2" y="5" width="20" height="14" rx="2"/><circle cx="12" cy="12" r="3"/><path d="M6 12h.1M18 12h.1"/></svg> Total no Caixa Atual</span>
             <span class="small-metric-value valor-sensivel" id="metric-gaveta-caixa" style="color: var(--accent-blue);">R$ 0,00</span>
             <span id="label-gaveta-sub" style="font-size: 11px; color: var(--text-dim); margin-top: 4px; display: block;">Dinheiro em caixa / turno</span>
           </div>
           <div class="small-metric-card">
-            <span class="small-metric-label">📅 Faturamento no Mês</span>
+            <span class="small-metric-label"><svg class="flow-glyph" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false" style="vertical-align:-.15em;flex-shrink:0;pointer-events:none"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M7 3v4M17 3v4M3 11h18M7 15h3M14 15h3M7 18h3"/></svg> Faturamento no Mês</span>
             <span class="small-metric-value valor-sensivel" id="metric-faturamento-mes" style="color: var(--accent-green);">R$ 0,00</span>
             <span style="font-size: 11px; color: var(--text-dim); margin-top: 4px; display: block;">Acumulado no mês atual</span>
           </div>
@@ -187,7 +188,7 @@
             <div class="small-metric-card alert" id="card-alerta-estoque-box" style="display: none; cursor: pointer; margin-bottom: 12px;" onclick="MobileApp.navegarPara('estoque')">
               <div style="display: flex; align-items: center; justify-content: space-between;">
                 <div style="display: flex; align-items: center; gap: 8px;">
-                  <span style="font-size: 20px;">⚠️</span>
+                  <span style="font-size: 20px;"><svg class="flow-glyph" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false" style="vertical-align:-.15em;flex-shrink:0;pointer-events:none"><path d="m12 3 10 18H2L12 3ZM12 9v5M12 17v.1"/></svg></span>
                   <div>
                     <strong style="font-size: 13px; color: #b12d32; display: block;">Itens com Estoque Baixo</strong>
                     <span id="alerta-estoque-texto" style="font-size: 11.5px; color: var(--text-muted);">Existem produtos precisando de reposição</span>
@@ -201,7 +202,7 @@
             <div class="small-metric-card" id="card-resumo-mesas" style="display: none; cursor: pointer; margin-bottom: 12px;" onclick="MobileApp.navegarPara('gerencia', 'mesas')">
               <div style="display: flex; align-items: center; justify-content: space-between;">
                 <div style="display: flex; align-items: center; gap: 8px;">
-                  <span style="font-size: 20px;">🍽️</span>
+                  <span style="font-size: 20px;"><svg class="flow-glyph" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false" style="vertical-align:-.15em;flex-shrink:0;pointer-events:none"><path d="M4 3v6c0 3 6 3 6 0V3M7 3v18M20 21V3c-5 0-5 10 0 10"/></svg></span>
                   <div>
                     <strong style="font-size: 13px; color: var(--accent-cyan); display: block;">Mesas & Comandas Ao Vivo</strong>
                     <span id="label-resumo-mesas-status" style="font-size: 11.5px; color: var(--text-muted);">Carregando status do salão...</span>
@@ -213,7 +214,7 @@
 
             <!-- Top 5 Produtos Mais Vendidos -->
             <div class="section-title-mobile">
-              <span>🏆 Top 5 Mais Vendidos</span>
+              <span><svg class="flow-glyph" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false" style="vertical-align:-.15em;flex-shrink:0;pointer-events:none"><path d="m12 2 3 7 7 1-5 5 1 7-6-4-6 4 1-7-5-5 7-1 3-7Z"/></svg> Top 5 Mais Vendidos</span>
             </div>
             <div class="small-metric-card ranking-card-box" id="resumo-top-produtos" style="display: flex; flex-direction: column; gap: 8px; margin-bottom: 14px;">
               <div style="color: var(--text-dim); font-size: 12px; text-align: center; padding: 8px;">Calculando ranking...</div>
@@ -221,7 +222,7 @@
 
             <!-- Breakdown por Formas de Pagamento -->
             <div class="section-title-mobile">
-              <span>💳 Vendas por Pagamento</span>
+              <span><svg class="flow-glyph" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false" style="vertical-align:-.15em;flex-shrink:0;pointer-events:none"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20M6 15h3"/></svg> Vendas por Pagamento</span>
             </div>
             <div class="small-metric-card" style="display: flex; flex-direction: column; gap: 12px;" id="resumo-formas-pagamento">
               <!-- Renderizado dinamicamente -->
@@ -232,7 +233,7 @@
           <!-- Coluna Direita: Últimas Vendas do Dia -->
           <div class="dashboard-col-right">
             <div class="section-title-mobile">
-              <span>🛒 Vendas Recentes</span>
+              <span><svg class="flow-glyph" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false" style="vertical-align:-.15em;flex-shrink:0;pointer-events:none"><path d="M2 3h3l3 13h11l3-10H6M9 20h.1M18 20h.1"/></svg> Vendas Recentes</span>
               <span class="badge-pill-count" id="badge-total-vendas-hoje">0</span>
             </div>
             <div id="lista-ultimas-vendas" style="display: flex; flex-direction: column; gap: 8px;">
@@ -252,26 +253,26 @@
         
         <!-- Busca Rápida -->
         <div class="mobile-search-bar">
-          <span>🔍</span>
+          <span><svg class="flow-glyph" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false" style="vertical-align:-.15em;flex-shrink:0;pointer-events:none"><circle cx="10.5" cy="10.5" r="7"/><path d="m16 16 5 5"/></svg></span>
           <input type="text" id="input-busca-estoque" class="mobile-search-input" placeholder="Buscar por produto ou código..." oninput="MobileApp.filtrarEstoque()">
         </div>
 
         <!-- Filtros Rápidos com Navegação Lateral e Scroll por Toque -->
         <div class="filter-carousel-wrapper">
-          <button type="button" class="btn-carousel-arrow left" onclick="MobileApp.scrollChips('esquerda')" title="Rolar para a esquerda">‹</button>
+          <button type="button" class="btn-carousel-arrow left" onclick="MobileApp.scrollChips('esquerda')" title="Rolar para a esquerda"><svg class="flow-glyph" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false" style="vertical-align:-.15em;flex-shrink:0;pointer-events:none"><path d="m15 5-7 7 7 7"/></svg></button>
           <div class="filter-chips-row" id="chips-estoque-container">
             <button type="button" class="chip-btn active" id="chip-est-todos" onclick="MobileApp.setFiltroEstoque('todos', this)">Todos</button>
-            <button type="button" class="chip-btn" id="chip-est-baixo" onclick="MobileApp.setFiltroEstoque('baixo', this)">⚠️ Baixo / Zerado</button>
-            <button type="button" class="chip-btn" id="chip-est-vencidos" onclick="MobileApp.setFiltroEstoque('vencidos', this)" style="color: #b12d32;">🚨 Vencidos</button>
-            <button type="button" class="chip-btn" id="chip-est-vence15d" onclick="MobileApp.setFiltroEstoque('vence15d', this)" style="color: #8a570d;">⏳ Vence em 15d</button>
-            <button type="button" class="chip-btn" id="chip-est-vence30d" onclick="MobileApp.setFiltroEstoque('vence30d', this)" style="color: #8a570d;">⏳ Vence em 30d</button>
-            <button type="button" class="chip-btn" id="chip-est-compras" onclick="MobileApp.setFiltroEstoque('compras', this)">🛒 Sugestão de Compra</button>
+            <button type="button" class="chip-btn" id="chip-est-baixo" onclick="MobileApp.setFiltroEstoque('baixo', this)"><svg class="flow-glyph" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false" style="vertical-align:-.15em;flex-shrink:0;pointer-events:none"><path d="m12 3 10 18H2L12 3ZM12 9v5M12 17v.1"/></svg> Baixo / Zerado</button>
+            <button type="button" class="chip-btn" id="chip-est-vencidos" onclick="MobileApp.setFiltroEstoque('vencidos', this)" style="color: #b12d32;"><svg class="flow-glyph" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false" style="vertical-align:-.15em;flex-shrink:0;pointer-events:none"><path d="m12 3 10 18H2L12 3ZM12 9v5M12 17v.1"/></svg> Vencidos</button>
+            <button type="button" class="chip-btn" id="chip-est-vence15d" onclick="MobileApp.setFiltroEstoque('vence15d', this)" style="color: #8a570d;"><svg class="flow-glyph" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false" style="vertical-align:-.15em;flex-shrink:0;pointer-events:none"><circle cx="12" cy="12" r="9"/><path d="M12 6v6l4 2"/></svg> Vence em 15d</button>
+            <button type="button" class="chip-btn" id="chip-est-vence30d" onclick="MobileApp.setFiltroEstoque('vence30d', this)" style="color: #8a570d;"><svg class="flow-glyph" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false" style="vertical-align:-.15em;flex-shrink:0;pointer-events:none"><circle cx="12" cy="12" r="9"/><path d="M12 6v6l4 2"/></svg> Vence em 30d</button>
+            <button type="button" class="chip-btn" id="chip-est-compras" onclick="MobileApp.setFiltroEstoque('compras', this)"><svg class="flow-glyph" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false" style="vertical-align:-.15em;flex-shrink:0;pointer-events:none"><path d="M2 3h3l3 13h11l3-10H6M9 20h.1M18 20h.1"/></svg> Sugestão de Compra</button>
           </div>
-          <button type="button" class="btn-carousel-arrow right" onclick="MobileApp.scrollChips('direita')" title="Rolar para a direita">›</button>
+          <button type="button" class="btn-carousel-arrow right" onclick="MobileApp.scrollChips('direita')" title="Rolar para a direita"><svg class="flow-glyph" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false" style="vertical-align:-.15em;flex-shrink:0;pointer-events:none"><path d="m9 5 7 7-7 7"/></svg></button>
         </div>
 
         <div class="section-title-mobile">
-          <span id="estoque-titulo-secao">📦 Catálogo de Produtos</span>
+          <span id="estoque-titulo-secao"><svg class="flow-glyph" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false" style="vertical-align:-.15em;flex-shrink:0;pointer-events:none"><path d="m3 7 9-4 9 4v10l-9 4-9-4V7Zm0 0 9 4 9-4M12 11v10M7 5l9 4"/></svg> Catálogo de Produtos</span>
           <span class="badge-pill-count" id="badge-total-produtos">0</span>
         </div>
 
@@ -290,33 +291,33 @@
         
         <!-- Toggle Sub-Aba: Contas a Pagar vs Fiado -->
         <div class="filter-chips-row" style="margin-bottom: 4px;">
-          <button type="button" class="chip-btn active" id="chip-fin-contas" onclick="MobileApp.setFiltroFinanceiro('contas')">💸 Contas a Pagar</button>
-          <button type="button" class="chip-btn" id="chip-fin-fiado" onclick="MobileApp.setFiltroFinanceiro('fiado')">📖 Fiado / Caderneta</button>
+          <button type="button" class="chip-btn active" id="chip-fin-contas" onclick="MobileApp.setFiltroFinanceiro('contas')"><svg class="flow-glyph" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false" style="vertical-align:-.15em;flex-shrink:0;pointer-events:none"><rect x="2" y="5" width="20" height="14" rx="2"/><circle cx="12" cy="12" r="3"/><path d="M6 12h.1M18 12h.1"/></svg> Contas a Pagar</button>
+          <button type="button" class="chip-btn" id="chip-fin-fiado" onclick="MobileApp.setFiltroFinanceiro('fiado')"><svg class="flow-glyph" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false" style="vertical-align:-.15em;flex-shrink:0;pointer-events:none"><path d="M5 3h10l4 4v14H5V3ZM14 3v5h5M8 12h8M8 16h8"/></svg> Fiado / Caderneta</button>
         </div>
 
         <!-- SEÇÃO: CONTAS A PAGAR -->
         <div id="secao-contas-pagar" style="display: flex; flex-direction: column; gap: 12px;">
           <div class="hero-metric-card glass-danger">
             <div class="hero-label">
-              <span>💸 Total de Contas Pendentes</span>
+              <span><svg class="flow-glyph" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false" style="vertical-align:-.15em;flex-shrink:0;pointer-events:none"><rect x="2" y="5" width="20" height="14" rx="2"/><circle cx="12" cy="12" r="3"/><path d="M6 12h.1M18 12h.1"/></svg> Total de Contas Pendentes</span>
             </div>
             <span class="hero-value valor-sensivel" id="metric-total-contas-pendentes" style="color: #b12d32;">R$ 0,00</span>
             <div class="hero-stats-row">
-              <span id="metric-contas-vencidas-alerta" style="color: #b12d32;">🚨 0 contas vencidas</span>
+              <span id="metric-contas-vencidas-alerta" style="color: #b12d32;"><svg class="flow-glyph" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false" style="vertical-align:-.15em;flex-shrink:0;pointer-events:none"><path d="m12 3 10 18H2L12 3ZM12 9v5M12 17v.1"/></svg> 0 contas vencidas</span>
             </div>
           </div>
 
           <!-- Filtros de Status de Contas a Pagar -->
           <div class="filter-carousel-wrapper">
-            <button type="button" class="btn-carousel-arrow left" onclick="MobileApp.scrollChipsContas('esquerda')" title="Rolar para a esquerda">‹</button>
+            <button type="button" class="btn-carousel-arrow left" onclick="MobileApp.scrollChipsContas('esquerda')" title="Rolar para a esquerda"><svg class="flow-glyph" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false" style="vertical-align:-.15em;flex-shrink:0;pointer-events:none"><path d="m15 5-7 7 7 7"/></svg></button>
             <div class="filter-chips-row" id="chips-contas-container">
               <button type="button" class="chip-btn active" id="chip-conta-todos" onclick="MobileApp.setFiltroContas('todos', this)">Todos</button>
-              <button type="button" class="chip-btn" id="chip-conta-vencidas" onclick="MobileApp.setFiltroContas('vencidas', this)">🚨 Vencidas</button>
-              <button type="button" class="chip-btn" id="chip-conta-hoje" onclick="MobileApp.setFiltroContas('hoje', this)">⏳ Vencem Hoje</button>
-              <button type="button" class="chip-btn" id="chip-conta-avencer" onclick="MobileApp.setFiltroContas('avencer', this)">📅 A Vencer</button>
-              <button type="button" class="chip-btn" id="chip-conta-pagas" onclick="MobileApp.setFiltroContas('pagas', this)">✅ Pagas</button>
+              <button type="button" class="chip-btn" id="chip-conta-vencidas" onclick="MobileApp.setFiltroContas('vencidas', this)"><svg class="flow-glyph" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false" style="vertical-align:-.15em;flex-shrink:0;pointer-events:none"><path d="m12 3 10 18H2L12 3ZM12 9v5M12 17v.1"/></svg> Vencidas</button>
+              <button type="button" class="chip-btn" id="chip-conta-hoje" onclick="MobileApp.setFiltroContas('hoje', this)"><svg class="flow-glyph" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false" style="vertical-align:-.15em;flex-shrink:0;pointer-events:none"><circle cx="12" cy="12" r="9"/><path d="M12 6v6l4 2"/></svg> Vencem Hoje</button>
+              <button type="button" class="chip-btn" id="chip-conta-avencer" onclick="MobileApp.setFiltroContas('avencer', this)"><svg class="flow-glyph" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false" style="vertical-align:-.15em;flex-shrink:0;pointer-events:none"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M7 3v4M17 3v4M3 11h18M7 15h3M14 15h3M7 18h3"/></svg> A Vencer</button>
+              <button type="button" class="chip-btn" id="chip-conta-pagas" onclick="MobileApp.setFiltroContas('pagas', this)"><svg class="flow-glyph" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false" style="vertical-align:-.15em;flex-shrink:0;pointer-events:none"><path d="m5 12 4 4L20 5"/></svg> Pagas</button>
             </div>
-            <button type="button" class="btn-carousel-arrow right" onclick="MobileApp.scrollChipsContas('direita')" title="Rolar para a direita">›</button>
+            <button type="button" class="btn-carousel-arrow right" onclick="MobileApp.scrollChipsContas('direita')" title="Rolar para a direita"><svg class="flow-glyph" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false" style="vertical-align:-.15em;flex-shrink:0;pointer-events:none"><path d="m9 5 7 7-7 7"/></svg></button>
           </div>
 
           <div class="section-title-mobile">
@@ -335,35 +336,35 @@
           <!-- Card de Resumo Financeiro de Fiado -->
           <div class="hero-metric-card glass-amber">
             <div class="hero-label">
-              <span>📖 Total a Receber de Clientes</span>
+              <span><svg class="flow-glyph" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false" style="vertical-align:-.15em;flex-shrink:0;pointer-events:none"><path d="M5 3h10l4 4v14H5V3ZM14 3v5h5M8 12h8M8 16h8"/></svg> Total a Receber de Clientes</span>
             </div>
             <span class="hero-value valor-sensivel" id="metric-total-fiado-receber" style="color: #8a570d;">R$ 0,00</span>
             <div class="hero-stats-row">
-              <span>👥 <strong id="metric-qtd-clientes-devedores">0</strong> clientes com saldo em aberto</span>
+              <span><svg class="flow-glyph" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false" style="vertical-align:-.15em;flex-shrink:0;pointer-events:none"><circle cx="9" cy="7" r="3"/><path d="M2 20v-2a7 7 0 0 1 14 0v2M16 4a3 3 0 0 1 0 6M18 14a6 6 0 0 1 4 6"/></svg> <strong id="metric-qtd-clientes-devedores">0</strong> clientes com saldo em aberto</span>
             </div>
           </div>
 
           <!-- Busca Rápida de Clientes -->
           <div class="mobile-search-bar">
-            <span>🔍</span>
+            <span><svg class="flow-glyph" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false" style="vertical-align:-.15em;flex-shrink:0;pointer-events:none"><circle cx="10.5" cy="10.5" r="7"/><path d="m16 16 5 5"/></svg></span>
             <input type="text" id="input-busca-clientes-mobile" class="mobile-search-input" placeholder="Buscar por nome, telefone, endereço ou doc..." oninput="MobileApp.filtrarClientesMobile()">
           </div>
 
           <!-- Filtros de Clientes & Botão Novo Cliente -->
-          <div style="display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap;">
+          <div class="client-filter-toolbar" style="display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap;">
             <div class="filter-chips-row" id="chips-clientes-container" style="flex: 1; margin-bottom: 0;">
               <button type="button" class="chip-btn active" id="chip-cli-todos" onclick="MobileApp.setFiltroClientesMobile('todos', this)">Todos</button>
-              <button type="button" class="chip-btn" id="chip-cli-devedores" onclick="MobileApp.setFiltroClientesMobile('devedores', this)">⚠️ Em Aberto</button>
-              <button type="button" class="chip-btn" id="chip-cli-delivery" onclick="MobileApp.setFiltroClientesMobile('delivery', this)">🛵 Delivery</button>
-              <button type="button" class="chip-btn" id="chip-cli-whats" onclick="MobileApp.setFiltroClientesMobile('whats', this)">🟢 WhatsApp</button>
+              <button type="button" class="chip-btn" id="chip-cli-devedores" onclick="MobileApp.setFiltroClientesMobile('devedores', this)"><svg class="flow-glyph" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false" style="vertical-align:-.15em;flex-shrink:0;pointer-events:none"><path d="m12 3 10 18H2L12 3ZM12 9v5M12 17v.1"/></svg> Em Aberto</button>
+              <button type="button" class="chip-btn" id="chip-cli-delivery" onclick="MobileApp.setFiltroClientesMobile('delivery', this)"><svg class="flow-glyph" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false" style="vertical-align:-.15em;flex-shrink:0;pointer-events:none"><path d="M2 5h12v12H2V5ZM14 9h4l4 4v4h-8M5 20a2 2 0 1 0 0-4 2 2 0 0 0 0 4Zm13 0a2 2 0 1 0 0-4 2 2 0 0 0 0 4Z"/></svg> Delivery</button>
+              <button type="button" class="chip-btn" id="chip-cli-whats" onclick="MobileApp.setFiltroClientesMobile('whats', this)"><svg class="flow-glyph" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false" style="vertical-align:-.15em;flex-shrink:0;pointer-events:none"><path d="m5 12 4 4L20 5"/></svg> WhatsApp</button>
             </div>
             <button type="button" class="btn-novo-colaborador" style="background: linear-gradient(135deg, #0284c7, #0369a1); white-space: nowrap;" onclick="MobileApp.abrirModalNovoClienteMobile()">
-              <span>➕ Novo Cliente</span>
+              <span><svg class="flow-glyph" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false" style="vertical-align:-.15em;flex-shrink:0;pointer-events:none"><path d="M12 4v16M4 12h16"/></svg> Novo Cliente</span>
             </button>
           </div>
 
           <div class="section-title-mobile">
-            <span>👥 Clientes Cadastrados</span>
+            <span><svg class="flow-glyph" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false" style="vertical-align:-.15em;flex-shrink:0;pointer-events:none"><circle cx="9" cy="7" r="3"/><path d="M2 20v-2a7 7 0 0 1 14 0v2M16 4a3 3 0 0 1 0 6M18 14a6 6 0 0 1 4 6"/></svg> Clientes Cadastrados</span>
             <span class="badge-pill-count" id="badge-total-devedores">0</span>
           </div>
 
@@ -384,31 +385,31 @@
         <div class="filter-carousel-wrapper" style="margin-bottom: 8px;">
           <div class="filter-chips-row" id="chips-subnav-gerencia">
             <button type="button" class="chip-btn active" id="btn-sub-ger-equipe" onclick="MobileApp.setSubAbaGerencia('equipe')">
-              <span>👥</span> <span>Equipe</span>
+              <span><svg class="flow-glyph" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false" style="vertical-align:-.15em;flex-shrink:0;pointer-events:none"><circle cx="9" cy="7" r="3"/><path d="M2 20v-2a7 7 0 0 1 14 0v2M16 4a3 3 0 0 1 0 6M18 14a6 6 0 0 1 4 6"/></svg></span> <span>Equipe</span>
             </button>
             <button type="button" class="chip-btn" id="btn-sub-ger-auditoria" onclick="MobileApp.setSubAbaGerencia('auditoria')">
-              <span>🛡️</span> <span>Auditoria</span>
+              <span><svg class="flow-glyph" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false" style="vertical-align:-.15em;flex-shrink:0;pointer-events:none"><path d="m12 3 8 3v6c0 5-8 9-8 9S4 17 4 12V6l8-3Z"/><path d="m8 12 3 3 5-6"/></svg></span> <span>Auditoria</span>
             </button>
             <button type="button" class="chip-btn" id="btn-sub-ger-categorias" onclick="MobileApp.setSubAbaGerencia('categorias')">
-              <span>🏷️</span> <span>Categorias</span>
+              <span><svg class="flow-glyph" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false" style="vertical-align:-.15em;flex-shrink:0;pointer-events:none"><path d="M3 3h8l10 10-8 8L3 11V3Z"/><circle cx="7.5" cy="7.5" r=".7"/></svg></span> <span>Categorias</span>
             </button>
             <button type="button" class="chip-btn" id="btn-sub-ger-terminais" onclick="MobileApp.setSubAbaGerencia('terminais')">
-              <span>💻</span> <span>Terminais</span>
+              <span><svg class="flow-glyph" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false" style="vertical-align:-.15em;flex-shrink:0;pointer-events:none"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg></span> <span>Terminais</span>
             </button>
             <button type="button" class="chip-btn" id="btn-sub-ger-abc" onclick="MobileApp.setSubAbaGerencia('abc')">
-              <span>📈</span> <span>Curva ABC</span>
+              <span><svg class="flow-glyph" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false" style="vertical-align:-.15em;flex-shrink:0;pointer-events:none"><path d="m3 17 6-6 4 4 8-10M15 5h6v6"/></svg></span> <span>Curva ABC</span>
             </button>
             <button type="button" class="chip-btn" id="btn-sub-ger-historico" onclick="MobileApp.setSubAbaGerencia('historico')">
-              <span>🕒</span> <span>Histórico Caixas</span>
+              <span><svg class="flow-glyph" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false" style="vertical-align:-.15em;flex-shrink:0;pointer-events:none"><circle cx="12" cy="12" r="9"/><path d="M12 6v6l4 2"/></svg></span> <span>Histórico Caixas</span>
             </button>
             <button type="button" class="chip-btn" id="btn-sub-ger-mesas" onclick="MobileApp.setSubAbaGerencia('mesas')">
-              <span>🍽️</span> <span>Mesas & Cmd</span>
+              <span><svg class="flow-glyph" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false" style="vertical-align:-.15em;flex-shrink:0;pointer-events:none"><path d="M4 3v6c0 3 6 3 6 0V3M7 3v18M20 21V3c-5 0-5 10 0 10"/></svg></span> <span>Mesas & Cmd</span>
             </button>
             <button type="button" class="chip-btn" id="btn-sub-ger-ajustes" onclick="MobileApp.setSubAbaGerencia('ajustes')">
-              <span>⚙️</span> <span>Ajustes & Módulos</span>
+              <span><svg class="flow-glyph" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false" style="vertical-align:-.15em;flex-shrink:0;pointer-events:none"><path d="M4 7h16M4 17h16"/><circle cx="9" cy="7" r="3"/><circle cx="15" cy="17" r="3"/></svg></span> <span>Ajustes & Módulos</span>
             </button>
             <button type="button" class="chip-btn" id="btn-sub-ger-dre" onclick="MobileApp.setSubAbaGerencia('dre')">
-              <span>📈</span> <span>DRE & Lucro</span>
+              <span><svg class="flow-glyph" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false" style="vertical-align:-.15em;flex-shrink:0;pointer-events:none"><path d="m3 17 6-6 4 4 8-10M15 5h6v6"/></svg></span> <span>DRE & Lucro</span>
             </button>
           </div>
         </div>
@@ -417,11 +418,11 @@
         <div id="subsecao-gerencia-equipe" style="display: flex; flex-direction: column; gap: 10px;">
           <div class="section-header-row">
             <div class="section-title-mobile" style="margin: 0;">
-              <span>👥 Colaboradores Cadastrados</span>
+              <span><svg class="flow-glyph" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false" style="vertical-align:-.15em;flex-shrink:0;pointer-events:none"><circle cx="9" cy="7" r="3"/><path d="M2 20v-2a7 7 0 0 1 14 0v2M16 4a3 3 0 0 1 0 6M18 14a6 6 0 0 1 4 6"/></svg> Colaboradores Cadastrados</span>
               <span class="badge-pill-count" id="badge-total-funcionarios">0</span>
             </div>
             <button type="button" class="btn-novo-colaborador" onclick="MobileApp.abrirModalNovoFuncionario()">
-              <span>➕ Novo Usuário</span>
+              <span><svg class="flow-glyph" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false" style="vertical-align:-.15em;flex-shrink:0;pointer-events:none"><path d="M12 4v16M4 12h16"/></svg> Novo Usuário</span>
             </button>
           </div>
           <div id="lista-gerencia-funcionarios" style="display: flex; flex-direction: column; gap: 8px;">
@@ -433,7 +434,7 @@
         <div id="subsecao-gerencia-auditoria" style="display: none; flex-direction: column; gap: 10px;">
           <div class="small-metric-card" style="background: rgba(124, 58, 237, 0.08); border-color: rgba(124, 58, 237, 0.3);">
             <div style="display: flex; align-items: center; gap: 10px;">
-              <span style="font-size: 24px;">🛡️</span>
+              <span style="font-size: 24px;"><svg class="flow-glyph" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false" style="vertical-align:-.15em;flex-shrink:0;pointer-events:none"><path d="m12 3 8 3v6c0 5-8 9-8 9S4 17 4 12V6l8-3Z"/><path d="m8 12 3 3 5-6"/></svg></span>
               <div>
                 <strong style="font-size: 13.5px; color: var(--accent-purple); display: block;">Auditoria da Loja</strong>
                 <span style="font-size: 11.5px; color: var(--text-muted);">Cortesias, sangrias, cancelamentos, produtos e fechamentos em tempo real.</span>
@@ -443,25 +444,25 @@
 
           <!-- Filtros Rápidos de Auditoria (Pills / Carrossel Horizontal) -->
           <div class="filter-carousel-wrapper" style="margin-top: 4px;">
-            <button type="button" class="btn-carousel-arrow left" onclick="MobileApp.scrollChipsAuditoria('esquerda')" title="Rolar para a esquerda">‹</button>
+            <button type="button" class="btn-carousel-arrow left" onclick="MobileApp.scrollChipsAuditoria('esquerda')" title="Rolar para a esquerda"><svg class="flow-glyph" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false" style="vertical-align:-.15em;flex-shrink:0;pointer-events:none"><path d="m15 5-7 7 7 7"/></svg></button>
             <div class="filter-chips-row" id="chips-auditoria-container">
               <button type="button" class="chip-btn active" id="chip-aud-todos" onclick="MobileApp.setFiltroAuditoria('todos', this)">Todos</button>
-              <button type="button" class="chip-btn" id="chip-aud-cortesia" onclick="MobileApp.setFiltroAuditoria('cortesia', this)">🎁 Cortesias</button>
-              <button type="button" class="chip-btn" id="chip-aud-abertura" onclick="MobileApp.setFiltroAuditoria('abertura_caixa', this)">🟢 Aberturas</button>
-              <button type="button" class="chip-btn" id="chip-aud-fechamento" onclick="MobileApp.setFiltroAuditoria('fechamento_caixa', this)">💰 Fechamentos</button>
-              <button type="button" class="chip-btn" id="chip-aud-sangria" onclick="MobileApp.setFiltroAuditoria('sangria_caixa', this)">💸 Sangrias</button>
-              <button type="button" class="chip-btn" id="chip-aud-suprimento" onclick="MobileApp.setFiltroAuditoria('suprimento_caixa', this)">💵 Suprimentos</button>
-              <button type="button" class="chip-btn" id="chip-aud-cancelamento" onclick="MobileApp.setFiltroAuditoria('cancelamento_venda', this)">🛑 Cancelamentos</button>
-              <button type="button" class="chip-btn" id="chip-aud-ajuste" onclick="MobileApp.setFiltroAuditoria('ajuste_estoque', this)">📦 Ajuste Estoque</button>
-              <button type="button" class="chip-btn" id="chip-aud-clientes" onclick="MobileApp.setFiltroAuditoria('clientes', this)">👥 Clientes & Fiado</button>
-              <button type="button" class="chip-btn" id="chip-aud-comandas" onclick="MobileApp.setFiltroAuditoria('comandas', this)">🍽️ Mesas</button>
-              <button type="button" class="chip-btn" id="chip-aud-produtos" onclick="MobileApp.setFiltroAuditoria('produtos', this)">✨ Produtos</button>
+              <button type="button" class="chip-btn" id="chip-aud-cortesia" onclick="MobileApp.setFiltroAuditoria('cortesia', this)"><svg class="flow-glyph" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false" style="vertical-align:-.15em;flex-shrink:0;pointer-events:none"><path d="m3 7 9-4 9 4v10l-9 4-9-4V7Zm0 0 9 4 9-4M12 11v10M7 5l9 4"/></svg> Cortesias</button>
+              <button type="button" class="chip-btn" id="chip-aud-abertura" onclick="MobileApp.setFiltroAuditoria('abertura_caixa', this)"><svg class="flow-glyph" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false" style="vertical-align:-.15em;flex-shrink:0;pointer-events:none"><path d="m5 12 4 4L20 5"/></svg> Aberturas</button>
+              <button type="button" class="chip-btn" id="chip-aud-fechamento" onclick="MobileApp.setFiltroAuditoria('fechamento_caixa', this)"><svg class="flow-glyph" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false" style="vertical-align:-.15em;flex-shrink:0;pointer-events:none"><rect x="2" y="5" width="20" height="14" rx="2"/><circle cx="12" cy="12" r="3"/><path d="M6 12h.1M18 12h.1"/></svg> Fechamentos</button>
+              <button type="button" class="chip-btn" id="chip-aud-sangria" onclick="MobileApp.setFiltroAuditoria('sangria_caixa', this)"><svg class="flow-glyph" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false" style="vertical-align:-.15em;flex-shrink:0;pointer-events:none"><rect x="2" y="5" width="20" height="14" rx="2"/><circle cx="12" cy="12" r="3"/><path d="M6 12h.1M18 12h.1"/></svg> Sangrias</button>
+              <button type="button" class="chip-btn" id="chip-aud-suprimento" onclick="MobileApp.setFiltroAuditoria('suprimento_caixa', this)"><svg class="flow-glyph" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false" style="vertical-align:-.15em;flex-shrink:0;pointer-events:none"><rect x="2" y="5" width="20" height="14" rx="2"/><circle cx="12" cy="12" r="3"/><path d="M6 12h.1M18 12h.1"/></svg> Suprimentos</button>
+              <button type="button" class="chip-btn" id="chip-aud-cancelamento" onclick="MobileApp.setFiltroAuditoria('cancelamento_venda', this)"><svg class="flow-glyph" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false" style="vertical-align:-.15em;flex-shrink:0;pointer-events:none"><path d="m3 7 9-4 9 4v10l-9 4-9-4V7Zm0 0 9 4 9-4M12 11v10M7 5l9 4"/></svg> Cancelamentos</button>
+              <button type="button" class="chip-btn" id="chip-aud-ajuste" onclick="MobileApp.setFiltroAuditoria('ajuste_estoque', this)"><svg class="flow-glyph" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false" style="vertical-align:-.15em;flex-shrink:0;pointer-events:none"><path d="m3 7 9-4 9 4v10l-9 4-9-4V7Zm0 0 9 4 9-4M12 11v10M7 5l9 4"/></svg> Ajuste Estoque</button>
+              <button type="button" class="chip-btn" id="chip-aud-clientes" onclick="MobileApp.setFiltroAuditoria('clientes', this)"><svg class="flow-glyph" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false" style="vertical-align:-.15em;flex-shrink:0;pointer-events:none"><circle cx="9" cy="7" r="3"/><path d="M2 20v-2a7 7 0 0 1 14 0v2M16 4a3 3 0 0 1 0 6M18 14a6 6 0 0 1 4 6"/></svg> Clientes & Fiado</button>
+              <button type="button" class="chip-btn" id="chip-aud-comandas" onclick="MobileApp.setFiltroAuditoria('comandas', this)"><svg class="flow-glyph" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false" style="vertical-align:-.15em;flex-shrink:0;pointer-events:none"><path d="M4 3v6c0 3 6 3 6 0V3M7 3v18M20 21V3c-5 0-5 10 0 10"/></svg> Mesas</button>
+              <button type="button" class="chip-btn" id="chip-aud-produtos" onclick="MobileApp.setFiltroAuditoria('produtos', this)"><svg class="flow-glyph" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false" style="vertical-align:-.15em;flex-shrink:0;pointer-events:none"><path d="m12 2 3 7 7 1-5 5 1 7-6-4-6 4 1-7-5-5 7-1 3-7Z"/></svg> Produtos</button>
             </div>
-            <button type="button" class="btn-carousel-arrow right" onclick="MobileApp.scrollChipsAuditoria('direita')" title="Rolar para a direita">›</button>
+            <button type="button" class="btn-carousel-arrow right" onclick="MobileApp.scrollChipsAuditoria('direita')" title="Rolar para a direita"><svg class="flow-glyph" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false" style="vertical-align:-.15em;flex-shrink:0;pointer-events:none"><path d="m9 5 7 7-7 7"/></svg></button>
           </div>
 
           <div class="section-title-mobile">
-            <span>📜 Registros Operacionais</span>
+            <span><svg class="flow-glyph" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false" style="vertical-align:-.15em;flex-shrink:0;pointer-events:none"><path d="M5 3h10l4 4v14H5V3ZM14 3v5h5M8 12h8M8 16h8"/></svg> Registros Operacionais</span>
             <span class="badge-pill-count" id="badge-total-auditorias">0</span>
           </div>
 
@@ -473,7 +474,7 @@
         <!-- SUB-SEÇÃO 2.5: CURVA ABC -->
         <div id="subsecao-gerencia-abc" style="display: none; flex-direction: column; gap: 12px;">
           <div class="section-title-mobile" style="margin-top: 2px;">
-            <span>📈 Curva ABC (Faturamento)</span>
+            <span><svg class="flow-glyph" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false" style="vertical-align:-.15em;flex-shrink:0;pointer-events:none"><path d="m3 17 6-6 4 4 8-10M15 5h6v6"/></svg> Curva ABC (Faturamento)</span>
             <span class="badge-pill-count" id="badge-curva-abc-itens">0</span>
           </div>
 
@@ -509,11 +510,11 @@
         <div id="subsecao-gerencia-categorias" style="display: none; flex-direction: column; gap: 12px;">
           <div style="display: flex; justify-content: space-between; align-items: center; gap: 8px;">
             <div class="section-title-mobile" style="margin: 0;">
-              <span>🏷️ Catálogo de Categorias</span>
+              <span><svg class="flow-glyph" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false" style="vertical-align:-.15em;flex-shrink:0;pointer-events:none"><path d="M3 3h8l10 10-8 8L3 11V3Z"/><circle cx="7.5" cy="7.5" r=".7"/></svg> Catálogo de Categorias</span>
               <span class="badge-pill-count" id="badge-total-categorias">0</span>
             </div>
             <button type="button" class="btn-novo-colaborador" onclick="MobileApp.abrirModalNovaCategoria()">
-              <span>➕ Nova</span>
+              <span><svg class="flow-glyph" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false" style="vertical-align:-.15em;flex-shrink:0;pointer-events:none"><path d="M12 4v16M4 12h16"/></svg> Nova</span>
             </button>
           </div>
           <div id="lista-gerencia-categorias" style="display: flex; flex-direction: column; gap: 8px;"></div>
@@ -522,7 +523,7 @@
         <!-- SUB-SEÇÃO TERMINAIS -->
         <div id="subsecao-gerencia-terminais" style="display: none; flex-direction: column; gap: 12px;">
           <div class="section-title-mobile" style="margin-top: 2px;">
-            <span>💻 Terminais Vinculados</span>
+            <span><svg class="flow-glyph" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false" style="vertical-align:-.15em;flex-shrink:0;pointer-events:none"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg> Terminais Vinculados</span>
             <span class="badge-pill-count" id="badge-total-terminais">0</span>
           </div>
           <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px;">
@@ -541,7 +542,7 @@
         <!-- SUB-SEÇÃO 2.6: HISTÓRICO DE CAIXAS -->
         <div id="subsecao-gerencia-historico-caixas" style="display: none; flex-direction: column; gap: 12px;">
           <div class="section-title-mobile" style="margin-top: 2px;">
-            <span>🕒 Histórico de Turnos Fechados</span>
+            <span><svg class="flow-glyph" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false" style="vertical-align:-.15em;flex-shrink:0;pointer-events:none"><circle cx="12" cy="12" r="9"/><path d="M12 6v6l4 2"/></svg> Histórico de Turnos Fechados</span>
             <span class="badge-pill-count" id="badge-total-historico-caixas">0</span>
           </div>
 
@@ -555,17 +556,17 @@
           <!-- Grid de Métricas de Salão -->
           <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px;">
             <div class="small-metric-card">
-              <span class="small-metric-label">🟢 Livres</span>
+              <span class="small-metric-label"><svg class="flow-glyph" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false" style="vertical-align:-.15em;flex-shrink:0;pointer-events:none"><path d="m5 12 4 4L20 5"/></svg> Livres</span>
               <span class="small-metric-value" id="gerencia-mesas-livres-count" style="color: var(--accent-green);">0</span>
             </div>
             <div class="small-metric-card">
-              <span class="small-metric-label">🔴 Em Consumo</span>
+              <span class="small-metric-label"><svg class="flow-glyph" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false" style="vertical-align:-.15em;flex-shrink:0;pointer-events:none"><path d="m12 3 10 18H2L12 3ZM12 9v5M12 17v.1"/></svg> Em Consumo</span>
               <span class="small-metric-value" id="gerencia-mesas-ocupadas-count" style="color: #b12d32;">0</span>
             </div>
           </div>
 
           <div class="section-title-mobile">
-            <span>🍽️ Salão & Consumos em Aberto</span>
+            <span><svg class="flow-glyph" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false" style="vertical-align:-.15em;flex-shrink:0;pointer-events:none"><path d="M4 3v6c0 3 6 3 6 0V3M7 3v18M20 21V3c-5 0-5 10 0 10"/></svg> Salão & Consumos em Aberto</span>
             <span class="badge-pill-count" id="badge-total-mesas-grid">0</span>
           </div>
 
@@ -579,7 +580,7 @@
           <!-- Card de Dados da Empresa -->
           <div class="mobile-list-card" style="padding: 14px;">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-              <strong style="font-size: 14px; color: var(--text-main);">🏢 Perfil da Loja</strong>
+              <strong style="font-size: 14px; color: var(--text-main);"><svg class="flow-glyph" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false" style="vertical-align:-.15em;flex-shrink:0;pointer-events:none"><path d="M4 10v11h16V10M3 10l2-7h14l2 7M3 10c0 3 4 3 4 0 0 3 5 3 5 0 0 3 5 3 5 0 0 3 4 3 4 0M9 21v-7h6v7"/></svg> Perfil da Loja</strong>
               <span class="badge-tag-sm cyan" id="badge-licenca-tipo">Licença Ativa</span>
             </div>
             <div id="gerencia-perfil-loja-info" style="font-size: 12.5px; color: var(--text-muted); display: flex; flex-direction: column; gap: 4px;">
@@ -589,7 +590,7 @@
 
           <!-- Módulos Opcionais Ativos -->
           <div class="section-title-mobile">
-            <span>⚙️ Módulos & Recursos Ativos</span>
+            <span><svg class="flow-glyph" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false" style="vertical-align:-.15em;flex-shrink:0;pointer-events:none"><path d="M4 7h16M4 17h16"/><circle cx="9" cy="7" r="3"/><circle cx="15" cy="17" r="3"/></svg> Módulos & Recursos Ativos</span>
           </div>
           <div id="lista-gerencia-modulos-toggles" style="display: flex; flex-direction: column; gap: 8px;">
             <!-- Renderizado dinamicamente via JS -->
@@ -600,16 +601,16 @@
         <div id="subsecao-gerencia-dre" style="display: none; flex-direction: column; gap: 12px;">
           <div class="hero-metric-card glass-primary">
             <div class="hero-label">
-              <span>📈 Lucro Líquido Estimado (Mês)</span>
+              <span><svg class="flow-glyph" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false" style="vertical-align:-.15em;flex-shrink:0;pointer-events:none"><path d="m3 17 6-6 4 4 8-10M15 5h6v6"/></svg> Lucro Líquido Estimado (Mês)</span>
             </div>
             <span class="hero-value valor-sensivel" id="metric-dre-lucro-liquido" style="color: var(--accent-green);">R$ 0,00</span>
             <div class="hero-stats-row">
-              <span>🎯 Margem Líquida: <strong id="metric-dre-margem-liq">0%</strong></span>
+              <span><svg class="flow-glyph" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false" style="vertical-align:-.15em;flex-shrink:0;pointer-events:none"><path d="m12 2 3 7 7 1-5 5 1 7-6-4-6 4 1-7-5-5 7-1 3-7Z"/></svg> Margem Líquida: <strong id="metric-dre-margem-liq">0%</strong></span>
             </div>
           </div>
 
           <div class="section-title-mobile">
-            <span>📊 Demonstrativo do Mês Atual</span>
+            <span><svg class="flow-glyph" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false" style="vertical-align:-.15em;flex-shrink:0;pointer-events:none"><path d="M3 3v18h18M7 16v-4M12 16V8M17 16V5"/></svg> Demonstrativo do Mês Atual</span>
           </div>
 
           <div id="lista-gerencia-dre-cards" style="display: flex; flex-direction: column; gap: 8px;">
@@ -650,14 +651,14 @@
       <div class="modal-bottom-content" role="dialog" aria-modal="true" aria-labelledby="sheet-title" onclick="event.stopPropagation()">
         <div class="modal-sheet-header">
           <div class="modal-sheet-header-main">
-            <div id="sheet-icon" class="modal-sheet-icon" aria-hidden="true">📋</div>
+            <div id="sheet-icon" class="modal-sheet-icon" aria-hidden="true"><svg class="flow-glyph" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false" style="vertical-align:-.15em;flex-shrink:0;pointer-events:none"><path d="M5 3h10l4 4v14H5V3ZM14 3v5h5M8 12h8M8 16h8"/></svg></div>
             <div class="modal-sheet-titles">
               <span id="sheet-eyebrow" class="modal-sheet-eyebrow" hidden></span>
               <h3 id="sheet-title" class="modal-sheet-title">Detalhes</h3>
               <span id="sheet-subtitle" class="modal-sheet-subtitle" hidden></span>
             </div>
           </div>
-          <button type="button" class="modal-sheet-close" onclick="MobileApp.fecharModalSheet()" aria-label="Fechar">✕</button>
+          <button type="button" class="modal-sheet-close" onclick="MobileApp.fecharModalSheet()" aria-label="Fechar"><svg class="flow-glyph" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false" style="vertical-align:-.15em;flex-shrink:0;pointer-events:none"><path d="m6 6 12 12M18 6 6 18"/></svg></button>
         </div>
         <div id="sheet-body" class="modal-sheet-body">
           <!-- Conteúdo dinâmico -->
@@ -670,10 +671,10 @@
       <div class="modal-sheet-card" style="max-width: 440px; width: 92%; border-radius: 16px; background: var(--bg-surface-1, #1e293b); border: 1px solid var(--border-card, #334155); padding: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.5);" onclick="event.stopPropagation()">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px;">
           <div style="display: flex; align-items: center; gap: 8px;">
-            <span style="font-size: 20px;">📅</span>
+            <span style="font-size: 20px;"><svg class="flow-glyph" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false" style="vertical-align:-.15em;flex-shrink:0;pointer-events:none"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M7 3v4M17 3v4M3 11h18M7 15h3M14 15h3M7 18h3"/></svg></span>
             <h3 style="font-size: 16px; font-weight: 800; color: var(--text-main); margin: 0;">Ajustar Data de Validade</h3>
           </div>
-          <button type="button" onclick="MobileApp.fecharModalValidade()" style="background: transparent; border: none; color: var(--text-muted); font-size: 18px; cursor: pointer; padding: 4px;">✕</button>
+          <button type="button" onclick="MobileApp.fecharModalValidade()" aria-label="Fechar" style="background: transparent; border: none; color: var(--text-muted); font-size: 18px; cursor: pointer; padding: 4px;"><svg class="flow-glyph" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false" style="vertical-align:-.15em;flex-shrink:0;pointer-events:none"><path d="m6 6 12 12M18 6 6 18"/></svg></button>
         </div>
 
         <div id="modal-mobile-validade-prod-info" style="background: var(--bg-surface-2, rgba(255,255,255,0.05)); border: 1px solid var(--border-card, rgba(255,255,255,0.1)); border-radius: 10px; padding: 12px; margin-bottom: 14px;">
@@ -696,7 +697,7 @@
 
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
           <button type="button" class="btn-secondary-mobile" style="height: 42px; font-size: 13px; font-weight: 700; border-radius: 8px;" onclick="MobileApp.fecharModalValidade()">Cancelar</button>
-          <button type="button" class="btn-primary-mobile" style="height: 42px; font-size: 13px; font-weight: 800; border-radius: 8px; background: linear-gradient(135deg, #059669, #047857); color: #fff;" onclick="MobileApp.salvarValidadeMobile()">💾 Salvar Data</button>
+          <button type="button" class="btn-primary-mobile" style="height: 42px; font-size: 13px; font-weight: 800; border-radius: 8px; background: linear-gradient(135deg, #059669, #047857); color: #fff;" onclick="MobileApp.salvarValidadeMobile()"><svg class="flow-glyph" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false" style="vertical-align:-.15em;flex-shrink:0;pointer-events:none"><path d="M4 3h13l4 4v14H3V3h1ZM7 3v6h9V3M7 21v-8h10v8"/></svg> Salvar Data</button>
         </div>
       </div>
     </div>
@@ -865,7 +866,7 @@
   <!-- Lógica Principal do Companion App -->
   <script src="report-rules.js?v=20260915b"></script>
   <script src="caixa-rules.js?v=20260915b"></script>
-  <script src="manager-rules.js?v=20260923-pwa"></script>
-  <script src="app.js?v=20260923-pwa"></script>
+  <script src="manager-rules.js?v=20260923-svg"></script>
+  <script src="app.js?v=20260923-svg"></script>
 </body>
 </html>

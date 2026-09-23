@@ -29,7 +29,7 @@ window.MobileApp = {
   unsubAuditoriaRealtime: null,
   unsubLicencaRealtime: null,
 
-  limparSessaoInvalida(mensagem = '🔒 Sessão inválida. Faça login novamente.') {
+  limparSessaoInvalida(mensagem = "Sessão inválida. Faça login novamente.") {
     if (this.timerInatividadeId) clearTimeout(this.timerInatividadeId);
     if (window.FlowNuvem && typeof window.FlowNuvem.sairDaLoja === 'function') {
       window.FlowNuvem.sairDaLoja();
@@ -143,7 +143,7 @@ window.MobileApp = {
       }
     } catch (e) {
       console.warn('[Sessão] Dados locais expirados:', e);
-      this.limparSessaoInvalida('🔒 Sessão salva expirada por segurança. Faça login novamente.');
+      this.limparSessaoInvalida("Sessão salva expirada por segurança. Faça login novamente.");
       return;
     }
 
@@ -158,21 +158,21 @@ window.MobileApp = {
       const snapLic = await getDoc(doc(db, 'licencas', chave));
 
       if (!snapLic.exists()) {
-        this.limparSessaoInvalida('🔒 Sessão inválida: licença não encontrada no sistema.');
+        this.limparSessaoInvalida("Sessão inválida: licença não encontrada no sistema.");
         return;
       }
 
       const licData = snapLic.data();
       const status = String(licData.status || '').trim().toLowerCase();
       if (status === 'bloqueado' || status === 'bloqueada') {
-        this.limparSessaoInvalida('🔒 Esta licença está bloqueada no Painel Central.');
+        this.limparSessaoInvalida("Esta licença está bloqueada no Painel Central.");
         return;
       }
 
       const pinCorreto = String(licData.pinGerente || licData.pinMestre || '').trim();
       const pinDigitado = String(pin).trim();
       if (!pinCorreto || pinDigitado !== pinCorreto) {
-        this.limparSessaoInvalida('🔒 Senha salva da sessão é inválida. Faça login novamente.');
+        this.limparSessaoInvalida("Senha salva da sessão é inválida. Faça login novamente.");
         return;
       }
 
@@ -203,7 +203,7 @@ window.MobileApp = {
       this.carregarDadosLoja();
     } catch (err) {
       console.warn('[Sessão] Revalidação falhou:', err);
-      this.limparSessaoInvalida('🔒 Sessão salva inválida ou indisponível. Faça login novamente.');
+      this.limparSessaoInvalida("Sessão salva inválida ou indisponível. Faça login novamente.");
     }
   },
 
@@ -224,16 +224,16 @@ window.MobileApp = {
     localStorage.setItem('flowpdv_mob_manter_conectado', 'true');
   },
 
-  async exigirOperacaoAutorizada(mensagem = '⚠️ Operação administrativa indisponível para esta sessão.') {
+  async exigirOperacaoAutorizada(mensagem = "Operação administrativa indisponível para esta sessão.") {
     if (!this.chaveLicenca) {
-      this.limparSessaoInvalida('🔒 Sessão inválida. Faça login novamente.');
+      this.limparSessaoInvalida("Sessão inválida. Faça login novamente.");
       return false;
     }
 
     const chaveLocal = this.chaveLicenca;
     const pinLocal = this.pinGerente;
     if (!chaveLocal || !pinLocal || String(chaveLocal).trim() !== String(this.chaveLicenca).trim()) {
-      this.limparSessaoInvalida('🔒 Sessão expirada ou não autorizada para esta licença.');
+      this.limparSessaoInvalida("Sessão expirada ou não autorizada para esta licença.");
       return false;
     }
 
@@ -247,20 +247,20 @@ window.MobileApp = {
       const { db, doc, getDoc } = window.FirebaseDB;
       const snapLic = await getDoc(doc(db, 'licencas', this.chaveLicenca));
       if (!snapLic.exists()) {
-        this.limparSessaoInvalida('🔒 Licença não encontrada no sistema.');
+        this.limparSessaoInvalida("Licença não encontrada no sistema.");
         return false;
       }
 
       const licData = snapLic.data();
       const status = String(licData.status || '').trim().toLowerCase();
       if (status === 'bloqueado' || status === 'bloqueada') {
-        this.limparSessaoInvalida('🔒 Esta licença está bloqueada no Painel Central.');
+        this.limparSessaoInvalida("Esta licença está bloqueada no Painel Central.");
         return false;
       }
 
       const pinCorreto = String(licData.pinGerente || licData.pinMestre || '').trim();
       if (!pinCorreto || String(pinLocal).trim() !== pinCorreto) {
-        this.limparSessaoInvalida('🔒 Senha da sessão inválida para esta licença.');
+        this.limparSessaoInvalida("Senha da sessão inválida para esta licença.");
         return false;
       }
 
@@ -293,36 +293,36 @@ window.MobileApp = {
 
   getIconeCategoria(cat) {
     const c = (cat || '').toLowerCase();
-    if (c.includes('cervej') || c.includes('chopp')) return '🍺';
-    if (c.includes('destil') || c.includes('whisky') || c.includes('vodka') || c.includes('gin') || c.includes('cachaça') || c.includes('rum') || c.includes('licor') || c.includes('tequila')) return '🥃';
-    if (c.includes('vinh') || c.includes('espumant') || c.includes('champagne')) return '🍷';
-    if (c.includes('não alc') || c.includes('nao alc') || c.includes('refrig') || c.includes('suco') || c.includes('água') || c.includes('agua') || c.includes('energet') || c.includes('energét')) return '🥤';
-    if (c.includes('bebid') || c.includes('drink')) return '🍷';
-    if (c.includes('gelo') && c.includes('carv')) return '🧊';
-    if (c.includes('gelo')) return '🧊';
-    if (c.includes('carv')) return '🔥';
-    if (c.includes('tabac') || c.includes('cigar') || c.includes('essênc') || c.includes('essenc') || c.includes('seda') || c.includes('pod') || c.includes('vape') || c.includes('narguil')) return '🚬';
-    if (c.includes('lanche') || c.includes('sandu') || c.includes('burger') || c.includes('hambur')) return '🍔';
-    if (c.includes('pizza')) return '🍕';
-    if (c.includes('porç') || c.includes('porc') || c.includes('petisc')) return '🍟';
-    if (c.includes('sobremes') || c.includes('sorvete') || c.includes('açaí') || c.includes('acai')) return '🍰';
-    if (c.includes('adicion') || c.includes('extra') || c.includes('complem')) return '🥓';
-    if (c.includes('snack') || c.includes('salgad') || c.includes('amendo') || c.includes('batata') || c.includes('pringle') || c.includes('dorito') || c.includes('ruffle')) return '🥜';
-    if (c.includes('bomboniere') || c.includes('chocolat') || c.includes('doce') || c.includes('bala') || c.includes('chicle')) return '🍬';
-    if (c.includes('combo') || c.includes('kit') || c.includes('promo')) return '🍱';
-    if (c.includes('aliment') || c.includes('arroz') || c.includes('feijão') || c.includes('massa') || c.includes('mercear')) return '🌾';
-    if (c.includes('carn') || c.includes('açougu') || c.includes('acougu') || c.includes('frango') || c.includes('peix') || c.includes('churr')) return '🥩';
-    if (c.includes('latic') || c.includes('queij') || c.includes('leite') || c.includes('frio') || c.includes('presunt')) return '🧀';
-    if (c.includes('horti') || c.includes('frut') || c.includes('legum') || c.includes('verdur')) return '🍎';
-    if (c.includes('padar') || c.includes('pão') || c.includes('pao') || c.includes('bolo')) return '🥖';
-    if (c.includes('higien') || c.includes('sabon') || c.includes('shamp') || c.includes('cosmet')) return '🧴';
-    if (c.includes('limpez') || c.includes('deterg') || c.includes('desinf')) return '🧹';
-    if (c.includes('matina') || c.includes('café') || c.includes('cafe') || c.includes('achocolat')) return '☕';
-    if (c.includes('acessór') || c.includes('acessor') || c.includes('copo') || c.includes('taça') || c.includes('taca') || c.includes('canec')) return '🏺';
-    if (c.includes('vestu') || c.includes('roupa')) return '👕';
-    if (c.includes('eletr')) return '🔌';
-    if (c.includes('geral')) return '📦';
-    return '🏷️';
+    if (c.includes('cervej') || c.includes('chopp')) return FlowIcons.from("🍺");
+    if (c.includes('destil') || c.includes('whisky') || c.includes('vodka') || c.includes('gin') || c.includes('cachaça') || c.includes('rum') || c.includes('licor') || c.includes('tequila')) return FlowIcons.from("🥃");
+    if (c.includes('vinh') || c.includes('espumant') || c.includes('champagne')) return FlowIcons.from("🍷");
+    if (c.includes('não alc') || c.includes('nao alc') || c.includes('refrig') || c.includes('suco') || c.includes('água') || c.includes('agua') || c.includes('energet') || c.includes('energét')) return FlowIcons.from("🥤");
+    if (c.includes('bebid') || c.includes('drink')) return FlowIcons.from("🍷");
+    if (c.includes('gelo') && c.includes('carv')) return FlowIcons.from("🧊");
+    if (c.includes('gelo')) return FlowIcons.from("🧊");
+    if (c.includes('carv')) return FlowIcons.from("🔥");
+    if (c.includes('tabac') || c.includes('cigar') || c.includes('essênc') || c.includes('essenc') || c.includes('seda') || c.includes('pod') || c.includes('vape') || c.includes('narguil')) return FlowIcons.from("🚬");
+    if (c.includes('lanche') || c.includes('sandu') || c.includes('burger') || c.includes('hambur')) return FlowIcons.from("🍔");
+    if (c.includes('pizza')) return FlowIcons.from("🍕");
+    if (c.includes('porç') || c.includes('porc') || c.includes('petisc')) return FlowIcons.from("🍟");
+    if (c.includes('sobremes') || c.includes('sorvete') || c.includes('açaí') || c.includes('acai')) return FlowIcons.from("🍰");
+    if (c.includes('adicion') || c.includes('extra') || c.includes('complem')) return FlowIcons.from("🥓");
+    if (c.includes('snack') || c.includes('salgad') || c.includes('amendo') || c.includes('batata') || c.includes('pringle') || c.includes('dorito') || c.includes('ruffle')) return FlowIcons.from("🥜");
+    if (c.includes('bomboniere') || c.includes('chocolat') || c.includes('doce') || c.includes('bala') || c.includes('chicle')) return FlowIcons.from("🍬");
+    if (c.includes('combo') || c.includes('kit') || c.includes('promo')) return FlowIcons.from("🍱");
+    if (c.includes('aliment') || c.includes('arroz') || c.includes('feijão') || c.includes('massa') || c.includes('mercear')) return FlowIcons.from("🌾");
+    if (c.includes('carn') || c.includes('açougu') || c.includes('acougu') || c.includes('frango') || c.includes('peix') || c.includes('churr')) return FlowIcons.from("🥩");
+    if (c.includes('latic') || c.includes('queij') || c.includes('leite') || c.includes('frio') || c.includes('presunt')) return FlowIcons.from("🧀");
+    if (c.includes('horti') || c.includes('frut') || c.includes('legum') || c.includes('verdur')) return FlowIcons.from("🍎");
+    if (c.includes('padar') || c.includes('pão') || c.includes('pao') || c.includes('bolo')) return FlowIcons.from("🥖");
+    if (c.includes('higien') || c.includes('sabon') || c.includes('shamp') || c.includes('cosmet')) return FlowIcons.from("🧴");
+    if (c.includes('limpez') || c.includes('deterg') || c.includes('desinf')) return FlowIcons.from("🧹");
+    if (c.includes('matina') || c.includes('café') || c.includes('cafe') || c.includes('achocolat')) return FlowIcons.from("☕");
+    if (c.includes('acessór') || c.includes('acessor') || c.includes('copo') || c.includes('taça') || c.includes('taca') || c.includes('canec')) return FlowIcons.from("🏺");
+    if (c.includes('vestu') || c.includes('roupa')) return FlowIcons.from("👕");
+    if (c.includes('eletr')) return FlowIcons.from("🔌");
+    if (c.includes('geral')) return FlowIcons.from("📦");
+    return FlowIcons.from("🏷️");
   },
 
   registrarServiceWorker() {
@@ -431,7 +431,7 @@ window.MobileApp = {
       this.carregarDadosLoja();
     } catch (err) {
       console.error('[Login] Erro:', err);
-      toastErro.innerHTML = `⚠️ ${err.message || 'Erro ao autenticar.'}`;
+      toastErro.innerHTML = ` ${err.message || 'Erro ao autenticar.'}`;
       toastErro.style.display = 'block';
     } finally {
       btnSubmit.disabled = false;
@@ -519,7 +519,7 @@ window.MobileApp = {
 
     const toastErro = document.getElementById('login-error-toast');
     if (toastErro) {
-      toastErro.innerHTML = '🔒 <strong>Sessão Expirada:</strong> Desconectado automaticamente após 15 minutos sem atividade por segurança.';
+      toastErro.innerHTML = "<strong>Sessão Expirada:</strong> Desconectado automaticamente após 15 minutos sem atividade por segurança.";
       toastErro.style.display = 'block';
     }
   },
@@ -889,14 +889,14 @@ window.MobileApp = {
       });
 
       if (turnosAbertos.length > 1) {
-        labelCaixa = `🟢 ${turnosAbertos.length} caixas abertos agora`;
+        labelCaixa = ` ${turnosAbertos.length} caixas abertos agora`;
       } else {
-        labelCaixa = `🟢 Caixa: ${turnosAbertos[0].operador || 'Aberto'}`;
+        labelCaixa = ` Caixa: ${turnosAbertos[0].operador || 'Aberto'}`;
       }
     } else {
       // Nenhum caixa aberto no momento
       gavetaCaixa = 0;
-      labelCaixa = '🔒 Todos os caixas fechados';
+      labelCaixa = "Todos os caixas fechados";
     }
 
     // Atualizar Métricas na Tela
@@ -989,7 +989,7 @@ window.MobileApp = {
             <div class="ranking-item-row">
               <div style="display: flex; justify-content: space-between; align-items: center; font-size: 12px; font-weight: 700;">
                 <span style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 180px; color: var(--text-main);">
-                  ${idx === 0 ? '🥇' : (idx === 1 ? '🥈' : (idx === 2 ? '🥉' : `${idx + 1}º`))} ${p.nome}
+                  ${idx + 1}. ${p.nome}
                 </span>
                 <span style="font-family: 'JetBrains Mono'; font-size: 11.5px; color: var(--text-muted); flex-shrink: 0;">
                   <strong>${p.qtd} un</strong> • <span class="valor-sensivel">${this.formatarMoeda(p.total)}</span>
@@ -1046,7 +1046,7 @@ window.MobileApp = {
     if (vendasHoje.length === 0) {
       containerVendas.innerHTML = `
         <div class="empty-state-mobile">
-          <span class="empty-state-icon">🛒</span>
+          <span class="empty-state-icon">${FlowIcons.from("🛒")}</span>
           <span style="font-size: 13px;">Nenhuma venda realizada hoje até o momento.</span>
         </div>
       `;
@@ -1071,9 +1071,9 @@ window.MobileApp = {
               <span class="card-item-price valor-sensivel">${this.formatarMoeda(v.total)}</span>
             </div>
             <div class="card-bottom-row">
-              <span class="card-info-meta">👤 ${v.operador || 'Caixa'} • 📦 ${qtdItens} ${qtdItens === 1 ? 'item' : 'itens'}</span>
+              <span class="card-info-meta">${FlowIcons.from("👤")} ${v.operador || 'Caixa'} • ${FlowIcons.from("📦")} ${qtdItens} ${qtdItens === 1 ? 'item' : 'itens'}</span>
               <div class="card-tag-wrapper">
-                <span class="card-time-text">🕒 ${hora}</span>
+                <span class="card-time-text">${FlowIcons.from("🕒")} ${hora}</span>
                 <span class="badge-tag-sm ${badgeClasse}">${forma}</span>
               </div>
             </div>
@@ -1104,19 +1104,19 @@ window.MobileApp = {
     const formas = { 'PIX': 0, 'Dinheiro': 0, 'Cartão Crédito': 0, 'Cartão Débito': 0, 'Fiado': 0 };
     Object.assign(formas, FlowReportRules.pagamentos(vendasHoje));
 
-    let texto = `📊 *FLOWPDV — FECHAMENTO DIÁRIO (${dataBr})*\n`;
-    texto += `🏪 *Loja:* ${nomeLoja}\n\n`;
-    texto += `💰 *Faturamento Total:* ${this.formatarMoeda(totalHoje)}\n`;
-    texto += `🧾 *Qtd. Vendas:* ${qtdVendas} pedidos\n`;
-    texto += `🎯 *Ticket Médio:* ${this.formatarMoeda(ticketMedio)}\n\n`;
-    texto += `💳 *Recebimentos por Forma:*\n`;
-    if (formas['PIX'] > 0) texto += `⚡ PIX: ${this.formatarMoeda(formas['PIX'])}\n`;
-    if (formas['Dinheiro'] > 0) texto += `💵 Dinheiro: ${this.formatarMoeda(formas['Dinheiro'])}\n`;
-    if (formas['Cartão Débito'] > 0) texto += `💳 Débito: ${this.formatarMoeda(formas['Cartão Débito'])}\n`;
-    if (formas['Cartão Crédito'] > 0) texto += `💳 Crédito: ${this.formatarMoeda(formas['Cartão Crédito'])}\n`;
-    if (formas['Fiado'] > 0) texto += `📖 Fiado: ${this.formatarMoeda(formas['Fiado'])}\n`;
+    let texto = ` *FLOWPDV — FECHAMENTO DIÁRIO (${dataBr})*\n`;
+    texto += ` *Loja:* ${nomeLoja}\n\n`;
+    texto += ` *Faturamento Total:* ${this.formatarMoeda(totalHoje)}\n`;
+    texto += ` *Qtd. Vendas:* ${qtdVendas} pedidos\n`;
+    texto += ` *Ticket Médio:* ${this.formatarMoeda(ticketMedio)}\n\n`;
+    texto += ` *Recebimentos por Forma:*\n`;
+    if (formas['PIX'] > 0) texto += ` PIX: ${this.formatarMoeda(formas['PIX'])}\n`;
+    if (formas['Dinheiro'] > 0) texto += ` Dinheiro: ${this.formatarMoeda(formas['Dinheiro'])}\n`;
+    if (formas['Cartão Débito'] > 0) texto += ` Débito: ${this.formatarMoeda(formas['Cartão Débito'])}\n`;
+    if (formas['Cartão Crédito'] > 0) texto += ` Crédito: ${this.formatarMoeda(formas['Cartão Crédito'])}\n`;
+    if (formas['Fiado'] > 0) texto += ` Fiado: ${this.formatarMoeda(formas['Fiado'])}\n`;
 
-    texto += `\n_Gerado automaticamente via FlowPDV Gestor Mobile_ 🚀`;
+    texto += `\n_Gerado automaticamente via FlowPDV Gestor Mobile_ `;
 
     const url = `https://api.whatsapp.com/send?text=${encodeURIComponent(texto)}`;
     window.open(url, '_blank');
@@ -1214,7 +1214,7 @@ window.MobileApp = {
     if (filtrados.length === 0) {
       container.innerHTML = `
         <div class="empty-state-mobile">
-          <span class="empty-state-icon">📦</span>
+          <span class="empty-state-icon">${FlowIcons.from("📦")}</span>
           <span style="font-size: 13px;">Nenhum produto encontrado neste filtro.</span>
         </div>
       `;
@@ -1228,13 +1228,13 @@ window.MobileApp = {
 
       let badgeEstoque = '';
       if (!this.produtoComControleEstoque(p)) {
-        badgeEstoque = `<span class="badge-tag-sm blue">♾️ Serviço</span>`;
+        badgeEstoque = `<span class="badge-tag-sm blue">${FlowIcons.from("♾️")} Serviço</span>`;
       } else if (estoque <= 0) {
-        badgeEstoque = `<span class="badge-tag-sm zero">🚨 Esgotado</span>`;
+        badgeEstoque = `<span class="badge-tag-sm zero">${FlowIcons.from("🚨")} Esgotado</span>`;
       } else if (estoque <= min) {
-        badgeEstoque = `<span class="badge-tag-sm low">⚠️ Baixo (${estoque} un)</span>`;
+        badgeEstoque = `<span class="badge-tag-sm low">${FlowIcons.from("⚠️")} Baixo (${estoque} un)</span>`;
       } else {
-        badgeEstoque = `<span class="badge-tag-sm ok">✅ ${estoque} un</span>`;
+        badgeEstoque = `<span class="badge-tag-sm ok">${FlowIcons.from("✅")} ${estoque} un</span>`;
       }
 
       // Validação visual de Validade com paridade ao Desktop
@@ -1243,11 +1243,11 @@ window.MobileApp = {
         const dataVal = new Date(p.dataValidade + 'T00:00:00');
         const diffDias = Math.ceil((dataVal - hoje) / (1000 * 60 * 60 * 24));
         if (diffDias < 0) {
-          validadeHtml = `<span class="badge-tag-sm zero" style="font-size: 10.5px; padding: 2px 7px;">🚨 Vencido (${dataVal.toLocaleDateString('pt-BR')})</span>`;
+          validadeHtml = `<span class="badge-tag-sm zero" style="font-size: 10.5px; padding: 2px 7px;">${FlowIcons.from("🚨")} Vencido (${dataVal.toLocaleDateString('pt-BR')})</span>`;
         } else if (diffDias <= 30) {
-          validadeHtml = `<span class="badge-tag-sm low" style="font-size: 10.5px; padding: 2px 7px;">⏳ Vence em ${diffDias}d (${dataVal.toLocaleDateString('pt-BR')})</span>`;
+          validadeHtml = `<span class="badge-tag-sm low" style="font-size: 10.5px; padding: 2px 7px;">${FlowIcons.from("⏳")} Vence em ${diffDias}d (${dataVal.toLocaleDateString('pt-BR')})</span>`;
         } else {
-          validadeHtml = `<span style="font-size: 11px; color: var(--text-dim); display: inline-flex; align-items: center; gap: 4px;">📅 Val: <strong>${dataVal.toLocaleDateString('pt-BR')}</strong></span>`;
+          validadeHtml = `<span style="font-size: 11px; color: var(--text-dim); display: inline-flex; align-items: center; gap: 4px;">${FlowIcons.from("📅")} Val: <strong>${dataVal.toLocaleDateString('pt-BR')}</strong></span>`;
         }
       }
 
@@ -1256,7 +1256,7 @@ window.MobileApp = {
         const sugerido = Math.max(1, (min * 2) - estoque);
         sugestaoCompraHtml = `
           <div class="sugestao-compra-badge-row" style="margin-top: 6px;">
-            <span>🛒 Sugestão de Reposição:</span>
+            <span>${FlowIcons.from("🛒")} Sugestão de Reposição:</span>
             <strong style="font-family: 'JetBrains Mono';">+${sugerido} un</strong>
           </div>
         `;
@@ -1341,7 +1341,7 @@ window.MobileApp = {
 
   async salvarValidadeMobile() {
     if (!this.produtoValidadeMobileId) return;
-    const autorizado = await this.exigirOperacaoAutorizada('⚠️ Não foi possível alterar a validade: sessão inválida.');
+    const autorizado = await this.exigirOperacaoAutorizada("Não foi possível alterar a validade: sessão inválida.");
     if (!autorizado) return;
     const inputVal = document.getElementById('input-mobile-data-validade');
     const novaData = inputVal?.value || '';
@@ -1423,7 +1423,7 @@ window.MobileApp = {
     });
 
     document.getElementById('metric-total-contas-pendentes').textContent = this.formatarMoeda(totalPendente);
-    document.getElementById('metric-contas-vencidas-alerta').textContent = `🚨 ${contasVencidasGeral.length} ${contasVencidasGeral.length === 1 ? 'conta vencida' : 'contas vencidas'}`;
+    document.getElementById('metric-contas-vencidas-alerta').textContent = ` ${contasVencidasGeral.length} ${contasVencidasGeral.length === 1 ? 'conta vencida' : 'contas vencidas'}`;
 
     // Filtragem conforme chip selecionado
     let contasExibidas = contas.filter(c => {
@@ -1445,7 +1445,7 @@ window.MobileApp = {
     if (contasExibidas.length === 0) {
       containerContas.innerHTML = `
         <div class="empty-state-mobile">
-          <span class="empty-state-icon">✅</span>
+          <span class="empty-state-icon">${FlowIcons.from("✅")}</span>
           <span style="font-size: 13px;">Nenhuma conta encontrada neste filtro.</span>
         </div>
       `;
@@ -1457,10 +1457,10 @@ window.MobileApp = {
         const isHoje = !isPago && dataVenc === hoje;
 
         let badgeVenc = '';
-        if (isPago) badgeVenc = `<span class="badge-tag-sm ok">✅ Paga</span>`;
-        else if (isVencida) badgeVenc = `<span class="badge-tag-sm zero">🚨 Vencida</span>`;
-        else if (isHoje) badgeVenc = `<span class="badge-tag-sm low">⏳ Vence Hoje</span>`;
-        else badgeVenc = `<span class="badge-tag-sm ok">📅 A Vencer</span>`;
+        if (isPago) badgeVenc = `<span class="badge-tag-sm ok">${FlowIcons.from("✅")} Paga</span>`;
+        else if (isVencida) badgeVenc = `<span class="badge-tag-sm zero">${FlowIcons.from("🚨")} Vencida</span>`;
+        else if (isHoje) badgeVenc = `<span class="badge-tag-sm low">${FlowIcons.from("⏳")} Vence Hoje</span>`;
+        else badgeVenc = `<span class="badge-tag-sm ok">${FlowIcons.from("📅")} A Vencer</span>`;
 
         let vencFormatado = '--';
         if (dataVenc) {
@@ -1481,7 +1481,7 @@ window.MobileApp = {
               <span class="card-item-price valor-sensivel" style="color: ${isPago ? 'var(--accent-green)' : '#b12d32'}; white-space: nowrap; flex-shrink: 0; margin-left: 10px; font-size: 15px;">${this.formatarMoeda(c.valor)}</span>
             </div>
             <div style="display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-top: 8px; font-size: 12px; color: var(--text-muted);">
-              <span style="display: flex; align-items: center; gap: 4px;">📅 Venc: <strong style="color: var(--text-main); font-family: 'JetBrains Mono';">${vencFormatado}</strong></span>
+              <span style="display: flex; align-items: center; gap: 4px;">${FlowIcons.from("📅")} Venc: <strong style="color: var(--text-main); font-family: 'JetBrains Mono';">${vencFormatado}</strong></span>
               <span class="badge-tag-sm cyan" style="font-size: 11px; font-weight: 700; white-space: nowrap; flex-shrink: 0;">${this.getIconeCategoria(categoriaNome)} ${categoriaNome}</span>
             </div>
             <div class="card-bottom-row" style="margin-top: 8px; padding-top: 8px; border-top: 1px dashed var(--border-card);">
@@ -1564,7 +1564,7 @@ window.MobileApp = {
     if (filtrados.length === 0) {
       container.innerHTML = `
         <div class="empty-state-mobile">
-          <span class="empty-state-icon">👥</span>
+          <span class="empty-state-icon">${FlowIcons.from("👥")}</span>
           <span style="font-size: 13px;">Nenhum cliente encontrado neste filtro.</span>
         </div>
       `;
@@ -1594,14 +1594,14 @@ window.MobileApp = {
           const msg = encodeURIComponent(`Olá ${cli.nome}, tudo bem? Passando para lembrar que consta um saldo em aberto de ${this.formatarMoeda(saldo)} referente à sua conta aqui no ${nomeLoja}. Qualquer dúvida ou para PIX, estamos à disposição!`);
           btnZap = `
             <a href="https://wa.me/55${telLimpo}?text=${msg}" target="_blank" onclick="event.stopPropagation()" class="btn-whatsapp-mobile" style="padding: 4px 8px; font-size: 11px; background: #059669;" title="Enviar cobrança amigável no WhatsApp">
-              <span>💬 Cobrar</span>
+              <span>${FlowIcons.from("💬")} Cobrar</span>
             </a>
           `;
         } else {
           const msg = encodeURIComponent(`Olá ${cli.nome}, tudo bem? Aqui é do atendimento do ${nomeLoja}.`);
           btnZap = `
             <a href="https://wa.me/55${telLimpo}?text=${msg}" target="_blank" onclick="event.stopPropagation()" class="btn-whatsapp-mobile" style="padding: 4px 8px; font-size: 11px; background: #22c55e;" title="Conversar no WhatsApp">
-              <span>🟢 Zap</span>
+              <span>${FlowIcons.from("🟢")} Zap</span>
             </a>
           `;
         }
@@ -1611,7 +1611,7 @@ window.MobileApp = {
       if (endCompleto) {
         btnCopiarEnd = `
           <button type="button" class="chip-btn" style="height: 28px; padding: 0 8px; font-size: 10.5px; border-color: #285e66; color: #285e66;" onclick="event.stopPropagation(); MobileApp.copiarEnderecoMobile('${encodeURIComponent(endCompleto)}')" title="Copiar endereço para mandar ao entregador">
-            📋 Copiar End.
+            ${FlowIcons.from("📋")} Copiar End.
           </button>
         `;
       }
@@ -1620,13 +1620,13 @@ window.MobileApp = {
       if (hasDebt) {
         btnReceber = `
           <button type="button" class="btn-primary-mobile" style="height: 28px; padding: 0 10px; font-size: 11px; font-weight: 800; background: linear-gradient(135deg, #10b981, #059669); border-radius: 6px; box-shadow: none;" onclick="event.stopPropagation(); MobileApp.abrirModalReceberFiadoMobile('${cli.id}')">
-            💵 Receber
+            ${FlowIcons.from("💵")} Receber
           </button>
         `;
       }
 
       return `
-        <div class="mobile-list-card" onclick="MobileApp.verDetalhesClienteFiado('${cli.id}')">
+        <div class="mobile-list-card client-card" onclick="MobileApp.verDetalhesClienteFiado('${cli.id}')">
           <div class="card-top-row">
             <div style="flex: 1; min-width: 0;">
               <strong class="card-item-title" style="font-size: 14px; color: var(--text-main);">${cli.nome}</strong>
@@ -1644,21 +1644,16 @@ window.MobileApp = {
 
           <!-- Linha de Contato & Endereço -->
           <div style="margin-top: 6px; font-size: 12px; color: var(--text-muted); display: flex; flex-direction: column; gap: 2px;">
-            ${cli.telefone ? `<span>📞 <strong style="color: var(--text-main); font-family: 'JetBrains Mono';">${cli.telefone}</strong></span>` : ''}
-            ${endResumo ? `<span>🛵 <strong style="color: #285e66;">${endResumo}</strong></span>` : ''}
+            ${cli.telefone ? `<span>${FlowIcons.from("📞")} <strong style="color: var(--text-main); font-family: 'JetBrains Mono';">${cli.telefone}</strong></span>` : ''}
+            ${endResumo ? `<span>${FlowIcons.from("🛵")} <strong style="color: #285e66;">${endResumo}</strong></span>` : ''}
           </div>
 
-          <!-- Linha de Ações Rápidas -->
-          <div class="card-bottom-row" style="margin-top: 8px; padding-top: 8px; border-top: 1px dashed var(--border-card); flex-wrap: wrap; gap: 6px;">
-            <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
-              ${btnReceber}
-              ${btnZap}
-              ${btnCopiarEnd}
-            </div>
-            <div style="display: flex; align-items: center; gap: 6px;">
-              <button type="button" class="btn-action-sm" style="font-size: 11px; padding: 2px 6px;" onclick="event.stopPropagation(); MobileApp.abrirModalEditarClienteMobile('${cli.id}')" title="Editar dados">✏️</button>
-              <span style="color: var(--accent-cyan); font-size: 11px; font-weight: 700;">Ver ➔</span>
-            </div>
+          <div class="card-bottom-row client-card-actions">
+            ${btnReceber}
+            ${btnZap}
+            ${btnCopiarEnd}
+            <button type="button" class="btn-secondary-mobile client-edit" onclick="event.stopPropagation(); MobileApp.abrirModalEditarClienteMobile('${cli.id}')">${FlowIcons.svg('edit')} Editar</button>
+            <button type="button" class="btn-secondary-mobile client-details" onclick="event.stopPropagation(); MobileApp.verDetalhesClienteFiado('${cli.id}')">${FlowIcons.svg('eye')} Detalhes</button>
           </div>
         </div>
       `;
@@ -1669,7 +1664,7 @@ window.MobileApp = {
     const end = decodeURIComponent(endCodificado || '');
     if (!end) return;
     navigator.clipboard.writeText(end).then(() => {
-      alert('📋 Endereço completo copiado para a área de transferência!');
+      alert("Endereço completo copiado para a área de transferência!");
     }).catch(() => {
       prompt('Copie o endereço abaixo:', end);
     });
@@ -1760,7 +1755,7 @@ window.MobileApp = {
     if (!categorias.length) {
       container.innerHTML = `
         <div class="empty-state-mobile">
-          <span class="empty-state-icon">🏷️</span>
+          <span class="empty-state-icon">${FlowIcons.from("🏷️")}</span>
           <span style="font-size: 13px;">Nenhuma categoria cadastrada.</span>
         </div>`;
       return;
@@ -1774,7 +1769,7 @@ window.MobileApp = {
       return `
         <div class="categoria-card">
           <div class="categoria-card-main">
-            <div class="categoria-card-icon" aria-hidden="true">${icone}</div>
+            <div class="categoria-card-icon" aria-hidden="true">${FlowIcons.from(icone)}</div>
             <div class="categoria-card-info">
               <strong class="categoria-card-nome">${cat}</strong>
               <span class="categoria-card-meta">${qtd} ${qtd === 1 ? 'produto' : 'produtos'}</span>
@@ -1782,11 +1777,11 @@ window.MobileApp = {
           </div>
           <div class="categoria-card-actions">
             <button type="button" class="categoria-action-btn" onclick="MobileApp.abrirModalRenomearCategoria('${enc}')" title="Renomear">
-              ✏️<span>Renomear</span>
+              ${FlowIcons.from("✏️")}<span>Renomear</span>
             </button>
             ${isGeral ? '' : `
             <button type="button" class="categoria-action-btn danger" onclick="MobileApp.excluirCategoriaMobile('${enc}')" title="Remover">
-              🗑️<span>Remover</span>
+              ${FlowIcons.from("🗑️")}<span>Remover</span>
             </button>`}
           </div>
         </div>`;
@@ -1798,9 +1793,9 @@ window.MobileApp = {
       <form onsubmit="MobileApp.salvarCategoriaMobile(event)" style="display:flex; flex-direction:column; gap:12px;">
         <label style="font-size:12px; font-weight:800; color:var(--text-muted);">Nome da categoria</label>
         <input id="input-nova-categoria" class="input-mobile" placeholder="Ex: Bebidas Geladas" required maxlength="40" style="height:46px;">
-        <button type="submit" class="btn-login-submit" style="height:46px;"><span>💾 Salvar Categoria</span></button>
+        <button type="submit" class="btn-login-submit" style="height:46px;"><span>${FlowIcons.from("💾")} Salvar Categoria</span></button>
       </form>`;
-    this.abrirModalSheet('🏷️ Nova Categoria', html);
+    this.abrirModalSheet("Nova Categoria", html);
     setTimeout(() => document.getElementById('input-nova-categoria')?.focus(), 80);
   },
 
@@ -1810,9 +1805,9 @@ window.MobileApp = {
       <form onsubmit="MobileApp.salvarCategoriaMobile(event, '${catEnc}')" style="display:flex; flex-direction:column; gap:12px;">
         <label style="font-size:12px; font-weight:800; color:var(--text-muted);">Novo nome</label>
         <input id="input-nova-categoria" class="input-mobile" value="${nome.replace(/"/g, '&quot;')}" required maxlength="40" style="height:46px;">
-        <button type="submit" class="btn-login-submit" style="height:46px;"><span>💾 Renomear</span></button>
+        <button type="submit" class="btn-login-submit" style="height:46px;"><span>${FlowIcons.from("💾")} Renomear</span></button>
       </form>`;
-    this.abrirModalSheet('✏️ Renomear Categoria', html);
+    this.abrirModalSheet("Renomear Categoria", html);
     setTimeout(() => {
       const el = document.getElementById('input-nova-categoria');
       if (el) { el.focus(); el.select(); }
@@ -1821,7 +1816,7 @@ window.MobileApp = {
 
   async salvarCategoriaMobile(e, nomeAntigoEnc = null) {
     e.preventDefault();
-    const autorizado = await this.exigirOperacaoAutorizada('⚠️ Sessão inválida para alterar categorias.');
+    const autorizado = await this.exigirOperacaoAutorizada("Sessão inválida para alterar categorias.");
     if (!autorizado) return;
 
     const input = document.getElementById('input-nova-categoria');
@@ -1853,7 +1848,7 @@ window.MobileApp = {
     await this.persistirCategoriasNuvem(categorias, (this.dadosBackup && this.dadosBackup.categoriasExcluidas) || []);
     this.fecharModalSheet();
     this.renderGerenciaCategorias();
-    alert('✅ Categorias atualizadas e sincronizadas com o PDV!');
+    alert("Categorias atualizadas e sincronizadas com o PDV!");
   },
 
   async excluirCategoriaMobile(catEnc) {
@@ -1864,7 +1859,7 @@ window.MobileApp = {
     }
     if (!confirm(`Remover a categoria "${nome}"?\nProdutos desta categoria passarão para "Geral".`)) return;
 
-    const autorizado = await this.exigirOperacaoAutorizada('⚠️ Sessão inválida para alterar categorias.');
+    const autorizado = await this.exigirOperacaoAutorizada("Sessão inválida para alterar categorias.");
     if (!autorizado) return;
 
     let categorias = this.obterCategoriasLoja().filter(c => c.toLowerCase() !== nome.toLowerCase());
@@ -1885,7 +1880,7 @@ window.MobileApp = {
 
     await this.persistirCategoriasNuvem(categorias, excluidasUnicas);
     this.renderGerenciaCategorias();
-    alert('✅ Categoria removida e sincronizada!');
+    alert("Categoria removida e sincronizada!");
   },
 
   async persistirCategoriasNuvem(categorias, categoriasExcluidas = []) {
@@ -2219,7 +2214,7 @@ window.MobileApp = {
     if (!terminais.length) {
       container.innerHTML = `
         <div class="empty-state-mobile">
-          <span class="empty-state-icon">💻</span>
+          <span class="empty-state-icon">${FlowIcons.from("💻")}</span>
           <span style="font-size: 13px;">Nenhum terminal vinculado a esta licença ainda.</span>
         </div>`;
       return;
@@ -2252,10 +2247,10 @@ window.MobileApp = {
         <div class="flow-item-card terminal-card">
           <div class="terminal-card-top">
             <div class="flow-item-main">
-              <div class="flow-item-icon">💻</div>
+              <div class="flow-item-icon">${FlowIcons.from("💻")}</div>
               <div class="flow-item-info">
                 <strong class="flow-item-title terminal-card-title" title="${host}">${host}</strong>
-                <span class="flow-item-meta">👤 ${operador}</span>
+                <span class="flow-item-meta">${FlowIcons.from("👤")} ${operador}</span>
               </div>
             </div>
             <div class="flow-item-side flow-item-side--row">
@@ -2263,7 +2258,7 @@ window.MobileApp = {
             </div>
           </div>
           <div class="terminal-card-footer">
-            <span class="flow-item-meta">🕒 ${ultimo}</span>
+            <span class="flow-item-meta">${FlowIcons.from("🕒")} ${ultimo}</span>
             <span class="flow-item-hint">${statusHint}</span>
           </div>
         </div>`;
@@ -2356,7 +2351,7 @@ window.MobileApp = {
     if (turnos.length === 0) {
       container.innerHTML = `
         <div class="empty-state-mobile">
-          <span class="empty-state-icon">🕒</span>
+          <span class="empty-state-icon">${FlowIcons.from("🕒")}</span>
           <span style="font-size: 13px;">Nenhum turno fechado ainda.</span>
         </div>
       `;
@@ -2387,20 +2382,20 @@ window.MobileApp = {
         ? parseFloat(t.diferenca)
         : (esp !== null && inf !== null ? (inf - esp) : 0);
 
-      let badgeDif = `<span class="badge-tag-sm ok">✅</span>`;
-      if (Math.abs(diferenca) <= 0.01) badgeDif = `<span class="badge-tag-sm ok">✅ Bateu</span>`;
-      else if (diferenca > 0) badgeDif = `<span class="badge-tag-sm low">🟢 Sobra +${this.formatarMoeda(diferenca).replace('R$ ', '')}</span>`;
-      else badgeDif = `<span class="badge-tag-sm zero">🔴 Quebra -${this.formatarMoeda(Math.abs(diferenca)).replace('R$ ', '')}</span>`;
+      let badgeDif = `<span class="badge-tag-sm ok">${FlowIcons.from("✅")}</span>`;
+      if (Math.abs(diferenca) <= 0.01) badgeDif = `<span class="badge-tag-sm ok">${FlowIcons.from("✅")} Bateu</span>`;
+      else if (diferenca > 0) badgeDif = `<span class="badge-tag-sm low">${FlowIcons.from("🟢")} Sobra +${this.formatarMoeda(diferenca).replace('R$ ', '')}</span>`;
+      else badgeDif = `<span class="badge-tag-sm zero">${FlowIcons.from("🔴")} Quebra -${this.formatarMoeda(Math.abs(diferenca)).replace('R$ ', '')}</span>`;
 
       return `
         <div class="flow-item-card clickable" onclick="MobileApp.verDetalhesTurnoMobile('${String(t.id).replace(/'/g, "\\'")}')">
           <div class="flow-item-main">
-            <div class="flow-item-icon">🕒</div>
+            <div class="flow-item-icon">${FlowIcons.from("🕒")}</div>
             <div class="flow-item-info">
               <strong class="flow-item-title">Turno #${idFmt}</strong>
-              <span class="flow-item-meta">👤 ${t.operador || 'Operador'}</span>
-              <span class="flow-item-meta">🟢 ${dataAbertura}</span>
-              <span class="flow-item-meta">🔴 ${dataFechamento}</span>
+              <span class="flow-item-meta">${FlowIcons.from("👤")} ${t.operador || 'Operador'}</span>
+              <span class="flow-item-meta">${FlowIcons.from("🟢")} ${dataAbertura}</span>
+              <span class="flow-item-meta">${FlowIcons.from("🔴")} ${dataFechamento}</span>
             </div>
           </div>
           <div class="flow-item-side">
@@ -2434,10 +2429,10 @@ window.MobileApp = {
       ? parseFloat(turno.diferenca)
       : (esp !== null && inf !== null ? (inf - esp) : 0);
 
-    let badgeDif = `<span class="badge-tag-sm ok">✅ Bateu</span>`;
+    let badgeDif = `<span class="badge-tag-sm ok">${FlowIcons.from("✅")} Bateu</span>`;
     if (Math.abs(diferenca) > 0.01) {
-      if (diferenca > 0) badgeDif = `<span class="badge-tag-sm low">🟢 Sobra ${this.formatarMoeda(diferenca)}</span>`;
-      else badgeDif = `<span class="badge-tag-sm zero">🔴 Quebra ${this.formatarMoeda(Math.abs(diferenca))}</span>`;
+      if (diferenca > 0) badgeDif = `<span class="badge-tag-sm low">${FlowIcons.from("🟢")} Sobra ${this.formatarMoeda(diferenca)}</span>`;
+      else badgeDif = `<span class="badge-tag-sm zero">${FlowIcons.from("🔴")} Quebra ${this.formatarMoeda(Math.abs(diferenca))}</span>`;
     }
 
     const sangrias = Array.isArray(turno.sangrias) ? turno.sangrias : [];
@@ -2461,8 +2456,8 @@ window.MobileApp = {
             ${badgeDif}
           </div>
           <div style="margin-top: 10px; color: var(--text-muted); font-weight: 800; font-size: 12px;">
-            <div>🟢 Abertura: <span style="color: var(--text-main); font-weight: 900;">${dataAbertura}</span></div>
-            <div>🔴 Fechamento: <span style="color: var(--text-main); font-weight: 900;">${dataFechamento}</span></div>
+            <div>${FlowIcons.from("🟢")} Abertura: <span style="color: var(--text-main); font-weight: 900;">${dataAbertura}</span></div>
+            <div>${FlowIcons.from("🔴")} Fechamento: <span style="color: var(--text-main); font-weight: 900;">${dataFechamento}</span></div>
           </div>
         </div>
 
@@ -2496,6 +2491,8 @@ window.MobileApp = {
     const config = (backup.config) || {};
     const modulos = (this.dadosLoja && this.dadosLoja.modulos) || config.modulos || {};
     const licData = this.dadosLoja || {};
+    const profile = FlowManagerRules.storeProfile(licData, config);
+    const esc = value => String(value).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 
     // 1. Perfil da Loja
     const infoEl = document.getElementById('gerencia-perfil-loja-info');
@@ -2503,19 +2500,19 @@ window.MobileApp = {
       infoEl.innerHTML = `
         <div style="display: flex; justify-content: space-between; border-bottom: 1px dashed var(--border-card); padding: 4px 0;">
           <span>Razão Social / Nome:</span>
-          <strong style="color: var(--text-main);">${licData.razaoSocial || config.nomeEmpresa || 'Minha Loja'}</strong>
+          <strong style="color: var(--text-main);">${esc(profile.nome)}</strong>
         </div>
         <div style="display: flex; justify-content: space-between; border-bottom: 1px dashed var(--border-card); padding: 4px 0;">
           <span>CNPJ / CPF:</span>
-          <strong style="color: var(--text-main); font-family: 'JetBrains Mono';">${licData.cnpj || config.cnpj || 'Não cadastrado'}</strong>
+          <strong style="color: var(--text-main); font-family: 'JetBrains Mono';">${esc(profile.cnpj || 'Não cadastrado')}</strong>
         </div>
         <div style="display: flex; justify-content: space-between; border-bottom: 1px dashed var(--border-card); padding: 4px 0;">
           <span>Chave PIX da Loja:</span>
-          <strong style="color: #285e66; font-family: 'JetBrains Mono';">${config.chavePix || 'Não informada'}</strong>
+          <strong style="color: #285e66; font-family: 'JetBrains Mono';">${esc(profile.pix || 'Não informada')}</strong>
         </div>
         <div style="display: flex; justify-content: space-between; border-bottom: 1px dashed var(--border-card); padding: 4px 0;">
           <span>WhatsApp de Atendimento:</span>
-          <strong style="color: #22c55e; font-family: 'JetBrains Mono';">${config.whatsappSuporte || config.telefone || 'Não informado'}</strong>
+          <strong style="color: var(--accent-green); font-family: 'JetBrains Mono';">${esc(profile.telefone || 'Não informado')}</strong>
         </div>
         <div style="display: flex; justify-content: space-between; padding: 4px 0;">
           <span>Chave de Licença:</span>
@@ -2529,10 +2526,10 @@ window.MobileApp = {
     if (!containerModulos) return;
 
     const modulosDef = [
-      { key: 'validadeLotes', nome: '📅 Controle de Validade & Lotes', desc: 'Alertas de produtos vencendo em 15/30 dias e queima de estoque.' },
-      { key: 'fiadoWhatsApp', nome: '📖 Módulo Fiado & CRM de Clientes', desc: 'Controle de limite de crédito, histórico e cobrança via WhatsApp.' },
-      { key: 'comandasMesas', nome: '🍽️ Mesas & Comandas (Salão)', desc: 'Gerenciamento de consumos e atendimento de salão.' },
-      { key: 'descontoMaximo', nome: '🏷️ Limite de Desconto no Caixa', desc: 'Exige liberação do gestor para descontos acima do limite.' }
+      { key: 'validadeLotes', nome: "Controle de Validade & Lotes", desc: 'Alertas de produtos vencendo em 15/30 dias e queima de estoque.' },
+      { key: 'fiadoWhatsApp', nome: "Módulo Fiado & CRM de Clientes", desc: 'Controle de limite de crédito, histórico e cobrança via WhatsApp.' },
+      { key: 'comandasMesas', nome: "Mesas & Comandas (Salão)", desc: 'Gerenciamento de consumos e atendimento de salão.' },
+      { key: 'descontoMaximo', nome: "Limite de Desconto no Caixa", desc: 'Exige liberação do gestor para descontos acima do limite.' }
     ];
 
     containerModulos.innerHTML = modulosDef.map(m => {
@@ -2557,7 +2554,7 @@ window.MobileApp = {
   },
 
   async toggleModuloLojaNuvem(moduloKey, novoStatus) {
-    const autorizado = await this.exigirOperacaoAutorizada('⚠️ Não foi possível alterar módulo da loja: sessão inválida.');
+    const autorizado = await this.exigirOperacaoAutorizada("Não foi possível alterar módulo da loja: sessão inválida.");
     if (!autorizado) return;
 
     if (!this.dadosBackup) this.dadosBackup = {};
@@ -2589,10 +2586,10 @@ window.MobileApp = {
           console.warn('[Modulos] Licença não aceitou o espelhamento:', eLic);
         }
 
-        alert(`✅ Módulo "${moduloKey}" atualizado com sucesso e sincronizado com o PDV!`);
+        alert(` Módulo "${moduloKey}" atualizado com sucesso e sincronizado com o PDV!`);
       } catch (e) {
         console.error('[Modulos] Erro ao sincronizar:', e);
-        alert('❌ Erro ao sincronizar módulo: ' + e.message);
+        alert("Erro ao sincronizar módulo: " + e.message);
       }
     }
   },
@@ -2711,7 +2708,7 @@ window.MobileApp = {
     if (funcionarios.length === 0) {
       container.innerHTML = `
         <div class="empty-state-mobile">
-          <span class="empty-state-icon">👥</span>
+          <span class="empty-state-icon">${FlowIcons.from("👥")}</span>
           <span style="font-size: 13px;">Nenhum funcionário cadastrado no sistema.</span>
         </div>
       `;
@@ -2722,11 +2719,11 @@ window.MobileApp = {
       const cargo = (func.cargo || func.funcao || 'operador').toLowerCase();
       const isAdmin = FlowManagerRules.isManager(cargo);
       const cargoLabel = isAdmin
-        ? 'Gestor'
+        ? 'Administrador'
         : (func.cargo || 'Operador');
       const badgeCargo = isAdmin
-        ? `<span class="badge-tag-sm purple">👑 ${cargoLabel}</span>`
-        : `<span class="badge-tag-sm blue">👤 ${cargoLabel}</span>`;
+        ? `<span class="badge-tag-sm purple">${FlowIcons.from("👑")} ${cargoLabel}</span>`
+        : `<span class="badge-tag-sm blue">${FlowIcons.from("👤")} ${cargoLabel}</span>`;
 
       const isAtivo = func.ativo !== false;
       const idFunc = String(func.id || func.usuario || func.login || func.nome || '').replace(/'/g, "\\'");
@@ -2734,10 +2731,10 @@ window.MobileApp = {
       return `
         <div class="flow-item-card clickable" onclick="MobileApp.abrirModalEditarFuncionario('${idFunc}')">
           <div class="flow-item-main">
-            <div class="flow-item-icon">${isAdmin ? '👑' : '👤'}</div>
+            <div class="flow-item-icon">${FlowIcons.svg(isAdmin ? 'shield' : 'user')}</div>
             <div class="flow-item-info">
               <strong class="flow-item-title">${func.nome || 'Colaborador'}</strong>
-              <span class="flow-item-meta">🔑 ${func.login || func.usuario || func.nome}</span>
+              <span class="flow-item-meta">${FlowIcons.from("🔑")} ${func.login || func.usuario || func.nome}</span>
             </div>
           </div>
           <div class="flow-item-side flow-item-side--row">
@@ -2774,14 +2771,14 @@ window.MobileApp = {
         <div class="form-group-mobile" style="margin-bottom: 0;">
           <label class="form-label-mobile">Cargo / Função *</label>
           <select id="edit-func-cargo" onchange="MobileApp.atualizarPermissoesCargo()" class="input-mobile" style="cursor: pointer;">
-            <option value="operador">👤 Operador</option>
-            <option value="gerente">Gerente (administrador)</option>
+            <option value="operador"> Operador</option>
+            <option value="gerente">Administrador</option>
           </select>
         </div>
 
         <div class="modal-perms-box">
           <span class="form-label-mobile" style="margin-bottom: 8px;">Permissões no PDV</span>
-          <p id="permissoes-cargo-info" class="permissions-note" hidden>Gerente tem acesso total às permissões do PDV.</p>
+          <p id="permissoes-cargo-info" class="permissions-note" hidden>Administrador tem acesso total às permissões do PDV.</p>
           <div class="modal-perms-grid">
             <label class="modal-perm-item"><input type="checkbox" id="perm-cancelar-item" checked> Cancelar Itens</label>
             <label class="modal-perm-item"><input type="checkbox" id="perm-cancelar-venda"> Cancelar Vendas</label>
@@ -2821,7 +2818,7 @@ window.MobileApp = {
 
     const cargo = (func.cargo || func.funcao || 'operador').toLowerCase();
     const isGerente = FlowManagerRules.isManager(cargo);
-    const cargoLabel = isGerente ? 'Gestor' : 'Operador';
+    const cargoLabel = isGerente ? 'Administrador' : 'Operador';
     const isAtivo = func.ativo !== false;
     const perms = FlowManagerRules.permissions(cargo, func.permissoes);
     const login = func.login || func.usuario || func.nome || '—';
@@ -2850,14 +2847,14 @@ window.MobileApp = {
         <div class="form-group-mobile" style="margin-bottom: 0;">
           <label class="form-label-mobile">Cargo / Função *</label>
           <select id="edit-func-cargo" onchange="MobileApp.atualizarPermissoesCargo()" class="input-mobile" style="cursor: pointer;">
-            <option value="operador" ${!isGerente ? 'selected' : ''}>👤 Operador</option>
-            <option value="gerente" ${isGerente ? 'selected' : ''}>Gerente (administrador)</option>
+            <option value="operador" ${!isGerente ? 'selected' : ''}> Operador</option>
+            <option value="gerente" ${isGerente ? 'selected' : ''}>Administrador</option>
           </select>
         </div>
 
         <div class="modal-perms-box">
           <span class="form-label-mobile" style="margin-bottom: 8px;">Permissões no PDV</span>
-          <p id="permissoes-cargo-info" class="permissions-note" hidden>Gerente tem acesso total às permissões do PDV.</p>
+          <p id="permissoes-cargo-info" class="permissions-note" hidden>Administrador tem acesso total às permissões do PDV.</p>
           <div class="modal-perms-grid">
             <label class="modal-perm-item"><input type="checkbox" id="perm-cancelar-item" ${perms.cancelarItem !== false ? 'checked' : ''}> Cancelar Itens</label>
             <label class="modal-perm-item"><input type="checkbox" id="perm-cancelar-venda" ${perms.cancelarVenda ? 'checked' : ''}> Cancelar Vendas</label>
@@ -2913,13 +2910,13 @@ window.MobileApp = {
 
   async salvarFuncionarioNuvem(e) {
     e.preventDefault();
-    const autorizado = await this.exigirOperacaoAutorizada('⚠️ Não foi possível salvar o colaborador: sessão inválida.');
+    const autorizado = await this.exigirOperacaoAutorizada("Não foi possível salvar o colaborador: sessão inválida.");
     if (!autorizado) return;
 
     const btnSubmit = document.getElementById('btn-salvar-func-modal');
     if (btnSubmit) {
       btnSubmit.disabled = true;
-      btnSubmit.innerHTML = '<span>⏳ Salvando na Nuvem...</span>';
+      btnSubmit.innerHTML = "<span> Salvando na Nuvem...</span>";
     }
 
     try {
@@ -2998,14 +2995,14 @@ window.MobileApp = {
 
       this.fecharModalSheet();
       this.renderGerenciaFuncionarios();
-      alert('✅ Colaborador salvo com sucesso e sincronizado com o PDV!');
+      alert("Colaborador salvo com sucesso e sincronizado com o PDV!");
     } catch (err) {
       console.error('[Equipe] Erro ao salvar funcionário:', err);
-      alert('❌ Erro ao salvar na nuvem: ' + err.message);
+      alert("Erro ao salvar na nuvem: " + err.message);
     } finally {
       if (btnSubmit) {
         btnSubmit.disabled = false;
-        btnSubmit.innerHTML = '<span>💾 Salvar</span>';
+        btnSubmit.innerHTML = "<span> Salvar</span>";
       }
     }
   },
@@ -3026,10 +3023,10 @@ window.MobileApp = {
 
       this.fecharModalSheet();
       this.renderGerenciaFuncionarios();
-      alert('✅ Colaborador excluído com sucesso!');
+      alert("Colaborador excluído com sucesso!");
     } catch (e) {
       console.error('[Equipe] Erro ao excluir:', e);
-      alert('❌ Erro ao excluir na nuvem: ' + e.message);
+      alert("Erro ao excluir na nuvem: " + e.message);
     }
   },
 
@@ -3053,7 +3050,7 @@ window.MobileApp = {
     if (comandas.length === 0) {
       container.innerHTML = `
         <div class="empty-state-mobile">
-          <span class="empty-state-icon">🍽️</span>
+          <span class="empty-state-icon">${FlowIcons.from("🍽️")}</span>
           <span style="font-size: 13px;">Nenhuma mesa ou comanda configurada na loja.</span>
         </div>
       `;
@@ -3066,17 +3063,17 @@ window.MobileApp = {
       const total = parseFloat(c.total) || 0;
       const qtdItens = (c.itens || []).reduce((acc, it) => acc + (parseFloat(it.quantidade) || 1), 0);
 
-      let badgeStatus = `<span class="badge-tag-sm ok">🟢 LIVRE</span>`;
-      if (isFechando) badgeStatus = `<span class="badge-tag-sm low">⏱️ CONFERINDO</span>`;
-      else if (!isLivre) badgeStatus = `<span class="badge-tag-sm zero">🔴 EM USO</span>`;
+      let badgeStatus = `<span class="badge-tag-sm ok">${FlowIcons.from("🟢")} LIVRE</span>`;
+      if (isFechando) badgeStatus = `<span class="badge-tag-sm low">${FlowIcons.from("⏱️")} CONFERINDO</span>`;
+      else if (!isLivre) badgeStatus = `<span class="badge-tag-sm zero">${FlowIcons.from("🔴")} EM USO</span>`;
 
       return `
         <div class="flow-item-card ${isLivre ? 'is-livre' : 'is-ocupada'} ${!isLivre ? 'clickable' : ''}" ${!isLivre ? `onclick="MobileApp.verDetalhesMesa('${c.id}')"` : ''}>
           <div class="flow-item-main">
-            <div class="flow-item-icon">${c.tipo === 'mesa' ? '🪑' : '🏷️'}</div>
+            <div class="flow-item-icon">${FlowIcons.svg(c.tipo === 'mesa' ? 'table' : 'tag')}</div>
             <div class="flow-item-info">
               <strong class="flow-item-title">${c.nome}</strong>
-              <span class="flow-item-meta">${c.cliente ? `👤 ${c.cliente}` : (isLivre ? 'Disponível agora' : `📦 ${qtdItens} itens`)}</span>
+              <span class="flow-item-meta">${c.cliente ? ` ${c.cliente}` : (isLivre ? 'Disponível agora' : ` ${qtdItens} itens`)}</span>
             </div>
           </div>
           <div class="flow-item-side">
@@ -3113,7 +3110,7 @@ window.MobileApp = {
           </div>
           <div style="text-align: right;">
             <span style="font-size: 11px; color: var(--text-dim);">Status da Mesa</span>
-            <span class="badge-tag-sm ${mesa.status === 'livre' ? 'ok' : 'zero'}" style="display: inline-block; margin-top: 2px;">${mesa.status === 'livre' ? '🟢 LIVRE' : '🔴 EM CONSUMO'}</span>
+            <span class="badge-tag-sm ${mesa.status === 'livre' ? 'ok' : 'zero'}" style="display: inline-block; margin-top: 2px;">${mesa.status === 'livre' ? "LIVRE" : "EM CONSUMO"}</span>
           </div>
         </div>
 
@@ -3289,7 +3286,7 @@ window.MobileApp = {
     if (logs.length === 0) {
       container.innerHTML = `
         <div class="empty-state-mobile">
-          <span class="empty-state-icon">🛡️</span>
+          <span class="empty-state-icon">${FlowIcons.from("🛡️")}</span>
           <span style="font-size: 13px;">Nenhum registro encontrado para este filtro.</span>
         </div>
       `;
@@ -3297,17 +3294,17 @@ window.MobileApp = {
     }
 
     container.innerHTML = logs.map(log => {
-      let badgeTipo = `<span class="badge-tag-sm blue">ℹ️ Evento</span>`;
-      if (log.tipo === 'abertura_caixa') badgeTipo = `<span class="badge-tag-sm ok">🟢 Abertura Caixa</span>`;
-      else if (log.tipo === 'fechamento_caixa') badgeTipo = `<span class="badge-tag-sm purple">💰 Fech. Caixa</span>`;
-      else if (log.tipo === 'sangria_caixa') badgeTipo = `<span class="badge-tag-sm low">💸 Sangria</span>`;
-      else if (log.tipo === 'suprimento_caixa') badgeTipo = `<span class="badge-tag-sm cyan">💵 Suprimento</span>`;
-      else if (log.tipo === 'cortesia') badgeTipo = `<span class="badge-tag-sm purple">🎁 Cortesia</span>`;
-      else if (log.tipo === 'cancelamento_venda') badgeTipo = `<span class="badge-tag-sm zero">🛑 Cancelamento</span>`;
-      else if (log.tipo === 'ajuste_estoque') badgeTipo = `<span class="badge-tag-sm low">📦 Ajuste Estoque</span>`;
-      else if (log.tipo === 'cadastro_produto') badgeTipo = `<span class="badge-tag-sm blue">✨ Novo Produto</span>`;
-      else if (log.tipo === 'exclusao_produto') badgeTipo = `<span class="badge-tag-sm zero">🗑️ Exclusão</span>`;
-      else if (log.tipo === 'edicao_produto') badgeTipo = `<span class="badge-tag-sm cyan">✏️ Edição</span>`;
+      let badgeTipo = `<span class="badge-tag-sm blue">${FlowIcons.from("ℹ️")} Evento</span>`;
+      if (log.tipo === 'abertura_caixa') badgeTipo = `<span class="badge-tag-sm ok">${FlowIcons.from("🟢")} Abertura Caixa</span>`;
+      else if (log.tipo === 'fechamento_caixa') badgeTipo = `<span class="badge-tag-sm purple">${FlowIcons.from("💰")} Fech. Caixa</span>`;
+      else if (log.tipo === 'sangria_caixa') badgeTipo = `<span class="badge-tag-sm low">${FlowIcons.from("💸")} Sangria</span>`;
+      else if (log.tipo === 'suprimento_caixa') badgeTipo = `<span class="badge-tag-sm cyan">${FlowIcons.from("💵")} Suprimento</span>`;
+      else if (log.tipo === 'cortesia') badgeTipo = `<span class="badge-tag-sm purple">${FlowIcons.from("🎁")} Cortesia</span>`;
+      else if (log.tipo === 'cancelamento_venda') badgeTipo = `<span class="badge-tag-sm zero">${FlowIcons.from("🛑")} Cancelamento</span>`;
+      else if (log.tipo === 'ajuste_estoque') badgeTipo = `<span class="badge-tag-sm low">${FlowIcons.from("📦")} Ajuste Estoque</span>`;
+      else if (log.tipo === 'cadastro_produto') badgeTipo = `<span class="badge-tag-sm blue">${FlowIcons.from("✨")} Novo Produto</span>`;
+      else if (log.tipo === 'exclusao_produto') badgeTipo = `<span class="badge-tag-sm zero">${FlowIcons.from("🗑️")} Exclusão</span>`;
+      else if (log.tipo === 'edicao_produto') badgeTipo = `<span class="badge-tag-sm cyan">${FlowIcons.from("✏️")} Edição</span>`;
 
       const dataHora = log.dataHoraFormatada || (log.criadoEm ? new Date(log.criadoEm).toLocaleString('pt-BR') : '--');
 
@@ -3322,7 +3319,7 @@ window.MobileApp = {
               <strong class="flow-item-title" style="white-space:normal; font-size:13px; line-height:1.35;">
                 ${log.tipo === 'cortesia' ? (log.detalhes?.motivo || log.descricao) : log.descricao}
               </strong>
-              <span class="flow-item-meta">👤 ${log.operador || 'Caixa'}</span>
+              <span class="flow-item-meta">${FlowIcons.from("👤")} ${log.operador || 'Caixa'}</span>
             </div>
           </div>
         </div>
@@ -3359,7 +3356,7 @@ window.MobileApp = {
         </div>
 
         <div>
-          <span style="font-size: 11.5px; font-weight: 800; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.5px; display: block; margin-bottom: 6px;">🛒 Itens Vendidos</span>
+          <span style="font-size: 11.5px; font-weight: 800; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.5px; display: block; margin-bottom: 6px;">${FlowIcons.from("🛒")} Itens Vendidos</span>
           <div style="background: var(--bg-surface-2); border: 1px solid var(--border-card); border-radius: 10px; padding: 6px 14px; max-height: 240px; overflow-y: auto;">
             ${itensHtml}
           </div>
@@ -3461,10 +3458,10 @@ window.MobileApp = {
     const isHoje = dataVenc === hoje && c.status !== 'pago' && c.status !== 'paga';
     const isPago = c.status === 'pago' || c.status === 'paga';
 
-    let badgeStatus = '<span class="badge-tag-sm ok">📅 A Vencer</span>';
-    if (isPago) badgeStatus = '<span class="badge-tag-sm ok" style="background: rgba(16,185,129,0.2); color: #216348;">✅ Conta Paga</span>';
-    else if (isVencida) badgeStatus = '<span class="badge-tag-sm zero">🚨 Vencida</span>';
-    else if (isHoje) badgeStatus = '<span class="badge-tag-sm low">⏳ Vence Hoje</span>';
+    let badgeStatus = "<span class=\"badge-tag-sm ok\"><svg class=\"flow-glyph\" viewBox=\"0 0 24 24\" width=\"1em\" height=\"1em\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\" focusable=\"false\" style=\"vertical-align:-.15em;flex-shrink:0;pointer-events:none\"><rect x=\"3\" y=\"5\" width=\"18\" height=\"16\" rx=\"2\"/><path d=\"M7 3v4M17 3v4M3 11h18M7 15h3M14 15h3M7 18h3\"/></svg> A Vencer</span>";
+    if (isPago) badgeStatus = "<span class=\"badge-tag-sm ok\" style=\"background: rgba(16,185,129,0.2); color: #216348;\"><svg class=\"flow-glyph\" viewBox=\"0 0 24 24\" width=\"1em\" height=\"1em\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\" focusable=\"false\" style=\"vertical-align:-.15em;flex-shrink:0;pointer-events:none\"><path d=\"m5 12 4 4L20 5\"/></svg> Conta Paga</span>";
+    else if (isVencida) badgeStatus = "<span class=\"badge-tag-sm zero\"><svg class=\"flow-glyph\" viewBox=\"0 0 24 24\" width=\"1em\" height=\"1em\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\" focusable=\"false\" style=\"vertical-align:-.15em;flex-shrink:0;pointer-events:none\"><path d=\"m12 3 10 18H2L12 3ZM12 9v5M12 17v.1\"/></svg> Vencida</span>";
+    else if (isHoje) badgeStatus = "<span class=\"badge-tag-sm low\"><svg class=\"flow-glyph\" viewBox=\"0 0 24 24\" width=\"1em\" height=\"1em\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\" focusable=\"false\" style=\"vertical-align:-.15em;flex-shrink:0;pointer-events:none\"><circle cx=\"12\" cy=\"12\" r=\"9\"/><path d=\"M12 6v6l4 2\"/></svg> Vence Hoje</span>";
 
     // Formata a data de vencimento no formato brasileiro DD/MM/YYYY
     let vencFormatado = '--';
@@ -3495,28 +3492,28 @@ window.MobileApp = {
         <!-- Informações Principais da Despesa -->
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
           <div style="background: var(--bg-surface-2); padding: 10px 12px; border-radius: 8px;">
-            <span style="font-size: 11px; color: var(--text-dim); display: block;">📅 Vencimento</span>
+            <span style="font-size: 11px; color: var(--text-dim); display: block;">${FlowIcons.from("📅")} Vencimento</span>
             <strong style="font-size: 13.5px; color: var(--text-main); font-family: 'JetBrains Mono'; margin-top: 2px; display: block;">${vencFormatado}</strong>
           </div>
           <div style="background: var(--bg-surface-2); padding: 10px 12px; border-radius: 8px;">
-            <span style="font-size: 11px; color: var(--text-dim); display: block;">🏷️ Categoria</span>
+            <span style="font-size: 11px; color: var(--text-dim); display: block;">${FlowIcons.from("🏷️")} Categoria</span>
             <strong style="font-size: 13.5px; color: var(--accent-cyan); margin-top: 2px; display: block;">${c.categoria || 'Geral'}</strong>
           </div>
         </div>
 
         <div style="background: var(--bg-surface-2); padding: 12px; border-radius: 10px;">
-          <span style="font-size: 11px; color: var(--text-dim); text-transform: uppercase; font-weight: 800; display: block; margin-bottom: 4px;">🏢 Fornecedor / Beneficiário</span>
+          <span style="font-size: 11px; color: var(--text-dim); text-transform: uppercase; font-weight: 800; display: block; margin-bottom: 4px;">${FlowIcons.from("🏢")} Fornecedor / Beneficiário</span>
           <p style="font-size: 14px; font-weight: 700; color: var(--text-main);">${c.fornecedor || 'Não informado no PDV'}</p>
         </div>
 
         <div style="background: var(--bg-surface-2); padding: 12px; border-radius: 10px;">
-          <span style="font-size: 11px; color: var(--text-dim); text-transform: uppercase; font-weight: 800; display: block; margin-bottom: 4px;">📝 Observações / Detalhes</span>
+          <span style="font-size: 11px; color: var(--text-dim); text-transform: uppercase; font-weight: 800; display: block; margin-bottom: 4px;">${FlowIcons.from("📝")} Observações / Detalhes</span>
           <p style="font-size: 13px; color: var(--text-main); line-height: 1.4;">${c.observacoes || 'Nenhuma observação informada.'}</p>
         </div>
 
         ${isPago && c.dataPagamento ? `
           <div style="background: rgba(16, 185, 129, 0.12); border: 1px solid rgba(16, 185, 129, 0.35); padding: 10px 12px; border-radius: 8px; display: flex; justify-content: space-between; align-items: center;">
-            <span style="font-size: 12px; color: #216348; font-weight: 700;">✅ Pago em: ${c.dataPagamento}</span>
+            <span style="font-size: 12px; color: #216348; font-weight: 700;">${FlowIcons.from("✅")} Pago em: ${c.dataPagamento}</span>
             <span style="font-size: 12px; color: var(--text-muted);">${c.formaPagamento || ''}</span>
           </div>
         ` : ''}
@@ -3550,14 +3547,14 @@ window.MobileApp = {
         const msg = encodeURIComponent(`Olá ${cli.nome}, tudo bem? Passando para lembrar que consta um saldo em aberto de ${this.formatarMoeda(saldo)} referente à sua conta aqui no ${nomeLoja}. Qualquer dúvida ou para PIX, estamos à disposição!`);
         btnZap = `
           <a href="https://wa.me/55${telLimpo}?text=${msg}" target="_blank" class="btn-whatsapp-mobile" style="text-decoration: none; justify-content: center; width: 100%; padding: 10px; font-size: 13px; background: #059669;">
-            <span>💬 Cobrar Saldo no WhatsApp</span>
+            <span>${FlowIcons.from("💬")} Cobrar Saldo no WhatsApp</span>
           </a>
         `;
       } else {
         const msg = encodeURIComponent(`Olá ${cli.nome}, tudo bem? Aqui é do atendimento do ${nomeLoja}.`);
         btnZap = `
           <a href="https://wa.me/55${telLimpo}?text=${msg}" target="_blank" class="btn-whatsapp-mobile" style="text-decoration: none; justify-content: center; width: 100%; padding: 10px; font-size: 13px; background: #22c55e;">
-            <span>🟢 Conversar no WhatsApp</span>
+            <span>${FlowIcons.from("🟢")} Conversar no WhatsApp</span>
           </a>
         `;
       }
@@ -3582,18 +3579,18 @@ window.MobileApp = {
         <!-- Telefone & Limite -->
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
           <div style="background: var(--bg-surface-2); padding: 10px 12px; border-radius: 8px;">
-            <span style="font-size: 11px; color: var(--text-dim); display: block;">📞 Telefone / WhatsApp</span>
+            <span style="font-size: 11px; color: var(--text-dim); display: block;">${FlowIcons.from("📞")} Telefone / WhatsApp</span>
             <strong style="font-size: 13px; color: var(--text-main); font-family: 'JetBrains Mono'; margin-top: 2px; display: block;">${cli.telefone || 'Não informado'}</strong>
           </div>
           <div style="background: var(--bg-surface-2); padding: 10px 12px; border-radius: 8px;">
-            <span style="font-size: 11px; color: var(--text-dim); display: block;">💳 Limite de Crédito</span>
+            <span style="font-size: 11px; color: var(--text-dim); display: block;">${FlowIcons.from("💳")} Limite de Crédito</span>
             <strong style="font-size: 13px; color: var(--accent-cyan); font-family: 'JetBrains Mono'; margin-top: 2px; display: block;">${limite > 0 ? this.formatarMoeda(limite) : 'R$ 200,00'}</strong>
           </div>
         </div>
 
         ${cli.cpfCnpj || cli.cpf ? `
           <div style="background: var(--bg-surface-2); padding: 10px 12px; border-radius: 8px;">
-            <span style="font-size: 11px; color: var(--text-dim); display: block;">🪪 CPF / CNPJ</span>
+            <span style="font-size: 11px; color: var(--text-dim); display: block;">${FlowIcons.from("🪪")} CPF / CNPJ</span>
             <strong style="font-size: 13px; color: var(--text-main); font-family: 'JetBrains Mono'; margin-top: 2px; display: block;">${cli.cpfCnpj || cli.cpf}</strong>
           </div>
         ` : ''}
@@ -3601,10 +3598,10 @@ window.MobileApp = {
         <!-- Endereço para Delivery -->
         <div style="background: var(--bg-surface-2); padding: 12px; border-radius: 10px;">
           <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
-            <span style="font-size: 11px; color: #285e66; text-transform: uppercase; font-weight: 800;">🛵 Endereço para Delivery</span>
+            <span style="font-size: 11px; color: #285e66; text-transform: uppercase; font-weight: 800;">${FlowIcons.from("🛵")} Endereço para Delivery</span>
             ${endCompleto ? `
               <button type="button" class="chip-btn" style="height: 26px; padding: 0 8px; font-size: 10.5px; border-color: #285e66; color: #285e66;" onclick="MobileApp.copiarEnderecoMobile('${encodeURIComponent(endCompleto)}')">
-                📋 Copiar
+                ${FlowIcons.from("📋")} Copiar
               </button>
             ` : ''}
           </div>
@@ -3620,7 +3617,7 @@ window.MobileApp = {
 
         ${cli.observacoes ? `
           <div style="background: rgba(245, 158, 11, 0.08); border: 1px solid rgba(245, 158, 11, 0.25); border-radius: 8px; padding: 10px 12px;">
-            <span style="font-size: 11px; color: #8a570d; font-weight: 800; display: block; margin-bottom: 2px;">📝 Observações:</span>
+            <span style="font-size: 11px; color: #8a570d; font-weight: 800; display: block; margin-bottom: 2px;">${FlowIcons.from("📝")} Observações:</span>
             <span style="font-size: 12.5px; color: var(--text-main);">${cli.observacoes}</span>
           </div>
         ` : ''}
@@ -3631,17 +3628,17 @@ window.MobileApp = {
         <div style="display: grid; grid-template-columns: ${hasDebt ? '1fr 1fr' : '1fr'}; gap: 8px; margin-top: 4px;">
           ${hasDebt ? `
             <button type="button" class="btn-primary-mobile" style="height: 44px; font-size: 13.5px; font-weight: 800; background: linear-gradient(135deg, #10b981, #059669); border-radius: 8px;" onclick="MobileApp.abrirModalReceberFiadoMobile('${cli.id}')">
-              💵 Receber Pagamento
+              ${FlowIcons.from("💵")} Receber Pagamento
             </button>
           ` : ''}
           <button type="button" class="btn-secondary-mobile" style="height: 44px; font-size: 13px; font-weight: 700; border-radius: 8px;" onclick="MobileApp.abrirModalEditarClienteMobile('${cli.id}')">
-            ✏️ Editar Cliente
+            ${FlowIcons.from("✏️")} Editar Cliente
           </button>
         </div>
       </div>
     `;
 
-    this.abrirModalSheet(`👤 Cliente: ${cli.nome}`, html);
+    this.abrirModalSheet(` Cliente: ${cli.nome}`, html);
   },
 
   abrirModalNovoClienteMobile() {
@@ -3709,12 +3706,12 @@ window.MobileApp = {
         </div>
 
         <button type="submit" id="btn-salvar-cli-mobile" class="btn-login-submit" style="margin-top: 6px; height: 46px; font-size: 14px;">
-          <span>💾 Cadastrar Cliente</span>
+          <span>${FlowIcons.from("💾")} Cadastrar Cliente</span>
         </button>
       </form>
     `;
 
-    this.abrirModalSheet('➕ Novo Cliente', html);
+    this.abrirModalSheet("Novo Cliente", html);
   },
 
   abrirModalEditarClienteMobile(cliId) {
@@ -3788,16 +3785,16 @@ window.MobileApp = {
 
         <div style="display: flex; gap: 8px; margin-top: 6px;">
           <button type="submit" id="btn-salvar-cli-mobile" class="btn-login-submit" style="flex: 1; height: 46px; font-size: 14px;">
-            <span>💾 Salvar Alterações</span>
+            <span>${FlowIcons.from("💾")} Salvar Alterações</span>
           </button>
-          <button type="button" class="btn-login-submit" style="background: rgba(239, 68, 68, 0.15); color: #ef4444; border: 1px solid #ef4444; width: auto; padding: 0 14px; height: 46px;" onclick="MobileApp.excluirClienteNuvemMobile('${cli.id}')">
-            <span>🗑️ Excluir</span>
+          <button type="button" class="modal-btn-danger" style="background: rgba(239, 68, 68, 0.15); color: #ef4444; border: 1px solid #ef4444; width: auto; padding: 0 14px; height: 46px;" onclick="MobileApp.excluirClienteNuvemMobile('${cli.id}')">
+            <span>${FlowIcons.from("🗑️")} Excluir</span>
           </button>
         </div>
       </form>
     `;
 
-    this.abrirModalSheet(`✏️ Editar: ${cli.nome}`, html);
+    this.abrirModalSheet(` Editar: ${cli.nome}`, html);
   },
 
   async buscarCepMobile(cepValor) {
@@ -3822,13 +3819,13 @@ window.MobileApp = {
 
   async salvarClienteNuvemMobile(e) {
     e.preventDefault();
-    const autorizado = await this.exigirOperacaoAutorizada('⚠️ Não foi possível salvar o cliente: sessão inválida.');
+    const autorizado = await this.exigirOperacaoAutorizada("Não foi possível salvar o cliente: sessão inválida.");
     if (!autorizado) return;
 
     const btnSubmit = document.getElementById('btn-salvar-cli-mobile');
     if (btnSubmit) {
       btnSubmit.disabled = true;
-      btnSubmit.innerHTML = '<span>⏳ Salvando na Nuvem...</span>';
+      btnSubmit.innerHTML = "<span> Salvando na Nuvem...</span>";
     }
 
     try {
@@ -3901,20 +3898,20 @@ window.MobileApp = {
 
       this.fecharModalSheet();
       this.renderClientesMobile();
-      alert('✅ Cliente salvo com sucesso e sincronizado!');
+      alert("Cliente salvo com sucesso e sincronizado!");
     } catch (err) {
       console.error('[Clientes] Erro ao salvar:', err);
-      alert('❌ Erro ao salvar na nuvem: ' + err.message);
+      alert("Erro ao salvar na nuvem: " + err.message);
     } finally {
       if (btnSubmit) {
         btnSubmit.disabled = false;
-        btnSubmit.innerHTML = '<span>💾 Salvar</span>';
+        btnSubmit.innerHTML = "<span> Salvar</span>";
       }
     }
   },
 
   async excluirClienteNuvemMobile(cliId) {
-    const autorizado = await this.exigirOperacaoAutorizada('⚠️ Não foi possível excluir o cliente: sessão inválida.');
+    const autorizado = await this.exigirOperacaoAutorizada("Não foi possível excluir o cliente: sessão inválida.");
     if (!autorizado) return;
 
     if (!this.dadosBackup) return;
@@ -3938,10 +3935,10 @@ window.MobileApp = {
 
       this.fecharModalSheet();
       this.renderClientesMobile();
-      alert(`🗑️ Cliente "${cli.nome}" excluído com sucesso.`);
+      alert(` Cliente "${cli.nome}" excluído com sucesso.`);
     } catch (e) {
       console.error('[Clientes] Erro ao excluir:', e);
-      alert('❌ Erro ao excluir na nuvem: ' + e.message);
+      alert("Erro ao excluir na nuvem: " + e.message);
     }
   },
 
@@ -3976,31 +3973,31 @@ window.MobileApp = {
         <div class="form-group-mobile" style="margin-bottom: 0;">
           <label class="form-label-mobile">Forma de Pagamento *</label>
           <select id="rec-cli-forma" class="input-mobile" style="cursor: pointer; font-weight: 700;">
-            <option value="Dinheiro">💵 Dinheiro</option>
-            <option value="PIX" selected>⚡ PIX</option>
-            <option value="Cartão de Débito">💳 Cartão de Débito</option>
-            <option value="Cartão de Crédito">💳 Cartão de Crédito</option>
+            <option value="Dinheiro"> Dinheiro</option>
+            <option value="PIX" selected> PIX</option>
+            <option value="Cartão de Débito"> Cartão de Débito</option>
+            <option value="Cartão de Crédito"> Cartão de Crédito</option>
           </select>
         </div>
 
         <button type="submit" id="btn-confirmar-rec-mobile" class="btn-login-submit" style="margin-top: 6px; height: 48px; font-size: 14.5px; background: linear-gradient(135deg, #10b981, #059669);">
-          <span>✅ Confirmar Recebimento</span>
+          <span>${FlowIcons.from("✅")} Confirmar Recebimento</span>
         </button>
       </form>
     `;
 
-    this.abrirModalSheet(`💵 Receber Fiado: ${cli.nome}`, html);
+    this.abrirModalSheet(` Receber Fiado: ${cli.nome}`, html);
   },
 
   async confirmarRecebimentoFiadoNuvemMobile(e) {
     e.preventDefault();
-    const autorizado = await this.exigirOperacaoAutorizada('⚠️ Não foi possível confirmar recebimento: sessão inválida.');
+    const autorizado = await this.exigirOperacaoAutorizada("Não foi possível confirmar recebimento: sessão inválida.");
     if (!autorizado) return;
 
     const btnSubmit = document.getElementById('btn-confirmar-rec-mobile');
     if (btnSubmit) {
       btnSubmit.disabled = true;
-      btnSubmit.innerHTML = '<span>⏳ Processando pagamento...</span>';
+      btnSubmit.innerHTML = "<span> Processando pagamento...</span>";
     }
 
     try {
@@ -4053,14 +4050,14 @@ window.MobileApp = {
       this.fecharModalSheet();
       this.renderClientesMobile();
       this.renderResumoDashboard();
-      alert(`🎉 Pagamento de R$ ${valor.toFixed(2)} recebido com sucesso de ${cli.nome}!`);
+      alert(` Pagamento de R$ ${valor.toFixed(2)} recebido com sucesso de ${cli.nome}!`);
     } catch (err) {
       console.error('[Recebimento] Erro:', err);
-      alert('❌ Erro ao registrar pagamento: ' + err.message);
+      alert("Erro ao registrar pagamento: " + err.message);
     } finally {
       if (btnSubmit) {
         btnSubmit.disabled = false;
-        btnSubmit.innerHTML = '<span>✅ Confirmar</span>';
+        btnSubmit.innerHTML = "<span> Confirmar</span>";
       }
     }
   },
@@ -4078,7 +4075,7 @@ window.MobileApp = {
     const subtitle = opts.subtitle || '';
 
     if (titleEl) titleEl.textContent = title;
-    if (iconEl) iconEl.textContent = icon;
+    if (iconEl) iconEl.innerHTML = FlowIcons.from(icon);
 
     if (eyebrowEl) {
       eyebrowEl.textContent = eyebrow;
@@ -4150,12 +4147,12 @@ window.MobileApp = {
   },
 
   getIconeFormaPag(forma) {
-    if (forma.includes('PIX')) return '⚡';
-    if (forma.includes('Dinheiro')) return '💵';
-    if (forma.includes('Crédito')) return '💳';
-    if (forma.includes('Débito')) return '💳';
-    if (forma.includes('Fiado')) return '📖';
-    return '💰';
+    if (forma.includes('PIX')) return FlowIcons.from("⚡");
+    if (forma.includes('Dinheiro')) return FlowIcons.from("💵");
+    if (forma.includes('Crédito')) return FlowIcons.from("💳");
+    if (forma.includes('Débito')) return FlowIcons.from("💳");
+    if (forma.includes('Fiado')) return FlowIcons.from("📖");
+    return FlowIcons.from("💰");
   },
 
   getGradienteFormaPag(forma) {

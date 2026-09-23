@@ -54,5 +54,9 @@
     return {total, totalItens: rows.length, rows: classified.filter(row =>
       (!filters.classe || row.classe === filters.classe) && (!busca || row.nome.toLocaleLowerCase('pt-BR').includes(busca)))};
   }
-  root.FlowManagerRules = {permissionFields, isManager, permissions, curvaABC};
+  function storeProfile(license = {}, config = {}) {
+    const first = (...values) => values.map(v => String(v ?? '').trim()).find(Boolean) || '';
+    return {nome:first(config.nomeEmpresa,config.nomeLoja,license.razaoSocial,license.nomeFantasia)||'Minha Loja',cnpj:first(config.cnpj,license.cnpj),pix:first(config.chavePix),telefone:first(config.telefone)};
+  }
+  root.FlowManagerRules = {permissionFields, isManager, permissions, curvaABC, storeProfile};
 })(typeof window === 'undefined' ? globalThis : window);

@@ -3,6 +3,18 @@ const assert = require('node:assert/strict');
 require('./report-rules.js');
 require('./manager-rules.js');
 const rules = globalThis.FlowManagerRules;
+test('store profile reads PDV config first and never uses support phone as store phone', () => {
+  assert.deepEqual(rules.storeProfile({razaoSocial:'Cadastro antigo',cnpj:'antigo',whatsappSuporte:'suporte'}, {nomeEmpresa:'Loja atual',cnpj:'novo',chavePix:'pix',telefone:'loja',whatsappSuporte:'outro suporte'}), {nome:'Loja atual',cnpj:'novo',pix:'pix',telefone:'loja'});
+  assert.equal(rules.storeProfile({}, {whatsappSuporte:'suporte'}).telefone, '');
+  assert.equal(rules.storeProfile({razaoSocial:'Licença'},{}).nome,'Licença');
+});
+test('SVG mapping accepts legacy IDs and only returns fixed trusted markup', () => {
+  require('./flow-icons.js');
+  const svg = globalThis.FlowIcons.from('📅');
+  assert.match(svg, /<svg/); assert.match(svg, /aria-hidden="true"/);
+  assert.equal(globalThis.FlowIcons.from(svg), svg);
+  assert.ok(!globalThis.FlowIcons.from('<img src=x onerror=alert(1)>').includes('onerror'));
+});
 test('manager role aliases always grant all PDV permissions; operator restrictions remain', () => {
   for (const role of ['gerente','gestor','administrador','admin','superadmin','dono']) {
     const permissions = rules.permissions(role, {cancelarVenda:false,verCustoEstoque:false});

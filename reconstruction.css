@@ -77,3 +77,42 @@ input[type="date"]::-webkit-datetime-edit{padding:0;min-width:0}
 @media(hover:hover){.btn-secondary-mobile:hover{background:#e2e5dc;color:var(--text-main)}}
 @media(max-width:380px){.categoria-action-btn span{display:inline}.categoria-action-btn{width:auto;padding:0 10px}.modal-perms-grid{grid-template-columns:1fr}.modal-sheet-icon{display:none}.mobile-tab-view{padding-left:14px!important;padding-right:14px!important}}
 @media(min-width:768px){.abc-filter-grid{grid-template-columns:repeat(4,minmax(0,1fr))}}
+
+/* Desktop controls and customer cards share the same action rhythm. */
+button:not(:disabled),a[href],select:not(:disabled),[role="button"]{cursor:pointer}
+button:disabled{cursor:not-allowed}
+.btn-primary-mobile,.btn-secondary-mobile,.btn-action-sm,.btn-whatsapp-mobile{appearance:none;display:inline-flex;align-items:center;justify-content:center;gap:7px;min-height:44px;padding:10px 14px;border:1px solid transparent;border-radius:8px;font-family:inherit;font-size:14px;font-weight:600;line-height:1.4;text-decoration:none;box-shadow:none;transition:background-color .16s,color .16s,border-color .16s}
+.btn-secondary-mobile,.btn-action-sm{background:#f0f1ea;color:#222923;border-color:#c9cec2}
+.btn-whatsapp-mobile{background:#216348!important;color:#fff!important;box-shadow:none!important}
+.btn-primary-mobile:active,.btn-secondary-mobile:active,.btn-action-sm:active{transform:none}
+#input-mobile-data-validade{margin:0;width:100%;min-width:0}
+.input-mobile:focus{box-shadow:none!important;border-color:var(--flow-orange)!important}
+.flow-glyph{overflow:visible;vertical-align:-.15em;flex-shrink:0;pointer-events:none}
+.modal-sheet-icon .flow-glyph,.flow-item-icon .flow-glyph,.categoria-card-icon .flow-glyph{width:22px;height:22px}
+.client-card{display:flex;flex-direction:column;gap:12px;cursor:pointer;min-width:0}
+.client-card .card-top-row{flex-wrap:wrap;gap:10px}
+.client-card .card-top-row>div{min-width:0;overflow-wrap:anywhere}
+.client-card .card-top-row>div:last-child{display:flex;flex-direction:column;align-items:flex-end;gap:4px;margin-left:0!important}
+.client-card-actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px!important;margin-top:auto!important;padding-top:14px;border-top:1px solid var(--border-card)}
+.client-card-actions>*{min-width:0;min-height:44px!important;height:auto!important;margin:0;display:inline-flex;align-items:center;justify-content:center;padding:8px!important;font-size:12px!important;line-height:1.4;text-align:center;box-shadow:none!important;border-radius:8px!important}
+.client-card-actions>*:last-child:nth-child(odd){grid-column:1/-1}
+.client-card-actions .btn-primary-mobile{grid-area:1/1}
+.client-card-actions .btn-whatsapp-mobile{grid-area:1/2}
+.client-card-actions .chip-btn{grid-area:2/1}
+.client-card-actions .client-edit{grid-area:2/2}
+.client-card-actions .client-details{grid-area:3/1/4/3}
+.client-card-actions .flow-glyph{width:16px;height:16px}
+.client-filter-toolbar{gap:12px!important;align-items:flex-start!important}
+#chips-clientes-container{justify-content:flex-start!important;flex-wrap:wrap;overflow:visible;padding:0;gap:8px;min-width:0}
+.client-filter-toolbar>.btn-primary-mobile{margin-left:auto}
+@media(max-width:600px){#chips-clientes-container{flex-basis:100%!important}.client-filter-toolbar>.btn-primary-mobile{width:100%}}
+.modal-sheet-body [style*="grid-template-columns: 1fr 1fr"]{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+.modal-sheet-body [style*="grid-template-columns"]>*{min-width:0;overflow-wrap:anywhere}
+#gerencia-perfil-loja-info>div{display:grid!important;grid-template-columns:minmax(120px,1fr) minmax(0,2fr);gap:16px;padding:10px 0!important;align-items:start}
+#gerencia-perfil-loja-info strong{text-align:right;min-width:0;overflow-wrap:anywhere}
+@media(hover:hover){
+ .btn-primary-mobile:not(:disabled):hover,.btn-login-submit:not(:disabled):hover,.btn-novo-colaborador:not(:disabled):hover{background:#953a13!important;color:#fff!important;border-color:transparent;box-shadow:none!important;transform:none}
+ .btn-secondary-mobile:not(:disabled):hover,.btn-action-sm:not(:disabled):hover{background:#e2e5dc;color:#222923;border-color:#9fa995}
+ .btn-whatsapp-mobile:hover{background:#184a35!important;color:#fff!important;box-shadow:none!important;transform:none}
+}
+@media(max-width:380px){#gerencia-perfil-loja-info>div{grid-template-columns:minmax(0,1fr);gap:3px}#gerencia-perfil-loja-info strong{text-align:left}}
