@@ -14,4 +14,4 @@ Manter as marcas laranja existentes. Papel marfim, superfícies brancas, texto g
 
 ## Limites desta rodada
 
-Preservar IDs, autenticação, regras de negócio e integrações. Testes completos, revisão e otimização foram adiados pelo usuário para amanhã. Não publicar. Este registro não afirma validação renderizada.
+Preservar IDs, autenticação, regras de negócio e integrações. Publicação autorizada pelo usuário para esta noite; confirmação da publicação pendente. Testes funcionais completos ficam para amanhã, junto da revisão e otimização adiadas. Este registro não afirma validação renderizada.

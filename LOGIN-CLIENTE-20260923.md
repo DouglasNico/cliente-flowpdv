@@ -8,3 +8,5 @@ Pedido: adotar a composição do login do cardápio e, após ajuste do usuário,
 - Cardápio: src/pages/login.css atualizado para esse mesmo azul.
 
 Verificação local em Chrome: 1440x900, 390x844 e 320x568 sem transbordamento horizontal; mostrar senha funciona; display:none continua ocultando a tela após login. Capturas em flowpdv-sistema/output/migracao-v2-20260923/mobile-login-*.png. Build do cardápio aprovado. Sem login real ou publicação.
+
+Publicação autorizada e concluída: commit d625662 enviado à main. HTTPS cliente.flowpdv.com.br respondeu 200 e Chrome confirmou o novo layout e o fundo azul do PDV. Somente index.html, login.css, sw.js e este registro entraram no commit.

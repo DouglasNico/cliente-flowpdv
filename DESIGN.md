@@ -48,12 +48,14 @@ components:
 
 Uma bancada de gestão clara, organizada como um livro de movimento. Superfícies brancas sobre papel marfim, divisórias finas e números alinhados tornam a leitura diária direta. O laranja da marca orienta ações e seleção; estados operacionais conservam suas cores sem dominar a composição.
 
+Publicação autorizada pelo usuário para esta noite; confirmação da publicação pendente. Testes funcionais completos ficam para amanhã, junto da revisão e otimização adiadas.
+
 **Key Characteristics:**
 - Listas e divisórias em vez de mosaicos decorativos.
 - Valores numéricos com algarismos tabulares.
 - Navegação selecionada evidente.
 
-Extração estática de `reconstruction.css` e dos estilos-base existentes em 23/09/2026. A implementação está em reconstrução. Testes completos, revisão e otimização foram adiados pelo usuário; não houve validação renderizada nesta documentação. A expressão específica da rodada está em `.impeccable/surface-brief.md`.
+Extração estática de `reconstruction.css` e dos estilos-base existentes em 23/09/2026. A implementação está em reconstrução. Não houve validação renderizada nesta documentação. A expressão específica da rodada está em `.impeccable/surface-brief.md`.
 
 ## Colors
 

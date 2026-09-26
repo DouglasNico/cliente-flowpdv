@@ -1,6 +1,6 @@
 {
   "schemaVersion": 2,
-  "generatedAt": "2026-09-23T06:56:43.353Z",
+  "generatedAt": "2026-09-23T07:03:21.4135013Z",
   "title": "Design System: Flow Gestor",
   "extensions": {
     "colorMeta": {
@@ -227,7 +227,7 @@
   ],
   "narrative": {
     "northStar": "Livro de movimento",
-    "overview": "Uma bancada de gestão clara, organizada como um livro de movimento. Superfícies brancas sobre papel marfim, divisórias finas e números alinhados tornam a leitura diária direta. O laranja da marca orienta ações e seleção; estados operacionais conservam suas cores sem dominar a composição.",
+    "overview": "Uma bancada de gestão clara, organizada como um livro de movimento. Superfícies brancas sobre papel marfim, divisórias finas e números alinhados tornam a leitura diária direta. O laranja da marca orienta ações e seleção; estados operacionais conservam suas cores sem dominar a composição.\n\nPublicação autorizada pelo usuário para esta noite; confirmação da publicação pendente. Testes funcionais completos ficam para amanhã, junto da revisão e otimização adiadas.",
     "keyCharacteristics": [
       "Listas e divisórias em vez de mosaicos decorativos.",
       "Valores numéricos com algarismos tabulares.",
